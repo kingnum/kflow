@@ -1,0 +1,26 @@
+# npm / Node
+node_modules/
+package-lock.json
+
+# Build artifacts
+target/
+targets/
+dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# KFlow runtime
+.kflow-runtime/
+
+# Claude Code
+.claude/
+
+# References
+references/
+
+# OS
+.DS_Store
+Thumbs.db
