@@ -1,6 +1,6 @@
 ---
 name: kflow-api-test
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs API testing/接口测试、API测试、接口单元测试, or subchange code review passes and ready for interface testing. curl/HTTP 方式对 api-tests/ 逐条测试，弹性重复制模式，健康评分（功能完整性/响应时间/HTTP状态码/错误处理/契约一致性）。适用于所有项目类型（前后端+纯后端）。含 PRE_HOOK/POST_HOOK 阶段钩子。/接口测试/API测试/接口单元测试
 license: MIT
 triggers:

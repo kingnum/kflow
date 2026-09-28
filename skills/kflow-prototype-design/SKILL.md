@@ -1,6 +1,6 @@
 ---
 name: kflow-prototype-design
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs prototype design/原型设计、UI 设计、交互设计、HTML 原型 for frontend changes. 编排层，动态扫描环境设计 Skills，组合工具链方案供用户选择，选定后锁定执行。可选阶段，仅涉及前端/UI 变更时推荐使用。含用户评审循环、5 轮导航合理性验证、5 轮 Playwright 全覆盖验证、UX 规则审查、对比度检测、CDN 离线扫描、多文件交叉引用检查。含 PRE_HOOK/POST_HOOK 阶段钩子引用。
 license: MIT
 triggers:

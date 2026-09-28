@@ -2,7 +2,7 @@
 
 一套**文档驱动的阶段门控开发流程体系**，将软件开发从设计到交付的全流程标准化为一系列 Claude Code Skills，确保每个阶段产物可追溯、可验证。
 
-> **版本**: 0.16.0 | **更新时间**: 2026-06-18 | **适用版本**: KFlow Skills 体系 2.0.0+
+> **版本**: 0.17.0 | **更新时间**: 2026-09-28 | **适用版本**: KFlow Skills 体系 2.0.0+
 
 ---
 
@@ -69,7 +69,7 @@ kflow-guide → kflow-explore → kflow-design
     │   ├── 设计探索 (kflow-explore)
     │   ├── 原型设计 (kflow-prototype-design, 可选)
     │   └── 详细设计 (kflow-design)
-    │         └── 四视角审查 + 子变更划分
+    │         └── 分级设计审查（简化/完整）+ 子变更划分
     │
     └── 执行阶段（子变更级，重复制模式）
         ├── 子变更 1: 计划 → 编码 → 代码审查 → 接口单元测试 → E2E测试
@@ -107,7 +107,7 @@ kflow-guide → kflow-explore → kflow-design
 |-------|------|--------|
 | `kflow-explore` | 创建变更目录、项目类型检测、功能点原子级拆分、构建领域词汇表、输出功能结构树、原型设计决策门控 | 开始新需求、设计探索、功能设计 |
 | `kflow-prototype-design` | 编排层，动态扫描环境设计 Skills → 多方案推荐 → 用户锁定工具链 → 委托生成 HTML 原型 + 5 轮导航验证 + 5 轮 Playwright 验证 + UX 规则审查 + 对比度检测 + 离线自包含 + 生成 element-coverage-tree（Path A 静态解析）（仅前后端，可选） | 原型设计、UI 设计、交互设计 |
-| `kflow-design` | 系统架构、数据模型、接口设计、NFR 定义、四视角并行审查（业务/技术/安全/质量）、子变更划分（含 HITL/AFK 分类）、ADR 架构决策记录、element-coverage-tree Path B（playwright-cli 动态探索）+ 100% 覆盖率门控、复杂度评估（高复杂度 FP 逐项用户确认） | 详细设计、技术设计、架构设计 |
+| `kflow-design` | 系统架构、数据模型、接口设计、NFR 定义、分级设计审查（功能缺陷级简化 / 功能需求级·产品需求级完整四视角并行）、子变更划分（含 HITL/AFK 分类）、ADR 架构决策记录、element-coverage-tree Path B（playwright-cli 动态探索）+ 100% 覆盖率门控、复杂度评估（高复杂度 FP 逐项用户确认） | 详细设计、技术设计、架构设计 |
 
 ### 执行阶段（子变更级，重复制模式）
 
@@ -126,7 +126,7 @@ kflow-guide → kflow-explore → kflow-design
 |-------|------|--------|
 | `kflow-integration-test` | 变更级集成测试 + 内聚四分法修复循环（实现错误/契约错误/测试错误/架构设计错误）、架构评估自动触发（连续 3 轮同用例失败）、服务持久化模式管理 | 集成测试、跨子变更测试 |
 | `kflow-audit` | 七维度加权评估（流程 22%/产物 23%/审查 20%/测试 15%/缺陷 10%/效率 5%/Post-mortem 5%）、归档门控集成、审计回退路由、SKILL.md 钩子引用合规检查 | 审计、评估、检查 |
-| `kflow-archive` | 门控检查 → 设计合并（功能设计+技术设计）→ 全景更新 → 移至 archive/ → AskUserQuestion 询问 git commit（含版本自增+打包） | 归档、完成、变更结束 |
+| `kflow-archive` | 门控检查 → 设计合并（功能设计+详细设计）→ 全景更新 → 移至 docs/changes/archive/ → AskUserQuestion 询问 git commit（含版本自增+打包） | 归档、完成、变更结束 |
 
 ---
 
@@ -138,7 +138,7 @@ kflow-guide → kflow-explore → kflow-design
 1. "我想添加用户认证功能"       → kflow-guide 识别意图
 2. kflow-explore               → 创建变更目录，原子级拆分功能点，构建领域词汇表
 3. kflow-prototype-design      → (可选) HTML 交互原型 + 元素覆盖树 Path A + 导航/Playwright 验证
-4. kflow-design                → 系统架构 + 四视角并行审查 + 划分子变更 + ADR 记录 + 元素覆盖树 Path B + 100% 覆盖率门控
+4. kflow-design                → 系统架构 + 分级设计审查 + 划分子变更 + ADR 记录 + 元素覆盖树 Path B + 100% 覆盖率门控
 5. kflow-plan                  → 子变更 TDD 任务清单 + DoD 验收标准
 6. kflow-code                  → TDD 编码实现 + 编译验证 + 原型到代码一致性约束
 7. kflow-code-review           → 两视角并行审查 + 分级重审闭环
@@ -179,7 +179,7 @@ kflow-guide → kflow-explore → kflow-design
 | 继续中断的工作 | "继续 {change-name}" / "恢复 {change-name}" |
 | 查看进度 | "状态" / "进度" / "查看进度" |
 | 原型/UI 设计 | "原型设计" / "UI 设计" / "交互设计" |
-| 详细/技术设计 | "详细设计" / "技术设计" / "架构设计" |
+| 详细设计 | "详细设计" / "技术设计" / "架构设计" |
 | 制定任务计划 | "任务计划" / "任务清单" / "实现计划" |
 | 编码实现 | "编码实现" / "TDD" / "功能实现" |
 | 代码审查 | "代码审查" / "review" / "审查代码" |
@@ -235,6 +235,8 @@ docs/
 │
 ├── changes/                          # 变更管理目录
 │   ├── index.md                      # 变更管理索引（活跃 + 已归档）
+│   ├── archive/                      # 归档目录
+│   │   └── {YYYY-MM-DD}-{change}/    # 归档的变更（整体归档，保持原结构）
 │   └── {change-name}/                # 单个变更
 │       ├── .status.md                # 变更总状态文件（含子变更进度矩阵）
 │       ├── tasks.md                  # 变更总任务清单（子变更级 checkbox）
@@ -247,7 +249,7 @@ docs/
 │       ├── e2e-tests/                # E2E 测试用例（目录化，仅前后端）
 │       ├── integration-tests/        # 集成测试用例（目录化）
 │       ├── self-reviews/             # 自循环审查记录（explore/prototype/design）
-│       ├── cross-reviews/            # 四视角交叉审查报告（批次目录）
+│       ├── cross-reviews/            # 交叉审查报告（完整四视角/简化单 synthesis，批次目录）
 │       ├── migrations/               # 数据库迁移（变更级）
 │       └── subchanges/               # 子变更目录
 │           └── {subchange-name}/
@@ -256,16 +258,21 @@ docs/
 │               └── test-reports/     # 测试报告（api/e2e/review/fix-reports）
 │
 ├── designs/                          # 产品级设计文档
-│   ├── architecture.md               # 全景架构
-│   ├── data-model.md                 # 全景数据模型
-│   ├── api-catalog.md                # 全景 API 目录
-│   └── nfr-baseline.md               # NFR 基线
+│   ├── index.md                      # 产品级设计索引入口
+│   ├── functional-designs/           # 按功能模块拆分的产品级功能设计（{menu}/index.md + part-NN.md 或 {domain}.md）
+│   ├── detailed-designs/             # 产品级详细设计（6 文件体系）
+│   │   ├── architecture.md           # 全景架构
+│   │   ├── data-model.md             # 全景数据模型
+│   │   ├── api-catalog.md            # 全景 API 目录
+│   │   ├── nfr-baseline.md           # NFR 基线
+│   │   ├── config-items.md           # 配置项设计
+│   │   └── error-handling.md         # 错误处理设计
+│   └── changelog.md                  # 变更日志（按年归档）
 │
-├── adr/                              # 架构决策记录
-└── archive/                          # 归档目录
+└── adr/                              # 架构决策记录
 
 openspec/
-└── specs/                            # OpenSpec 规格文件（87 个核心机制/阶段规格）
+└── specs/                            # OpenSpec 规格文件（131 个核心机制/阶段规格）
 ```
 
 ---
@@ -308,7 +315,7 @@ openspec/
 
 **集成测试连续失败？** 连续 3 轮同一用例失败自动触发架构评估，防止设计问题在测试阶段反复消耗资源。
 
-**归档后还能修改吗？** 不能。归档变更移至 `docs/archive/`，禁止修改。需修改应创建新变更。
+**归档后还能修改吗？** 不能。归档变更移至 `docs/changes/archive/`，禁止修改。需修改应创建新变更。
 
 **阶段钩子（PRE_HOOK/POST_HOOK）是什么？** 每个阶段执行前后的标准化服务生命周期管理步骤。PRE_HOOK 负责状态检查、文件重载、服务启动、健康检查；POST_HOOK 负责服务停止、浏览器清理、状态更新。钩子执行职责归属于变更级 Agent，子变更 Agent 不执行钩子。
 
@@ -327,7 +334,7 @@ openspec/
 - [阶段钩子规范](docs/designs/core-mechanisms/09-phase-hooks.md) — PRE_HOOK/POST_HOOK 配置表、RELOAD 清单、服务生命周期
 - [运行时钩子规范](.claude/skills/kflow-shared/phase-hooks.md) — 各阶段引用的运行时钩子执行规范
 - [服务生命周期管理](.claude/skills/kflow-shared/service-lifecycle.md) — daemon 模式、端口冲突检测、服务停止超时链
-- [OpenSpec 规格](openspec/specs/) — 87 个核心机制/阶段规格文件
+- [OpenSpec 规格](openspec/specs/) — 131 个核心机制/阶段规格文件
 - [CLAUDE.md](CLAUDE.md) — Claude Code 项目指令（含钩子引用强制规则、版本自增+打包规则）
 
 ---
@@ -337,6 +344,15 @@ openspec/
 ---
 
 ## 版本更新说明
+
+### v0.17.0 (2026-09-28)
+**设计自审分级、详细设计术语统一、设计评审分级与归档位置调整**
+- **设计自审分级（首次/非首次）**：三设计阶段（explore/prototype/design）SELFREV 从无条件固定 10 轮改为按「首次/非首次创建」分级——首次创建固定 10 轮，非首次创建按影响范围分数弹性决定轮次（下限 1、上限 10）+ 评分底线（各维度评分均 > 8 方通过，未达标补审至 10 轮上限）；判定信号复用 kflow-init 检测（CONTEXT.md 存在 + detailed-designs/ 非空）
+- **详细设计术语统一**：产品级目录 `technical-designs/` → `detailed-designs/`（6 文件体系），中文术语「技术设计」归一为「详细设计」；模板目录同步重命名；旧目录兼容读取 + 迁移提示（不自动 git mv）
+- **设计评审分级**：kflow-design REVIEW 按变更类型分级——功能缺陷级走简化模式（单 Agent 串行综合审查，单一 synthesis.md，不执行分级重审闭环），功能需求级/产品需求级走完整模式（四视角并行 + 分级重审闭环）
+- **归档位置统一**：归档目录 `docs/archive/` → `docs/changes/archive/`，消除 status/resume 检测路径的文档-实现错位
+- 新增 2 个 specs（design-review-tiering、archive-directory-location）+ 修改 7 个 specs（archive-design-merge、doc-naming-convention、init-legacy-reverse-analysis、product-config-items-doc、product-error-handling-doc、stage-doc-templates、subagent-self-review）
+- 同步更新 11 个运行时 SKILL.md、设计文档、核心机制文档、模板文件与 README.md
 
 ### v0.16.0 (2026-06-18)
 **权限声明可移植化与后台权限失败回退机制**

@@ -1,6 +1,6 @@
 ---
 name: kflow-plan
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs task planning/任务计划、任务清单、实现计划, or detailed-design.md is ready for subchange breakdown. 子变更级checkbox任务清单（含DoD四维验收标准），功能点级全展开TDD循环，区分后端SC/前端SC输入源。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务）。
 license: MIT
 triggers:

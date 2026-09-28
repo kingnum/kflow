@@ -1,6 +1,6 @@
 ---
 name: kflow-integration-test
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs integration testing/集成测试、跨子变更测试、integration test, or all subchanges complete and ready for cross-subchange verification. 变更级集成测试，内聚四分法修复循环，架构评估自动触发。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:

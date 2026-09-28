@@ -1,6 +1,6 @@
 ---
 name: kflow-design
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs detailed design/详细设计、技术设计、架构设计、设计审查. 变更级统一详细设计——系统架构、数据模型、接口设计、NFR定义、四视角并行审查（业务/技术/安全/质量）、子变更划分（含HITL/AFK分类）、ADR架构决策记录。必须阶段，依赖 kflow-explore 输出。
 license: MIT
 triggers:

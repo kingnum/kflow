@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-fix
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs bug fixing/缺陷修复、Bug 修复、测试失败, or a subchange test round has failures. Subchange-level only; integration test failures are handled by kflow-integration-test. 子变更级二分法根因分类路由（实现错误/测试错误），系统化诊断，多Agent并行分析。入口仅限测试阶段自动发现（B路径），用户反馈统一由 kflow-bug-triage 处理。含 PRE_HOOK/POST_HOOK 阶段钩子引用（同触发阶段的钩子配置）。
 license: MIT
 triggers:

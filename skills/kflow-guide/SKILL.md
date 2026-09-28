@@ -1,6 +1,6 @@
 ---
 name: kflow-guide
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs workflow guidance/流程指引、帮助、如何开始、下一步做什么 or says 继续/恢复/resume with a change name. Also use when user expresses intent to start new work/做、添加、实现、修复、搭建 or design revision/设计需调整/功能设计需调整/原型.*调整/详细设计.*调整/接口设计.*改/修改.*设计/调整.*设计.自动检测用户意图、项目类型、活跃变更，降低使用门槛，无需记忆所有 Skill 名称。RESUME 路由 + NEW CHANGE 指引 + 定向指引 + DESIGN_REVISION 设计修订分流。**RESUME 路由优先级最高，匹配「继续/恢复/resume + 变更名」时禁止 Plan Mode，直接进入 Skill 路由链。**
 license: MIT
 triggers:

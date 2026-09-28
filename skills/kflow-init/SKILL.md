@@ -1,6 +1,6 @@
 ---
 name: kflow-init
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs environment initialization/初始化、环境配置、工具推荐、设置, project kickoff/项目启动, or legacy project reverse analysis/老项目逆向分析.
 license: MIT
 triggers:

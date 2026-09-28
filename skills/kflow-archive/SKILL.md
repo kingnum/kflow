@@ -1,6 +1,6 @@
 ---
 name: kflow-archive
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD: 全量产物, .status.md）。
 license: MIT
 triggers:

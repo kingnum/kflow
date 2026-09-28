@@ -1,6 +1,6 @@
 ---
 name: kflow-e2e-test
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs E2E testing/E2E 测试、QA 测试、功能测试、浏览器自动化测试, or subchange API tests (kflow-api-test) pass and ready for browser testing. Playwright snapshot+ref模式，决策树路由，健康评分映射。仅前后端项目，纯后端跳过。依赖前置 kflow-api-test。含 PRE_HOOK/POST_HOOK 阶段钩子。/playwright
 license: MIT
 triggers:

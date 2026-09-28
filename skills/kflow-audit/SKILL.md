@@ -1,6 +1,6 @@
 ---
 name: kflow-audit
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs audit/审计、评估、检查、审核 of a change, or before archiving/归档前, or anytime manual inspection is needed. 七维度加权评估（流程22%/产物23%/审查20%/测试15%/缺陷10%/效率5%/Post-mortem5%），归档门控集成，审计回退路由。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD: 全量产物, cross-reviews/, test-reports/, .status.md）。
 license: MIT
 triggers:

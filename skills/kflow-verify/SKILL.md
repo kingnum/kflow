@@ -1,6 +1,6 @@
 ---
 name: kflow-verify
-version: 0.16.0
+version: 0.17.0
 description: Use when user needs artifact diagnosis/诊断、验证产物、检查产物、产物完整性、输入源检查、verify, or before archive to check all artifacts. 独立诊断 Skill（非流程阶段），七维度全阶段产物诊断、严重度分级（🔴阻塞/🟡警告/🔵建议）、修复路由到对应阶段 REVISION 模式。可随时手动调用 + 归档前自动触发。不写入 .status.md 阶段状态表。
 license: MIT
 triggers:
