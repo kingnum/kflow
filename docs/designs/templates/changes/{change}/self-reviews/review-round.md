@@ -4,13 +4,13 @@ skill: kflow-explore / kflow-prototype-design / kflow-design
 version: 1.0.0
 created_at: 2026-05-14
 template_for: self-reviews/{phase}/{YYYYMMDD}-{HHMMSS}.md
-template_description: 自审轮次报告模板，用于 explore/prototype/design 三阶段的 10 轮自循环审查记录。每轮独立保存为时间戳命名的文件。
+template_description: 自审轮次报告模板，用于 explore/prototype/design 三阶段的自循环审查记录（首次 10 轮 / 非首次弹性轮次 + 评分底线）。每轮独立保存为时间戳命名的文件。
 ---
 
 # 自审报告：{phase} 阶段 — 第 {N} 轮
 
 > **阶段**: {explore|prototype|design}
-> **轮次**: {N}/10
+> **轮次**: {N}/{目标轮次}
 > **审查开始时间**: {YYYY-MM-DD HH:MM:SS}
 > **上一轮报告**: {上一轮文件路径，第 1 轮填写 N/A}
 
@@ -20,10 +20,10 @@ template_description: 自审轮次报告模板，用于 explore/prototype/design
 
 | 维度 | 本轮得分 | 上轮得分 | 变化 |
 |------|---------|---------|------|
-| {维度1} | {1-10} | {1-10 或 N/A} | {+n/-n/—} |
-| {维度2} | {1-10} | {1-10 或 N/A} | {+n/-n/—} |
-| {维度3} | {1-10} | {1-10 或 N/A} | {+n/-n/—} |
-| {维度4} | {1-10} | {1-10 或 N/A} | {+n/-n/—} |
+| {维度1} | {0-10} | {0-10 或 N/A} | {+n/-n/—} |
+| {维度2} | {0-10} | {0-10 或 N/A} | {+n/-n/—} |
+| {维度3} | {0-10} | {0-10 或 N/A} | {+n/-n/—} |
+| {维度4} | {0-10} | {0-10 或 N/A} | {+n/-n/—} |
 
 > 维度取决于阶段：explore（完整性/闭环性/必要性/清晰性）、prototype（覆盖性/一致性/可用性/完整性）、design（一致性/完备性/可行性/可测性）
 

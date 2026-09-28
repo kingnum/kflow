@@ -1,7 +1,7 @@
 ---
 name: kflow-explore
 version: 0.16.0
-description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - detects project type (frontend+backend vs pure backend), splits features to atomic level, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces 10-round self-review (repetition mode) and two-action save rule for external info gathering.
+description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - detects project type (frontend+backend vs pure backend), splits features to atomic level, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tiered self-review (first-time creation 10 rounds / subsequent elastic rounds + score floor > 8) and two-action save rule for external info gathering.
 license: MIT
 triggers:
   - 开始新需求
@@ -33,7 +33,7 @@ allowed-tools:
   → 需求澄清 + CONTEXT.md 管理（首次构建或增补 + 对齐检查）
   → 功能点原子级拆分 + 关联关系分析
   → 输出 functional-designs/（index.md + part-NN.md 目录化结构）
-  → 10 轮自循环审查（完整性/闭环性/必要性/清晰性）
+  → 自循环审查（首次 10 轮 / 非首次弹性轮次 + 评分底线，完整性/闭环性/必要性/清晰性）
   → 原型设计决策门控（AskUserQuestion，仅前后端项目，prototype_decision 标记幂等）
   → 标记阶段完成
 ```
@@ -47,7 +47,7 @@ allowed-tools:
 - `functional-designs/index.md` **不再包含**子变更划分方案（子变更划分后置到 design 阶段）
 - `functional-designs/` 至少包含一个 `part-NN.md` 分册文件
 - `.status.md` 必须存在并标记设计探索阶段为 ✅ 完成
-- `self-reviews/explore/` 目录下必须存在 10 个自审报告文件
+- `self-reviews/explore/` 目录下自审报告文件份数与执行模式匹配（首次创建 10 份；非首次创建按弹性目标轮次）
 
 # 输入要求
 
@@ -65,7 +65,7 @@ allowed-tools:
 | 功能设计文档 | `docs/changes/{change}/functional-designs/` | ✅ 必须 | 需求描述、项目类型、功能点清单（每功能点含：用户故事、所属页面与菜单、可执行操作、表单项定义、业务规则、业务流程上下文）、功能点关联关系、功能结构树（模块→功能点树状图，含FP-ID/优先级/简述）、核心业务流程图、变更类型判断、版本号+统一修订记录表（合并原需求变更记录与修订记录，格式：版本/日期/修订类型/修订内容/影响功能点/触发阶段） |
 | 领域词汇表 | `CONTEXT.md`（项目根目录） | ✅ 必须 | 项目级领域术语定义，首次构建或增补。每术语含：定义、别名、边界 |
 | 状态文件 | `docs/changes/{change}/.status.md` | ✅ 必须 | 标记设计探索阶段完成，含项目类型字段、执行备注 |
-| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | ✅ 必须 | 10 轮自审报告，文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
+| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | ✅ 必须 | 自审报告（首次 10 份 / 非首次弹性份数），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
 
 # 执行流程
 
@@ -94,13 +94,13 @@ allowed-tools:
 │  7. SPLIT     → 拆分功能点到原子级                                │
 │  8. RELATE    → 分析功能点关联关系                                │
 │  9. OUTPUT    → 输出功能设计文档（含版本号+修订记录区+功能结构树）│
-│  10. SELFREV  → 10 轮自循环审查（子代理串行 + 重复制）           │
+│  10. SELFREV  → 首次/非首次分级自审（子代理串行 + 重复制）       │
 │  │   每轮: 启动独立 Agent(subagent) 子代理                       │
 │  │   子代理全四维度独立检查（完整性/闭环性/必要性/清晰性）         │
 │  │   子代理发现问题 → 直接修复 + 生成自审报告                     │
 │  │   主 Agent 读报告 + 确认修复 → 启动下一轮子代理                │
 │  │   报告路径: self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md       │
-│  │   串行执行 10 轮，不可提前终止                                 │
+│  │   首次创建串行 10 轮；非首次创建弹性轮次 + 评分底线 > 8        │
 │  11. PROTO_GATE → 原型设计决策门控（仅前后端项目）             │
 │  │   ├── 检查 .status.md 中是否存在 prototype_decision 标记     │
 │  │   ├── 不存在 → AskUserQuestion: "检测到 {n} 个 UI 功能点，   │
@@ -334,7 +334,7 @@ allowed-tools:
 
 > 配置项影响矩阵用于在功能设计阶段识别配置变更的波及范围，为后续详细设计、测试用例设计提供输入。每行记录一个配置项及其影响的全部功能点。
 
-## 步骤 10：SELFREV — 10 轮自循环审查（子代理串行 + 重复制）
+## 步骤 10：SELFREV — 首次/非首次分级自审（子代理串行 + 重复制）
 
 ### 子代理上下文文件加载（基础层 + 创意层）
 
@@ -350,13 +350,20 @@ allowed-tools:
 
 > **v2.2.0 变更**: 自审执行方式从"当前 Agent 自身执行"改为"子代理（Agent subagent）串行执行"。每轮启动独立子代理，子代理拥有独立上下文避免"作者盲点"。
 
-> **v2.1.0 变更**: 从"分工制"（每轮只审查部分维度）改为"重复制"——每轮独立执行全部四个维度（完整性+闭环性+必要性+清晰性），10 轮形成自然收敛。
+> **v2.1.0 变更**: 从"分工制"（每轮只审查部分维度）改为"重复制"——每轮独立执行全部四个维度（完整性+闭环性+必要性+清晰性），多轮形成自然收敛。
 
 | 对比 | 分工制（旧） | 重复制（新） |
 |------|------------|------------|
 | 每轮范围 | 部分维度 | **全部四个维度** |
 | 发现节奏 | 后期才暴露其他维度问题 | 早期就暴露各类问题 |
 | 收敛趋势 | 不明显 | 自然收敛（后期问题越来越少） |
+
+### 首次/非首次分级
+
+判定信号、弹性轮次公式与评分底线规则详见 [references/self-review.md](references/self-review.md) §4。要点：
+
+- **首次创建（无设计基础）**：`docs/CONTEXT.md` 不存在 或 `docs/designs/detailed-designs/` 为空 → 固定执行 10 轮。
+- **非首次创建（已有设计基础）**：`docs/CONTEXT.md` 存在 且 `docs/designs/detailed-designs/` 非空 → 弹性轮次（explore 影响范围分数 = 功能点数 × 1；映射：1→1 轮、2–5→ceil(分数)、6–15→max(5, ceil(分数/2))、>15→10 轮）+ 评分底线（各维度评分均 > 8 方通过，未达标补审至 10 轮上限）。
 
 ### 审查维度与检查规则
 
@@ -365,27 +372,31 @@ allowed-tools:
 ### 自审执行流程（子代理串行 + 重复制）
 
 ```
-10 轮自审执行流程（子代理串行，每轮全维度）:
+自审执行流程（子代理串行，每轮全维度，首次/非首次分级）:
 
-1. 主 Agent 启动第一轮子代理:
+1. 判定首次/非首次：读取 docs/CONTEXT.md 与 docs/designs/detailed-designs/ 判定执行模式
+2. 主 Agent 启动第一轮子代理:
    Agent(
      subagent_type="claude",
      description="Explore 自审 Round 1",
      prompt="读取 functional-designs/ 下的所有产物文件，按完整性、闭环性、必要性、清晰性全部四个维度独立检查。发现问题直接修复产物文件，生成审查报告到 self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。"
    )
-2. 子代理返回审查报告路径
-3. 主 Agent 读取报告，确认修复内容
-4. 修复不合理 → 主 Agent 补充修复
-5. 启动下一轮子代理（Round N+1），步骤同 Round 1
-6. SHALL NOT 并行启动多个子代理（串行执行）
-7. 重复直至完成全部 10 轮
-8. 全部完成后标记阶段完成
+3. 子代理返回审查报告路径
+4. 主 Agent 读取报告，确认修复内容
+5. 修复不合理 → 主 Agent 补充修复
+6. 启动下一轮子代理（Round N+1），步骤同 Round 1
+7. SHALL NOT 并行启动多个子代理（串行执行）
+8. 轮次控制：
+   ├── 首次创建 → 完成全部 10 轮
+   └── 非首次创建 → 按弹性轮次执行，各维度评分均 > 8 即通过；未达标补审至 10 轮上限
+9. 全部完成后标记阶段完成
 ```
 
 ### 强制执行规则
 
-- SHALL 完成全部 10 轮自审，不允许提前终止
-- 即使连续多轮无新问题也必须完成全部 10 轮
+- 首次创建 SHALL 完成全部 10 轮自审，不允许提前终止
+- 非首次创建 SHALL 完成弹性目标轮次，且各维度评分均 > 8 方通过；未达标补审至 10 轮上限
+- 即使连续多轮无新问题，首次创建也须完成全部 10 轮
 - SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审
 - SHALL NOT 并行启动多个子代理（串行执行，前一轮完成后再启动下一轮）
 - 自审全部完成后标记阶段完成，释放 prototype 或 design 阶段门控
@@ -494,7 +505,7 @@ CONTEXT.md 消费链:
 
 - **FP 类型标记**：每个功能点 SHALL 标记为「后端」或「前端」，无法归类的 FP 必须继续拆分，类型作为后续子变更划分类型校验的依据
 - **子变更划分不在此阶段执行**：后置到详细设计阶段完成后基于完整设计认知划分
-- **10 轮自审强制执行（子代理串行 + 重复制）**：每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），子代理边审边修，串行不可并行，即使无新问题也必须完成全部 10 轮，不可提前终止
+- **自审分级强制执行（子代理串行 + 重复制）**：首次创建完成全部 10 轮；非首次创建按弹性轮次执行，各维度评分均 > 8 方通过（未达标补审至 10 轮上限）。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），子代理边审边修，串行不可并行，不可提前终止
 - **两动作规则**：每 2 次外部信息收集操作后立即保存关键发现到 functional-designs/
 - **CONTEXT.md**：项目级领域词汇表，首次构建后持续增补，后续阶段只引用不修改
 - **functional-designs/ 结构**：index.md（含版本号、需求变更记录表、配置项影响矩阵）+ part-NN.md 目录化结构

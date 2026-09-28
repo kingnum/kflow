@@ -386,10 +386,10 @@ allowed-tools:
 | 1 | CONTEXT.md | docs/CONTEXT.md | ✅ 已就绪 / ❌ 不存在 |
 | 2 | 设计索引入口 | docs/designs/index.md | ✅ 已就绪 / ❌ 不存在 |
 | 3 | 功能设计文档 | docs/designs/functional-designs/ | 前后端：✅ N个模块 / ❌ 不存在；纯后端：✅ N篇 / ❌ 不存在 |
-| 4 | 架构全景 | docs/designs/technical-designs/architecture.md | ✅ 已就绪 / ❌ 不存在 |
-| 5 | 数据模型 | docs/designs/technical-designs/data-model.md | ✅ 已就绪 / ❌ 不存在 |
-| 6 | API 目录 | docs/designs/technical-designs/api-catalog.md | ✅ 已就绪 / ❌ 不存在 |
-| 7 | NFR 基线 | docs/designs/technical-designs/nfr-baseline.md | ✅ 已就绪 / ❌ 不存在 |
+| 4 | 架构全景 | docs/designs/detailed-designs/architecture.md | ✅ 已就绪 / ❌ 不存在 |
+| 5 | 数据模型 | docs/designs/detailed-designs/data-model.md | ✅ 已就绪 / ❌ 不存在 |
+| 6 | API 目录 | docs/designs/detailed-designs/api-catalog.md | ✅ 已就绪 / ❌ 不存在 |
+| 7 | NFR 基线 | docs/designs/detailed-designs/nfr-baseline.md | ✅ 已就绪 / ❌ 不存在 |
 | 8 | 服务指引 | docs/service-guide.md | ✅ 已就绪 / ❌ 不存在 |
 
 **侧带检测**（不影响主判断）：config-items.md 和 error-handling.md 缺失时标注"⚠️ 建议补充"。
@@ -439,12 +439,12 @@ L3: 源码语义扫描
 | 1 | docs/CONTEXT.md | L3 提取 | 领域术语及定义 | 领域术语及定义 |
 | 2 | docs/designs/index.md | 综合 | 项目概述、功能模块导航（指向子目录） | 项目概述、功能模块导航（指向平铺文件） |
 | 3 | docs/designs/functional-designs/ | L2.5 + L3 | 按菜单子目录: `{menu}/index.md` + `{menu}/part-NN.md` | 按设计域平铺: `{domain}.md` (backend-domain.md) |
-| 4 | docs/designs/technical-designs/architecture.md | L1 + L2 | 系统架构模式推断 + 配置项索引 + 错误处理索引 | 系统架构模式推断 + 配置项索引 + 错误处理索引 |
-| 5 | docs/designs/technical-designs/data-model.md | L3 实体扫描 | 实体及关键字段聚合 | 实体及关键字段聚合 |
-| 6 | docs/designs/technical-designs/api-catalog.md | L3 路由定义 | API 端点目录 | API 端点目录 |
-| 7 | docs/designs/technical-designs/nfr-baseline.md | L3 注解扫描 | NFR 基线 | NFR 基线 |
-| 8 | docs/designs/technical-designs/config-items.md | L1 配置扫描 | 配置项骨架（新增） | 配置项骨架（新增） |
-| 9 | docs/designs/technical-designs/error-handling.md | L3 异常扫描 | 错误码骨架（新增） | 错误码骨架（新增） |
+| 4 | docs/designs/detailed-designs/architecture.md | L1 + L2 | 系统架构模式推断 + 配置项索引 + 错误处理索引 | 系统架构模式推断 + 配置项索引 + 错误处理索引 |
+| 5 | docs/designs/detailed-designs/data-model.md | L3 实体扫描 | 实体及关键字段聚合 | 实体及关键字段聚合 |
+| 6 | docs/designs/detailed-designs/api-catalog.md | L3 路由定义 | API 端点目录 | API 端点目录 |
+| 7 | docs/designs/detailed-designs/nfr-baseline.md | L3 注解扫描 | NFR 基线 | NFR 基线 |
+| 8 | docs/designs/detailed-designs/config-items.md | L1 配置扫描 | 配置项骨架（新增） | 配置项骨架（新增） |
+| 9 | docs/designs/detailed-designs/error-handling.md | L3 异常扫描 | 错误码骨架（新增） | 错误码骨架（新增） |
 | 10 | docs/service-guide.md | L1 配置扫描 | dev 环境启动命令、端口、数据库 | dev 环境启动命令、端口、数据库 |
 
 ### 用户审核确认
@@ -499,7 +499,7 @@ git init 失败不阻塞 init 流程，提示失败原因。
    └── 重新扫描并更新状态标记
 
 4. 变更对齐检查（新增）:
-   ├── 扫描 docs/changes/ 目录下所有未归档变更（排除 docs/archive/）
+   ├── 扫描 docs/changes/ 目录下所有未归档变更（排除 docs/changes/archive/）
    ├── 读取每个变更的 .status.md 获取当前阶段列表
    ├── 读取 core-mechanisms/01-project-types.md §1.3 中的当前阶段定义
    ├── 对每个变更逐一对比阶段列表与当前阶段定义
@@ -580,12 +580,12 @@ CLAUDE.md 结构（init 注入后）:
 | CONTEXT.md | ✅ 已就绪 / ❌ 不存在 |
 | docs/designs/index.md | ✅ 已就绪 / ❌ 不存在 |
 | docs/designs/functional-designs/ | 前后端：✅ {N}个模块 / ❌ 不存在；纯后端：✅ {N}篇 / ❌ 不存在 |
-| docs/designs/technical-designs/architecture.md | ✅ 已就绪 / ❌ 不存在 |
-| docs/designs/technical-designs/data-model.md | ✅ 已就绪 / ❌ 不存在 |
-| docs/designs/technical-designs/api-catalog.md | ✅ 已就绪 / ❌ 不存在 |
-| docs/designs/technical-designs/nfr-baseline.md | ✅ 已就绪 / ❌ 不存在 |
-| docs/designs/technical-designs/config-items.md | ✅ 已就绪 / ⚠️ 建议补充 |
-| docs/designs/technical-designs/error-handling.md | ✅ 已就绪 / ⚠️ 建议补充 |
+| docs/designs/detailed-designs/architecture.md | ✅ 已就绪 / ❌ 不存在 |
+| docs/designs/detailed-designs/data-model.md | ✅ 已就绪 / ❌ 不存在 |
+| docs/designs/detailed-designs/api-catalog.md | ✅ 已就绪 / ❌ 不存在 |
+| docs/designs/detailed-designs/nfr-baseline.md | ✅ 已就绪 / ❌ 不存在 |
+| docs/designs/detailed-designs/config-items.md | ✅ 已就绪 / ⚠️ 建议补充 |
+| docs/designs/detailed-designs/error-handling.md | ✅ 已就绪 / ⚠️ 建议补充 |
 | docs/service-guide.md | ✅ 已就绪 / ❌ 不存在 |
 ```
 

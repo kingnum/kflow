@@ -64,7 +64,7 @@ templates/
 │   │   ├── part-NN.md                          #     产品级分册模板（新）
 │   │   ├── backend-domain.md                   #     纯后端简化模板（新）
 │   │   └── module.md                           #     功能模块文档模板（⚠️ 已废弃，使用 index.md + part-NN.md 替代）
-│   ├── technical-designs/                      #   技术设计模板（镜像 docs/designs/technical-designs/）
+│   ├── detailed-designs/                      #   详细设计模板（镜像 docs/designs/detailed-designs/）
 │   │   ├── architecture.md                     #     全景架构文档模板（已修订：增加配置项/错误处理索引）
 │   │   ├── data-model.md                       #     全景数据模型文档模板（已修订：兼容性说明）
 │   │   ├── api-catalog.md                      #     全景 API 目录模板（已修订：兼容性说明）
@@ -142,12 +142,12 @@ templates/
 | 37 | design-templates/functional-designs/part-NN.md | docs/designs/functional-designs/{menu}/part-NN.md | kflow-archive | 新建 |
 | 38 | design-templates/functional-designs/backend-domain.md | docs/designs/functional-designs/{domain}.md | kflow-archive | 新建 |
 | 39 | design-templates/functional-designs/module.md | docs/designs/functional-designs/{module}.md | kflow-archive | ⚠️ 废弃 |
-| 40 | design-templates/technical-designs/architecture.md | docs/designs/technical-designs/architecture.md | kflow-archive | 修订 |
-| 41 | design-templates/technical-designs/data-model.md | docs/designs/technical-designs/data-model.md | kflow-archive | 修订 |
-| 42 | design-templates/technical-designs/api-catalog.md | docs/designs/technical-designs/api-catalog.md | kflow-archive | 修订 |
-| 43 | design-templates/technical-designs/nfr-baseline.md | docs/designs/technical-designs/nfr-baseline.md | kflow-archive | 修订 |
-| 44 | design-templates/technical-designs/config-items.md | docs/designs/technical-designs/config-items.md | kflow-archive | 新建 |
-| 45 | design-templates/technical-designs/error-handling.md | docs/designs/technical-designs/error-handling.md | kflow-archive | 新建 |
+| 40 | design-templates/detailed-designs/architecture.md | docs/designs/detailed-designs/architecture.md | kflow-archive | 修订 |
+| 41 | design-templates/detailed-designs/data-model.md | docs/designs/detailed-designs/data-model.md | kflow-archive | 修订 |
+| 42 | design-templates/detailed-designs/api-catalog.md | docs/designs/detailed-designs/api-catalog.md | kflow-archive | 修订 |
+| 43 | design-templates/detailed-designs/nfr-baseline.md | docs/designs/detailed-designs/nfr-baseline.md | kflow-archive | 修订 |
+| 44 | design-templates/detailed-designs/config-items.md | docs/designs/detailed-designs/config-items.md | kflow-archive | 新建 |
+| 45 | design-templates/detailed-designs/error-handling.md | docs/designs/detailed-designs/error-handling.md | kflow-archive | 新建 |
 | 46 | design-templates/changelog.md | docs/designs/changelog.md | kflow-archive | 新建 |
 
 ### 项目级文档模板 (docs/)

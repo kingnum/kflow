@@ -43,7 +43,7 @@ allowed-tools:
   → 5.2 GENERATE: 子代理按 toolchain.md 锁定执行，生成 HTML 原型 + design-system/MASTER.md
   → CDN 扫描 + 交叉引用检查 + 5 轮导航验证 + 5 轮 Playwright 验证
   → 5 轮 UX 规则审查 + 对比度检测 + design-system 产物必检（新增）
-  → 10 轮自审（重复制：每轮全 4 维度）
+  → 首次/非首次分级自审（重复制：每轮全 4 维度）
   → 用户评审循环（AskUserQuestion）
   → 更新状态文件
 ```
@@ -111,7 +111,7 @@ kflow-prototype-design (编排层)
 | CDN 扫描与交叉引用报告 | `docs/changes/{change}/self-reviews/prototype/cdn-crossref-check/report.md` | ✅ 必须 | CDN 外部依赖扫描结果 + 多文件交叉引用完整性检查合并报告 |
 | 导航验证报告 | `docs/changes/{change}/self-reviews/prototype/nav-check/round-{1..5}.md` | ✅ 必须 | 5 轮导航合理性验证报告（页面可达性矩阵、返回/取消按钮语义验证、表单切换链完整性、弹窗/抽屉导航检查、跨页面流程闭环验证） |
 | Playwright 验证报告 | `docs/changes/{change}/self-reviews/prototype/playwright-check/round-{1..5}.md` | 🔶 条件 | 5 轮 Playwright 全覆盖验证报告（页面可达性扫描、按钮/链接全覆盖清单、表单全覆盖清单、弹窗/抽屉全覆盖清单、端到端流程通过清单）或降级说明 |
-| 自审报告 | `docs/changes/{change}/self-reviews/prototype/` | ✅ 必须 | 10 轮自审报告（重复制），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
+| 自审报告 | `docs/changes/{change}/self-reviews/prototype/` | ✅ 必须 | 自审报告（首次 10 份 / 非首次弹性份数，重复制），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
 | 用户评审记录 | `docs/changes/{change}/.status.md`（用户评审记录表） | ✅ 必须 | 原型设计评审状态、评审时间、备注 |
 
 > **产物位置**：`docs/changes/{change}/prototype/` 目录（变更级目录下）。
@@ -170,7 +170,7 @@ prototype/
 │  │   ├── 7.6 对比度检测                                          │
 │  │   └── 7.7 design-system 产物必检                              │
 │  7.5 BROWSER_CLEANUP → playwright-cli kill-all 清理浏览器进程     │
-│  8. SELFREV   → 10 轮自审（子代理串行 + 重复制: 每轮全 4 维度）   │
+│  8. SELFREV   → 首次/非首次分级自审（子代理串行 + 重复制）       │
 │  9. REVIEW    → AskUserQuestion 用户评审（确认/修订循环）         │
 │  │   ├── 确认通过 → COMPLETE                                     │
 │  │   └── 需修订   → 收集反馈 → 回到 DESIGN                       │
@@ -592,7 +592,7 @@ playwright-cli kill-all
 
 > 清理 VERIFY 步骤（Playwright 验证）残留的浏览器进程，释放系统资源。
 
-## 步骤 8：SELFREV — 10 轮自审（子代理串行 + 重复制）
+## 步骤 8：SELFREV — 首次/非首次分级自审（子代理串行 + 重复制）
 
 ### 子代理上下文文件加载（基础层 + 创意层）
 
@@ -604,19 +604,26 @@ playwright-cli kill-all
 
 > **子代理隔离规则**：自审子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管自审执行。最多重试 3 次，全部失败后标记 ⚠️ 阻塞并提示用户。
 
-在 VERIFY 步骤完成后、用户评审确认之前，强制执行 10 轮自循环审查。自审由子代理（Agent subagent）串行执行，与 VERIFY 子代理模式对齐但审查范围不同（SELFREV 侧重维度级审查+边审边修，VERIFY 侧重具体检查项+出报告）。
+在 VERIFY 步骤完成后、用户评审确认之前，强制执行自循环审查（SELFREV），按「首次/非首次创建」分级执行：首次创建固定 10 轮；非首次创建走弹性轮次（影响范围分数决定目标轮次，下限 1、上限 10）+ 评分底线（各维度评分均 > 8 方通过）。自审由子代理（Agent subagent）串行执行，与 VERIFY 子代理模式对齐但审查范围不同（SELFREV 侧重维度级审查+边审边修，VERIFY 侧重具体检查项+出报告）。
 
 > **v2.3.0 变更**: 自审执行方式从"当前 Agent 自身执行"改为"子代理（Agent subagent）串行执行"，每轮启动独立子代理，与 VERIFY 子代理模式对齐。
 
 ### 自审模式：子代理串行 + 重复制
 
-> **v2.2.0 变更**: 从"分工制"改为"重复制"——每轮独立执行全部四个维度，10 轮形成自然收敛。
+> **v2.2.0 变更**: 从"分工制"改为"重复制"——每轮独立执行全部四个维度，多轮形成自然收敛。
 
 | 对比 | 分工制（旧） | 重复制（新） |
 |------|------------|------------|
 | 每轮范围 | 部分维度 | **全部四个维度** |
 | 发现节奏 | 后期才暴露其他维度问题 | 早期就暴露各类问题 |
 | 收敛趋势 | 不明显 | 自然收敛（后期问题越来越少） |
+
+### 首次/非首次分级
+
+判定信号、弹性轮次公式与评分底线规则详见 [references/self-review.md](references/self-review.md) §4。要点：
+
+- **首次创建（无设计基础）**：`docs/CONTEXT.md` 不存在 或 `docs/designs/detailed-designs/` 为空 → 固定执行 10 轮。
+- **非首次创建（已有设计基础）**：`docs/CONTEXT.md` 存在 且 `docs/designs/detailed-designs/` 非空 → 弹性轮次（prototype 影响范围分数 = 页面数 × 2 + 交互元素数 × 1；映射：1→1 轮、2–5→ceil(分数)、6–15→max(5, ceil(分数/2))、>15→10 轮）+ 评分底线（各维度评分均 > 8 方通过，未达标补审至 10 轮上限）。
 
 ### 审查维度与检查规则
 
@@ -655,21 +662,24 @@ playwright-cli kill-all
 ### 自审执行流程（子代理串行 + 重复制）
 
 ```
-10 轮自审执行流程（子代理串行，每轮全维度）:
+自审执行流程（子代理串行，每轮全维度，首次/非首次分级）:
 
-1. 主 Agent 启动第一轮子代理:
+1. 判定首次/非首次：读取 docs/CONTEXT.md 与 docs/designs/detailed-designs/ 判定执行模式
+2. 主 Agent 启动第一轮子代理:
    Agent(
      subagent_type="claude",
      description="Prototype 自审 Round 1",
      prompt="读取 prototype/ 目录下所有 HTML 文件和 design-prompt.md，按覆盖性、一致性、可用性、完整性全部四个维度独立检查。覆盖性为第一优先级。发现问题直接修复原型文件，生成审查报告到 self-reviews/prototype/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。"
    )
-2. 子代理返回审查报告路径
-3. 主 Agent 读取报告，确认修复内容
-4. 修复不合理 → 主 Agent 补充修复
-5. 启动下一轮子代理（Round N+1），步骤同 Round 1
-6. SHALL NOT 并行启动多个子代理（串行执行）
-7. 重复直至完成全部 10 轮
-8. 全部完成后进入用户评审确认
+3. 子代理返回审查报告路径
+4. 主 Agent 读取报告，确认修复内容
+5. 修复不合理 → 主 Agent 补充修复
+6. 启动下一轮子代理（Round N+1），步骤同 Round 1
+7. SHALL NOT 并行启动多个子代理（串行执行）
+8. 轮次控制：
+   ├── 首次创建 → 完成全部 10 轮
+   └── 非首次创建 → 按弹性轮次执行，各维度评分均 > 8 即通过；未达标补审至 10 轮上限
+9. 全部完成后进入用户评审确认
 ```
 
 ### 与 VERIFY 子代理模式的对比
@@ -679,7 +689,7 @@ playwright-cli kill-all
 | 执行者 | 独立子代理 (Agent subagent) | 独立子代理 (Agent subagent) |
 | 目的 | 自我完善、维度级审查 + 边审边修 | 独立验证、发现遗漏 + 出报告 |
 | 范围 | 维度级审查（4 维度全量） | 具体检查项（可达性、按钮、表单、弹窗、流程） |
-| 轮次 | 10 轮 | 5 轮（导航）+ 5 轮（Playwright） |
+| 轮次 | 首次 10 轮 / 非首次弹性轮次 | 5 轮（导航）+ 5 轮（Playwright） |
 
 ### 自审报告内容
 
@@ -687,8 +697,9 @@ playwright-cli kill-all
 
 ### 强制执行规则
 
-- SHALL 完成全部 10 轮自审，不允许提前终止
-- 即使连续多轮无新问题也必须完成全部 10 轮
+- 首次创建 SHALL 完成全部 10 轮自审，不允许提前终止
+- 非首次创建 SHALL 完成弹性目标轮次，且各维度评分均 > 8 方通过；未达标补审至 10 轮上限
+- 即使连续多轮无新问题，首次创建也须完成全部 10 轮
 - SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审
 - SHALL NOT 并行启动多个子代理（串行执行，前一轮完成后再启动下一轮）
 - 自审全部完成后进入用户评审确认（AskUserQuestion），释放 design 阶段门控
@@ -708,7 +719,7 @@ Question: "HTML 原型已完成，覆盖 {n} 个屏幕、{m} 个 UI 功能点。
 [UX 规则审查: 5 轮完成，发现并修复 {a} 个问题]
 [对比度检测: {通过 / 不通过}]
 [design-system 产物: {存在 / 缺失}]
-[10轮自审（重复制）: 已完成，发现并修复 {z} 个问题]
+[自审（首次/非首次分级，重复制）: 已完成，发现并修复 {z} 个问题]
 是否确认通过？"
 Options:
   - "确认通过" → 原型满足需求，进入详细设计
@@ -718,7 +729,7 @@ Options:
 ### 评审循环机制
 
 ```
-DESIGN(子代理委托) → VERIFY(CDN+交叉引用+导航5轮+Playwright5轮) → SELFREV(10轮重复制) → REVIEW
+DESIGN(子代理委托) → VERIFY(CDN+交叉引用+导航5轮+Playwright5轮) → SELFREV(首次/非首次分级重复制) → REVIEW
   ├── 确认通过 → COMPLETE
   └── 需修订 → 收集用户反馈 → 回到 DESIGN（再次调用 huashu-design，附修订要求）
 ```
@@ -881,7 +892,7 @@ kflow-explore（设计探索）
 - **prototype-gen 角色不可用是硬阻塞**：标记 ⚠️ 阻塞，提示安装命令：`huashu-design` 或 `frontend-design`
 - **5 轮导航合理性验证**：VERIFY 6.3 节执行 5 轮子代理串行验证（页面可达性/返回按钮/表单链/弹窗/闭环），每轮全 5 项，不可提前终止
 - **5 轮 Playwright 全覆盖验证**：VERIFY 6.4 节执行 5 轮子代理串行验证（可达性/按钮/表单/弹窗/端到端），每轮全 5 项，不可提前终止
-- **10 轮自审强制执行（子代理串行 + 重复制）**：DESIGN 完成后自动进入 SELFREV，每轮启动独立子代理执行全部四个维度（覆盖性+一致性+可用性+完整性），子代理边审边修，串行不可并行，生成独立报告，不允许提前终止
+- **自审分级强制执行（子代理串行 + 重复制）**：DESIGN 完成后自动进入 SELFREV，首次创建完成全部 10 轮；非首次创建按弹性轮次执行，各维度评分均 > 8 方通过（未达标补审至 10 轮上限）。每轮启动独立子代理执行全部四个维度（覆盖性+一致性+可用性+完整性），子代理边审边修，串行不可并行，生成独立报告，不允许提前终止
 - **用户评审是循环**：通过 AskUserQuestion 确认，需要修订时回到 DESIGN 步骤重新启动子代理委托 huashu-design
 - **Playwright 不可用时降级**：记录降级原因，改为手动文件分析并写入报告
 - **CDN 扫描优先于后续验证**：CDN 扫描不通过时不继续后续验证步骤

@@ -169,10 +169,10 @@
 | 使用评估 | 归档前自动审计 + 手动调用 | 七维度评估（流程合规性、产物完整性、审查质量、测试充分性、缺陷管理、效率指标、Post-mortem汇总） |
 | 环境初始化 | 能力发现 + 工具推荐 | 检测 MCP servers 和 Skills，评估组合可行性，输出 toolchain.md |
 | 缺陷修复等级 | 三级分离 | `kflow-bug-triage` 负责用户反馈四层溯源诊断；`kflow-bug-fix` 负责子变更级二分法；`kflow-integration-test` 内聚变更级四分法 |
-| 设计合并 | 归档时合并到产品级 | 功能设计合并到 docs/designs/functional-designs/（前后端：{menu}/index.md + part-NN.md；纯后端：{domain}.md）+ 技术设计分散更新到 technical-designs/ 6 文件（含 config-items.md、error-handling.md），标注来源变更 |
+| 设计合并 | 归档时合并到产品级 | 功能设计合并到 docs/designs/functional-designs/（前后端：{menu}/index.md + part-NN.md；纯后端：{domain}.md）+ 详细设计分散更新到 detailed-designs/ 6 文件（含 config-items.md、error-handling.md），标注来源变更 |
 | 文件命名 | 双层目录体系 | functional-designs/（功能设计目录）+ detailed-design.md（详细设计） |
 | 文档拆分 | 产品级多文件 + 变更级目录化拆分 | 产品级从一开始多文件拆分，变更级功能点>30拆分为多文件（index.md + part-NN.md），4 组文档目录化 |
-| 10 轮自审机制 | explore/prototype/design 三阶段强制执行 | 每阶段 10 轮自循环审查，每轮独立记录时间戳文件，覆盖阶段专属维度，不允许提前终止 |
+| 设计自审分级 | explore/prototype/design 三阶段按首次/非首次分级执行 | 首次创建固定 10 轮自循环审查；非首次创建弹性轮次（影响范围分数决定目标轮次）+ 评分底线（各维度 > 8），每轮独立记录时间戳文件，覆盖阶段专属维度 |
 | 执行类阶段重复制 | plan/code/code-review/api-test/e2e-test/integration-test/bug-fix 七阶段统一 | 子代理每轮遍历全部工作项独立执行完整流程，禁止按轮次分段分配工作重点，复杂度评估仅信息展示 |
 | 阶段边界强制 | 文档白名单 + 标准产物强制 + 越界禁止 | 每阶段仅允许创建输出产物表列出的文件，信息不足记录到 skill-suggestion.md，禁止越界输出 |
 | 功能设计升维 | functional-designs/ 扩展为用户体验规格说明书 | 新增页面菜单、可执行操作、表单项定义、业务规则、业务流程闭环，为 prototype 提供精确输入 |

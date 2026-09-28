@@ -59,11 +59,11 @@ allowed-tools:
 
 | 产物 | 文件 | 模板 | 图例 | 内容要求 |
 |------|------|------|------|---------|
-| 归档变更目录 | docs/archive/{YYYY-MM-DD}-{change}/ | N/A（目录移动） | ✅ 必须 | 变更整体移动 |
-| 状态文件更新 | docs/archive/{change}/.status.md | [变更级状态文件](../../templates/changes/{change}/change-status.md) | ✅ 必须 | 添加归档记录 |
+| 归档变更目录 | docs/changes/archive/{YYYY-MM-DD}-{change}/ | N/A（目录移动） | ✅ 必须 | 变更整体移动 |
+| 状态文件更新 | docs/changes/archive/{YYYY-MM-DD}-{change}/.status.md | [变更级状态文件](../../templates/changes/{change}/change-status.md) | ✅ 必须 | 添加归档记录 |
 | 索引文件更新 | docs/changes/index.md | [变更管理索引](../../templates/changes/{change}/change-index.md) | ✅ 必须 | 活跃列表移除，归档列表添加 |
 | 产品级功能设计文档（合并） | docs/designs/functional-designs/{menu}/index.md + {menu}/part-NN.md（前后端）或 {domain}.md（纯后端） | [功能模块目录](../../templates/design-templates/functional-designs/index.md)、[产品级分册](../../templates/design-templates/functional-designs/part-NN.md)、[纯后端简化](../../templates/design-templates/functional-designs/backend-domain.md) | ✅ 必须 | 设计合并后的产品级功能设计，按 FP-ID 追加/替换，更新 index.md 分册总览 |
-| 技术设计全景文档更新 | docs/designs/technical-designs/{architecture,data-model,api-catalog,nfr-baseline,config-items,error-handling}.md | [全景架构](../../templates/design-templates/technical-designs/architecture.md)、[数据模型](../../templates/design-templates/technical-designs/data-model.md)、[API目录](../../templates/design-templates/technical-designs/api-catalog.md)、[NFR基线](../../templates/design-templates/technical-designs/nfr-baseline.md)、[配置项](../../templates/design-templates/technical-designs/config-items.md)、[错误处理](../../templates/design-templates/technical-designs/error-handling.md) | 🔶 条件 | 涉及跨模块变更时按类型分散更新至 6 文件 |
+| 详细设计全景文档更新 | docs/designs/detailed-designs/{architecture,data-model,api-catalog,nfr-baseline,config-items,error-handling}.md | [全景架构](../../templates/design-templates/detailed-designs/architecture.md)、[数据模型](../../templates/design-templates/detailed-designs/data-model.md)、[API目录](../../templates/design-templates/detailed-designs/api-catalog.md)、[NFR基线](../../templates/design-templates/detailed-designs/nfr-baseline.md)、[配置项](../../templates/design-templates/detailed-designs/config-items.md)、[错误处理](../../templates/design-templates/detailed-designs/error-handling.md) | 🔶 条件 | 涉及跨模块变更时按类型分散更新至 6 文件 |
 | 变更日志更新 | docs/designs/changelog.md | [变更日志](../../templates/design-templates/changelog.md) | 🔶 条件 | 新增功能模块或结构变更时更新 |
 | 功能模块摘要更新 | docs/designs/functional-designs/module-summary.md | [模块摘要](../../templates/design-templates/functional-designs/module-summary.md) | ✅ 必须 | 设计合并后更新模块摘要（模块名+核心功能+FP-ID范围+文档位置） |
 
@@ -96,12 +96,12 @@ allowed-tools:
 │  │   └── 未完成变更 → 询问归档原因，记录                     │
 │  5. MERGE     → 执行设计合并到产品级                          │
 │  │   ├── EXTRACT: 提取 functional-designs/ 功能设计            │
-│  │   ├── EXTRACT: 提取 detailed-design.md 技术设计            │
+│  │   ├── EXTRACT: 提取 detailed-design.md 详细设计            │
 │  │   ├── MATCH: 匹配合并目标 functional-designs/{module}.md   │
 │  │   │   ├── 检测目标文档是否含「由 AI 逆向分析生成」草稿标记  │
 │  │   │   └── 含草稿标记 → 首次合并，替换为正式来源标注         │
 │  │   ├── MERGE: 按功能模块合并功能设计（按 FP-ID 追加/替换）   │
-│  │   ├── MERGE: 按类型更新 technical-designs/*.md             │
+│  │   ├── MERGE: 按类型更新 detailed-designs/*.md             │
 │  │   ├── ANNOTATE: 标注来源变更和归档时间                     │
 │  │   ├── CONFLICT: 检测冲突，默认替换更新，结构性冲突人工裁决  │
 │  │   └── CHANGELOG: 更新 docs/designs/changelog.md           │
@@ -114,7 +114,7 @@ allowed-tools:
 │  │   └── 更新 docs/designs/functional-designs/module-summary.md │
 │  6. MOVE      → 移动变更目录到 archive/                      │
 │  │   └── docs/changes/{change}/ →                            │
-│  │       docs/archive/{YYYY-MM-DD}-{change}/                 │
+│  │       docs/changes/archive/{YYYY-MM-DD}-{change}/                 │
 │  7. UPDATE    → 更新归档变更的状态文件                       │
 │  │   └── 添加归档时间、归档状态                               │
 │  8. INDEX     → 更新 docs/changes/index.md                   │
@@ -196,7 +196,7 @@ allowed-tools:
 归档后 commit 流程:
 
 1. ANALYZE   → 分析归档内容
-   ├── 从归档目录 docs/archive/{YYYY-MM-DD}-{change}/ 读取变更摘要
+   ├── 从归档目录 docs/changes/archive/{YYYY-MM-DD}-{change}/ 读取变更摘要
    ├── 从 functional-designs/ 提取功能设计关键词
    └── 从 detailed-design.md 提取受影响的设计域
 
@@ -253,7 +253,7 @@ allowed-tools:
 
 | 变更名称 | 归档时间 | 归档状态 | 归档目录 |
 |----------|----------|----------|----------|
-| {change-old} | 2026-04-28 | 完成 | docs/archive/2026-04-28-{change-old}/ |
+| {change-old} | 2026-04-28 | 完成 | docs/changes/archive/2026-04-28-{change-old}/ |
 ```
 
 ---

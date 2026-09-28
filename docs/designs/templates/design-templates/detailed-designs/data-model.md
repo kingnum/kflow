@@ -3,7 +3,7 @@ stage: 归档
 skill: kflow-archive
 version: 1.0.0
 created_at: 2026-05-05
-template_for: docs/designs/technical-designs/data-model.md
+template_for: docs/designs/detailed-designs/data-model.md
 ---
 
 # 全景数据模型文档

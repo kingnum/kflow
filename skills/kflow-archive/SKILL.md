@@ -1,7 +1,7 @@
 ---
 name: kflow-archive
 version: 0.16.0
-description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + technical-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD: 全量产物, .status.md）。
+description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD: 全量产物, .status.md）。
 license: MIT
 triggers:
   - 归档
@@ -50,11 +50,11 @@ allowed-tools:
 
 | 产物 | 文件 | 图例 | 内容要求 |
 |------|------|------|---------|
-| 归档变更目录 | `docs/archive/{YYYY-MM-DD}-{change}/` | ✅ 必须 | 变更整体移动 |
-| 状态文件更新 | `docs/archive/{change}/.status.md` | ✅ 必须 | 添加归档记录 |
+| 归档变更目录 | `docs/changes/archive/{YYYY-MM-DD}-{change}/` | ✅ 必须 | 变更整体移动 |
+| 状态文件更新 | `docs/changes/archive/{YYYY-MM-DD}-{change}/.status.md` | ✅ 必须 | 添加归档记录 |
 | 索引文件更新 | `docs/changes/index.md` | ✅ 必须 | 活跃列表移除，归档列表添加 |
 | 产品级功能设计文档（合并） | `docs/designs/functional-designs/{menu}/index.md` + `{menu}/part-NN.md`（前后端）或 `{domain}.md`（纯后端） | ✅ 必须 | 设计合并后的产品级功能设计，按 FP-ID 追加/替换，更新 index.md 分册总览 |
-| 技术设计全景文档更新 | `docs/designs/technical-designs/{architecture,data-model,api-catalog,nfr-baseline,config-items,error-handling}.md` | 🔶 条件 | 涉及跨模块变更时按类型分散更新至 6 文件 |
+| 详细设计全景文档更新 | `docs/designs/detailed-designs/{architecture,data-model,api-catalog,nfr-baseline,config-items,error-handling}.md` | 🔶 条件 | 涉及跨模块变更时按类型分散更新至 6 文件 |
 | 变更日志更新 | `docs/designs/changelog.md` | 🔶 条件 | 新增功能模块或结构变更时更新 |
 | 功能模块摘要更新 | `docs/designs/functional-designs/module-summary.md` | ✅ 必须 | 设计合并后更新模块摘要（模块名+核心功能+FP-ID范围+文档位置） |
 
@@ -77,12 +77,12 @@ allowed-tools:
 │  │   └── 未完成变更 → 询问归档原因，记录                     │
 │  5. MERGE     → 执行设计合并到产品级                          │
 │  │   ├── EXTRACT: 提取 functional-designs/ 功能设计            │
-│  │   ├── EXTRACT: 提取 detailed-design.md 技术设计            │
+│  │   ├── EXTRACT: 提取 detailed-design.md 详细设计            │
 │  │   ├── MATCH: 匹配合并目标 functional-designs/{module}.md   │
 │  │   │   ├── 检测目标文档是否含「由 AI 逆向分析生成」草稿标记  │
 │  │   │   └── 含草稿标记 → 首次合并，替换为正式来源标注         │
 │  │   ├── MERGE: 按功能模块合并功能设计（按 FP-ID 追加/替换）   │
-│  │   ├── MERGE: 按类型更新 technical-designs/*.md             │
+│  │   ├── MERGE: 按类型更新 detailed-designs/*.md             │
 │  │   ├── ANNOTATE: 标注来源变更和归档时间                     │
 │  │   ├── CONFLICT: 检测冲突，默认替换更新，结构性冲突人工裁决  │
 │  │   └── CHANGELOG: 更新 docs/designs/changelog.md           │
@@ -95,7 +95,7 @@ allowed-tools:
 │  │   └── 更新 docs/designs/functional-designs/module-summary.md │
 │  6. MOVE      → 移动变更目录到 archive/                      │
 │  │   └── docs/changes/{change}/ →                            │
-│  │       docs/archive/{YYYY-MM-DD}-{change}/                 │
+│  │       docs/changes/archive/{YYYY-MM-DD}-{change}/                 │
 │  7. UPDATE    → 更新归档变更的状态文件                       │
 │  │   └── 添加归档时间、归档状态                               │
 │  8. INDEX     → 更新 docs/changes/index.md                   │
@@ -185,7 +185,7 @@ Options:
 
 1. EXTRACT（提取）:
    ├── 从 functional-designs/ 提取功能描述、需求分析、功能点清单
-   └── 从 detailed-design.md 提取技术设计、数据模型、接口设计、NFR、配置项、错误处理
+   └── 从 detailed-design.md 提取详细设计、数据模型、接口设计、NFR、配置项、错误处理
 
 2. MATCH（匹配）:
    ├── 按功能点的「所属页面与菜单」信息定位目标模块
@@ -196,28 +196,32 @@ Options:
    │   ├── 文件已存在 → 按 FP-ID 合并更新
    │   └── 文件不存在 → 新建（使用 backend-domain.md 模板）
    ├── 检测目标文件/目录是否含「由 AI 逆向分析生成」草稿标记 → 首次合并去草稿
+   ├── 详细设计合并目标兼容检测:
+   │   ├── 检测 docs/designs/detailed-designs/ 是否存在
+   │   ├── 不存在但 docs/designs/technical-designs/ 存在 → 兼容读取旧目录
+   │   └── 提示用户目录已重命名为 detailed-designs/，建议执行 git mv 迁移
    └── 模块归属模糊 → AskUserQuestion 确认模块归属
 
 3. MERGE（合并）:
    ├── 功能设计 → functional-designs/{menu}/part-NN.md 或 {domain}.md 对应章节（按 FP-ID 匹配）
    ├── 更新目标目录的 index.md 分册总览
-   ├── 技术设计 → technical-designs/*.md（按类型分散更新，含 config-items.md、error-handling.md）
-   ├── NFR 变更 → 更新 docs/designs/technical-designs/nfr-baseline.md（如有变化）
-   ├── 数据模型变更 → 更新 docs/designs/technical-designs/data-model.md（如有新增实体）
-   ├── API 变更 → 更新 docs/designs/technical-designs/api-catalog.md（如有新增/修改接口）
-   ├── 架构变更 → 更新 docs/designs/technical-designs/architecture.md（如有架构调整）
-   ├── 配置项变更 → 更新 docs/designs/technical-designs/config-items.md
-   ├── 错误处理变更 → 更新 docs/designs/technical-designs/error-handling.md
+   ├── 详细设计 → detailed-designs/*.md（按类型分散更新，含 config-items.md、error-handling.md）
+   ├── NFR 变更 → 更新 docs/designs/detailed-designs/nfr-baseline.md（如有变化）
+   ├── 数据模型变更 → 更新 docs/designs/detailed-designs/data-model.md（如有新增实体）
+   ├── API 变更 → 更新 docs/designs/detailed-designs/api-catalog.md（如有新增/修改接口）
+   ├── 架构变更 → 更新 docs/designs/detailed-designs/architecture.md（如有架构调整）
+   ├── 配置项变更 → 更新 docs/designs/detailed-designs/config-items.md
+   ├── 错误处理变更 → 更新 docs/designs/detailed-designs/error-handling.md
    └── 首次合并 → 替换草稿标记为正式来源标注
 
 4. ANNOTATE（溯源标注）:
    └── 每合并章节标注:
        > 来源变更: {change-name} | 归档时间: {YYYY-MM-DD}
-       > 原始文件: docs/archive/{YYYY-MM-DD}-{change}/
+       > 原始文件: docs/changes/archive/{YYYY-MM-DD}-{change}/
 
 5. CONFLICT（冲突处理）:
    ├── 默认策略: 替换更新（新设计覆盖旧设计）
-   ├── 保留旧版本链接: docs/archive/{YYYY-MM-DD}-{change}/
+   ├── 保留旧版本链接: docs/changes/archive/{YYYY-MM-DD}-{change}/
    └── 结构性冲突: AskUserQuestion 提示人工裁决
 
 6. CHANGELOG（更新变更日志）:
@@ -294,7 +298,7 @@ Options:
 归档后 commit 流程:
 
 1. ANALYZE   → 分析归档内容
-   ├── 从归档目录 docs/archive/{YYYY-MM-DD}-{change}/ 读取变更摘要
+   ├── 从归档目录 docs/changes/archive/{YYYY-MM-DD}-{change}/ 读取变更摘要
    ├── 从 functional-designs/ 提取功能设计关键词
    └── 从 detailed-design.md 提取受影响的设计域
 
@@ -357,7 +361,7 @@ Options:
 
 | 变更名称 | 归档时间 | 归档状态 | 归档目录 |
 |----------|----------|----------|----------|
-| {change-old} | 2026-04-28 | 完成 | docs/archive/2026-04-28-{change-old}/ |
+| {change-old} | 2026-04-28 | 完成 | docs/changes/archive/2026-04-28-{change-old}/ |
 ```
 
 ---

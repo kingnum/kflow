@@ -3,7 +3,7 @@ stage: 归档
 skill: kflow-archive
 version: 1.0.0
 created_at: 2026-05-05
-template_for: docs/designs/technical-designs/architecture.md
+template_for: docs/designs/detailed-designs/architecture.md
 ---
 
 # 全景架构文档

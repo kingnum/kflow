@@ -3,7 +3,7 @@ stage: 归档
 skill: kflow-archive
 version: 1.0.0
 created_at: 2026-05-17
-template_for: docs/designs/technical-designs/config-items.md
+template_for: docs/designs/detailed-designs/config-items.md
 ---
 
 # 配置项设计文档

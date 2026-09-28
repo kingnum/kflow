@@ -348,6 +348,8 @@ Round N+1:
 
 ## 十三、多 Agent 审查结果合并机制
 
+> **变更类型分级**：多 Agent 合并仅适用于完整模式（功能需求级/产品需求级，四视角并行）。简化模式（功能缺陷级）由单 Agent 串行覆盖四视角检查项，直接输出单一 synthesis.md，SHALL NOT 执行多 Agent 合并流程。
+
 > **借鉴**：gstack Review Army fingerprint 去重机制
 
 ### 13.1 问题 fingerprint 定义

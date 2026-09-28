@@ -193,7 +193,7 @@ allowed-tools:
 ┌─────────────────────────────────────────────────────────────┐
 │  1. SCAN      → 扫描 docs/changes/ 目录                      │
 │  2. FILTER    → 过滤未归档变更                                │
-│  │   └── 排除 docs/archive/ 目录下的变更                    │
+│  │   └── 排除 docs/changes/archive/ 目录下的变更                    │
 │  3. READ      → 读取各变更的 .status.md                       │
 │  4. COUNT     → 统计活跃变更数量                              │
 │  │   ├── 0 个 → 提示创建新变更                               │

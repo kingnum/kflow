@@ -79,18 +79,18 @@
 - **THEN** 提供 `templates/design-templates/functional-designs/backend-domain.md` 模板
 - **AND** 模板使用简化章节结构（设计域替代页面菜单、接口参数定义替代表单项、调用约束替代交互约束）
 
-### Requirement: 新增技术设计模板
+### Requirement: 新增详细设计模板
 
 系统 SHALL 为 config-items.md 和 error-handling.md 提供模板。
 
 #### Scenario: 配置项设计模板
 - **WHEN** config-items.md 需要生成
-- **THEN** 提供 `templates/design-templates/technical-designs/config-items.md` 模板
+- **THEN** 提供 `templates/design-templates/detailed-designs/config-items.md` 模板
 - **AND** 模板格式与 detailed-design.md §五配置项设计一致
 
 #### Scenario: 错误处理设计模板
 - **WHEN** error-handling.md 需要生成
-- **THEN** 提供 `templates/design-templates/technical-designs/error-handling.md` 模板
+- **THEN** 提供 `templates/design-templates/detailed-designs/error-handling.md` 模板
 - **AND** 模板格式与 detailed-design.md §六错误处理设计一致
 
 ### Requirement: 模板路径与产物路径镜像

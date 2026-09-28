@@ -54,6 +54,11 @@
 - **THEN** 系统优先读取新目录结构
 - **AND** 提示用户清理旧的单文件
 
+#### Scenario: 发现旧命名产品级目录（详细设计）
+- **WHEN** Skill 读取产品级技术设计文档时发现 `docs/designs/technical-designs/` 而非 `docs/designs/detailed-designs/`
+- **THEN** 系统兼容读取旧的 `technical-designs/` 目录
+- **AND** 提示用户目录已重命名为 `detailed-designs/`，建议执行 `git mv` 迁移
+
 ### Requirement: 产品级功能设计文档目录化
 
 系统 SHALL 将产品级功能设计文档组织为 `docs/designs/functional-designs/` 目录结构，前后端项目按一级菜单划分子目录，纯后端项目按设计域创建简化文件。
@@ -80,13 +85,13 @@
 - **THEN** 文件名 SHALL 使用设计域的 kebab-case 名称
 - **AND** 避免使用抽象的 domain 名称
 
-### Requirement: 产品级技术设计文档目录化
+### Requirement: 产品级详细设计文档目录化
 
-系统 SHALL 将产品级技术设计文档组织为 `docs/designs/technical-designs/` 目录结构，包含 6 个文件。
+系统 SHALL 将产品级详细设计文档组织为 `docs/designs/detailed-designs/` 目录结构，包含 6 个文件。
 
 #### Scenario: 产品级 technical-designs 目录
-- **WHEN** 产品级技术设计文档首次创建
-- **THEN** 创建 `docs/designs/technical-designs/` 目录
+- **WHEN** 产品级详细设计文档首次创建
+- **THEN** 创建 `docs/designs/detailed-designs/` 目录
 - **AND** 包含 architecture.md、data-model.md、api-catalog.md、nfr-baseline.md、config-items.md、error-handling.md
 
 ### Requirement: 门控检查使用新命名

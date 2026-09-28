@@ -279,6 +279,12 @@ CONTEXT 检测:
 
 当 `docs/CONTEXT.md` 不存在或 `docs/designs/functional-designs/` 目录为空时，使用 AskUserQuestion 询问用户。
 
+### 旧目录兼容读取
+
+当 LEGACY 逆向分析生成产品级详细设计文档草稿时，若目标项目存在旧的 `docs/designs/technical-designs/` 目录（而非 `docs/designs/detailed-designs/`）：
+- 兼容读取旧目录中的既有详细设计文档
+- 提示用户目录已重命名为 `detailed-designs/`，建议执行 `git mv technical-designs detailed-designs` 迁移
+
 详见 [references/legacy-analysis.md](references/legacy-analysis.md) — 三层逆向扫描（L1 配置文件 / L2 目录结构 / L2.5 前端工程 / L3 源码语义）、生成文档草稿（10 项产品文档）、产品文档 8 项检测、用户审核确认。
 
 ## 步骤 11：INJECT — 注入 CLAUDE.md（三层 marker）
@@ -307,12 +313,12 @@ CONTEXT 检测:
 | CONTEXT.md | ✅ 已就绪 / ❌ 不存在 |
 | docs/designs/index.md | ✅ 已就绪 / ❌ 不存在 |
 | docs/designs/functional-designs/ | 前后端：✅ N个模块 / ❌ 不存在；纯后端：✅ N篇 / ❌ 不存在 |
-| docs/designs/technical-designs/architecture.md | ✅ 已就绪 / ❌ 不存在 |
-| docs/designs/technical-designs/data-model.md | ✅ 已就绪 / ❌ 不存在 |
-| docs/designs/technical-designs/api-catalog.md | ✅ 已就绪 / ❌ 不存在 |
-| docs/designs/technical-designs/nfr-baseline.md | ✅ 已就绪 / ❌ 不存在 |
-| docs/designs/technical-designs/config-items.md | ✅ 已就绪 / ⚠️ 建议补充 |
-| docs/designs/technical-designs/error-handling.md | ✅ 已就绪 / ⚠️ 建议补充 |
+| docs/designs/detailed-designs/architecture.md | ✅ 已就绪 / ❌ 不存在 |
+| docs/designs/detailed-designs/data-model.md | ✅ 已就绪 / ❌ 不存在 |
+| docs/designs/detailed-designs/api-catalog.md | ✅ 已就绪 / ❌ 不存在 |
+| docs/designs/detailed-designs/nfr-baseline.md | ✅ 已就绪 / ❌ 不存在 |
+| docs/designs/detailed-designs/config-items.md | ✅ 已就绪 / ⚠️ 建议补充 |
+| docs/designs/detailed-designs/error-handling.md | ✅ 已就绪 / ⚠️ 建议补充 |
 | docs/service-guide.md | ✅ 已就绪 / ❌ 不存在 |
 ```
 
@@ -410,7 +416,7 @@ Re-init 变更对齐检查:
 
 1. 扫描未归档变更:
    ├── Glob: docs/changes/*/
-   └── 排除 docs/archive/ 下的变更
+   └── 排除 docs/changes/archive/ 下的变更
 
 2. 对每个未归档变更:
    ├── 读取 .status.md 中的阶段状态表

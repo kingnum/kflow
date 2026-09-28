@@ -81,7 +81,7 @@ RefreshToken:
 - 敏感字段: twoFactorSecret AES-256-GCM 加密存储
 
 > 来源变更: add-2fa | 归档时间: 2026-04-30
-> 原始文件: docs/archive/2026-04-30-add-2fa/
+> 原始文件: docs/changes/archive/2026-04-30-add-2fa/
 
 ### 2.5 跨域接口契约
 
@@ -91,4 +91,4 @@ RefreshToken:
 | 用户信息查询 | auth | order, payment | GET /api/users/{id} → { id, email } |
 
 > 来源变更: ecommerce-platform-init | 归档时间: 2026-05-04
-> 原始文件: docs/archive/2026-05-04-ecommerce-platform-init/
+> 原始文件: docs/changes/archive/2026-05-04-ecommerce-platform-init/

@@ -59,7 +59,7 @@ allowed-tools:
 │                    STATUS WORKFLOW                           │
 ├─────────────────────────────────────────────────────────────┤
 │  1. SCAN      → 扫描 docs/changes/ 目录                      │
-│  2. FILTER    → 过滤未归档变更（排除 archive/ 子目录）        │
+│  2. FILTER    → 过滤未归档变更（排除 docs/changes/archive/ 子目录）        │
 │  3. INDEX     → 尝试读取 docs/changes/index.md（如存在）     │
 │  │   └── 索引文件存在 → 补充活跃变更列表信息                 │
 │  │   └── 索引文件不存在 → 仅从扫描结果获取                   │

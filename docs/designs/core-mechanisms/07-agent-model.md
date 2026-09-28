@@ -55,7 +55,7 @@
 
 ### 16.1 概述
 
-kflow-explore、kflow-prototype-design、kflow-design 三个设计阶段在产物初稿完成后强制执行 10 轮自循环审查（self-review）。每轮由独立子代理串行执行全维度检查，按阶段类型采用不同维度组合（explore: 完整性/闭环性/必要性/清晰性；prototype: 覆盖性/一致性/可用性/完整性；design: 一致性/完备性/可行性/可测性），10 轮自然收敛。
+kflow-explore、kflow-prototype-design、kflow-design 三个设计阶段在产物初稿完成后强制执行自循环审查（self-review），按「首次/非首次创建」分级执行（design-review-tiering）：**首次创建**（项目无设计基础）固定 10 轮；**非首次创建**（已有设计基础）走弹性轮次（影响范围分数决定目标轮次，下限 1、上限 10）+ 评分底线（各维度评分均 > 8 方通过，未达标补审至 10 轮上限）。每轮由独立子代理串行执行全维度检查，按阶段类型采用不同维度组合（explore: 完整性/闭环性/必要性/清晰性；prototype: 覆盖性/一致性/可用性/完整性；design: 一致性/完备性/可行性/可测性）。判定信号、弹性轮次公式与评分底线规则见 design-review-tiering 规格与各设计类 skill 的 references/self-review.md。
 
 ## 十七、子代理上下文分层加载
 

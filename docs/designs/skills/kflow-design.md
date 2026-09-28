@@ -65,7 +65,7 @@ allowed-tools:
 | 接口测试用例 | api-tests/ | [接口测试索引](../../templates/changes/{change}/api-tests/index.md)、[接口测试分册](../../templates/changes/{change}/api-tests/part-NN.md) | ✅ 必须 | 统一接口单元测试用例文档 |
 | E2E测试用例 | e2e-tests/ | [E2E测试索引](../../templates/changes/{change}/e2e-tests/index.md)、[E2E测试分册](../../templates/changes/{change}/e2e-tests/part-NN.md) | ✅ 必须 | 统一浏览器自动化测试用例文档 |
 | 元素覆盖树 | prototype/element-coverage-tree.md（有原型）或 e2e-tests/element-coverage-tree.md（无原型） | 见本页 [element-coverage-tree 产物格式规范](#element-coverage-tree-产物格式规范) | ✅ 必须（前后端项目） | 四层树状元素覆盖文件，合并页面导航、交互元素、状态和 TC-ID 映射。替代已废弃的 element-spec.md 和 nav-tree.md |
-| 审查报告 | cross-reviews/{timestamp}/*.md | [业务审查](../../templates/changes/{change}/review-reports/business-review.md)、[技术审查](../../templates/changes/{change}/review-reports/technical-review.md)、[安全审查](../../templates/changes/{change}/review-reports/security-review.md)、[质量审查](../../templates/changes/{change}/review-reports/quality-review.md) | ✅ 必须 | 四视角审查报告（变更级一次执行） |
+| 审查报告 | cross-reviews/{timestamp}/*.md | [业务审查](../../templates/changes/{change}/review-reports/business-review.md)、[技术审查](../../templates/changes/{change}/review-reports/technical-review.md)、[安全审查](../../templates/changes/{change}/review-reports/security-review.md)、[质量审查](../../templates/changes/{change}/review-reports/quality-review.md) | ✅ 必须 | 完整模式四视角审查报告；简化模式仅输出单一 synthesis.md（单视角综合审查） |
 | 审查综合报告 | cross-reviews/{timestamp}/synthesis.md | [审查综合报告](../../templates/changes/{change}/review-reports/review-synthesis.md) | ✅ 必须 | 问题汇总、追踪矩阵、关闭条件 |
 | 架构决策记录 | docs/adr/{序号}-{标题}.md | [ADR 格式](#adr-文件格式) | 🔶 条件 | 满足三条件时创建，含过期条件标注，每变更上限控制 |
 | 用户评审记录 | .status.md | [变更级状态文件](../../templates/changes/{change}/change-status.md) | ✅ 必须 | 详细设计评审状态、时间、备注 |
@@ -77,7 +77,7 @@ allowed-tools:
 | 覆盖追溯矩阵 | traceability.md | [覆盖追溯矩阵](../../templates/changes/{change}/traceability.md) | ✅ 必须 | 基于 functional-designs/index.md FP 清单初始化空白矩阵，功能点ID 列已填充 |
 | 统一详细设计 | detailed-design.md（FP ≤ 20）或 detailed-design/ 目录（FP > 20，6 文件结构） | [统一详细设计](../../templates/changes/{change}/detailed-design.md) | ✅ 必须 | 系统架构 + 所有功能点设计 + NFR 章节 + 子变更划分 + 复杂度分布表 + 高复杂度 FP 确认记录 + 修订记录（统一格式：版本/日期/修订类型/修订内容/影响功能点/触发阶段） |
 | 接口测试用例 | api-tests/ | [接口测试索引](../../templates/changes/{change}/api-tests/index.md)、[接口测试分册](../../templates/changes/{change}/api-tests/part-NN.md) | ✅ 必须 | 统一接口单元测试用例文档 |
-| 审查报告 | cross-reviews/{timestamp}/*.md | [业务审查](../../templates/changes/{change}/review-reports/business-review.md)、[技术审查](../../templates/changes/{change}/review-reports/technical-review.md)、[安全审查](../../templates/changes/{change}/review-reports/security-review.md)、[质量审查](../../templates/changes/{change}/review-reports/quality-review.md) | ✅ 必须 | 四视角审查报告（变更级一次执行） |
+| 审查报告 | cross-reviews/{timestamp}/*.md | [业务审查](../../templates/changes/{change}/review-reports/business-review.md)、[技术审查](../../templates/changes/{change}/review-reports/technical-review.md)、[安全审查](../../templates/changes/{change}/review-reports/security-review.md)、[质量审查](../../templates/changes/{change}/review-reports/quality-review.md) | ✅ 必须 | 完整模式四视角审查报告；简化模式仅输出单一 synthesis.md（单视角综合审查） |
 | 审查综合报告 | cross-reviews/{timestamp}/synthesis.md | [审查综合报告](../../templates/changes/{change}/review-reports/review-synthesis.md) | ✅ 必须 | 问题汇总、追踪矩阵、关闭条件 |
 | 架构决策记录 | docs/adr/{序号}-{标题}.md | [ADR 格式](#adr-文件格式) | 🔶 条件 | 满足三条件时创建，含过期条件标注，每变更上限控制 |
 | 用户评审记录 | .status.md | [变更级状态文件](../../templates/changes/{change}/change-status.md) | ✅ 必须 | 详细设计评审状态、时间、备注 |
@@ -120,12 +120,12 @@ allowed-tools:
 │  │   9c. 类型由系统推断，SHALL NOT 人工手动填写                  │
 │  │   9d. 旧版兼容：functional-designs/index.md 缺少类型列        │
 │  │       → 🟡 警告，提示重新执行 kflow-explore REVISION 补充    │
-│  10. SELFREV   → 10 轮自循环审查（子代理串行 + 重复制）             │
+│  10. SELFREV   → 首次/非首次分级自审（子代理串行 + 重复制）       │
 │  │   │   每轮子代理独立执行全部四个维度（一致性+完备性+可行性+可测性）│
 │  │   │   子代理发现问题 → 直接修复 + 生成自审报告                  │
 │  │   报告路径: self-reviews/design/{YYYYMMDD}-{HHMMSS}.md        │
-│  │   必须完成全部 10 轮，不可提前终止                             │
-│  11. REVIEW    → 执行四视角交叉审查（并行 Agent，变更级一次）     │
+│  │   首次创建固定 10 轮；非首次创建弹性轮次 + 评分底线 > 8         │
+│  11. REVIEW    → 按变更类型分级审查（简化/完整）                  │
 │  12. SYNTH    → 输出审查综合报告（含问题追踪矩阵和关闭条件）     │
 │  13. FIX      → 根据审查问题更新设计文档                        │
 │  14. APPROVAL → 展示设计给用户最终评审（AskUserQuestion）       │
@@ -726,6 +726,8 @@ E2E 测试用例编写和 TC-ID 映射完成后，SHALL 执行覆盖率门控检
 
 ## 多视角审查流程
 
+设计审查按变更类型分级执行：功能缺陷级走「简化模式」（单视角综合审查，单 Agent 串行覆盖四视角检查项）；功能需求级/产品需求级走「完整模式」（四视角并行审查）。下方 REVIEW WORKFLOW 描述完整模式；简化模式由单 Agent 串行执行，输出单一 `synthesis.md`，不执行分级重审闭环。
+
 ```
 详细设计审查流程:
 
@@ -931,13 +933,31 @@ E2E 测试用例编写和 TC-ID 映射完成后，SHALL 执行覆盖率门控检
 
 ---
 
-## 10 轮自审
+## 自审（SELFREV 分级）
 
 > **版本**: 1.9.0 新增
 
 ### 概述
 
-详细设计阶段在 DIVIDE 步骤之后、REVIEW 步骤之前，强制执行 10 轮自循环审查。自审由子代理（Agent subagent）串行执行，采用重复制——每轮子代理独立执行全部四个维度（一致性/完备性/可行性/可测性）。
+详细设计阶段在 DIVIDE 步骤之后、REVIEW 步骤之前，强制执行自循环审查（SELFREV），按「首次/非首次创建」分级执行：首次创建固定 10 轮；非首次创建走弹性轮次（影响范围分数决定目标轮次，下限 1、上限 10）+ 评分底线（各维度评分均 > 8 方通过）。自审由子代理（Agent subagent）串行执行，采用重复制——每轮子代理独立执行全部四个维度（一致性/完备性/可行性/可测性）。
+
+### 首次/非首次判定信号
+
+- **首次创建（无设计基础）**：`docs/CONTEXT.md` 不存在 或 `docs/designs/detailed-designs/` 为空 → 固定执行 10 轮。
+- **非首次创建（已有设计基础）**：`docs/CONTEXT.md` 存在 且 `docs/designs/detailed-designs/` 非空 → 弹性轮次 + 评分底线。
+
+### 非首次创建：弹性轮次 + 评分底线
+
+目标轮次由影响范围分数决定（design 影响范围分数 = 功能点数 × 1 + 接口数 × 1.5 + 数据模型数 × 2），轮次映射：
+
+| 影响范围分数 | 目标轮次 |
+|-------------|---------|
+| 1 | 1 轮 |
+| 2–5 | ceil(分数) 轮 |
+| 6–15 | max(5, ceil(分数/2)) 轮 |
+| >15 | 10 轮 |
+
+评分底线：每轮子代理输出各维度评分（0–10 量纲），各维度均 > 8 方通过；任一维度 ≤ 8 继续补审，直至各维度均 > 8 或达到 10 轮上限。
 
 > **子代理隔离规则**：自审子代理意外停止/报错/要求重做时，主代理 MUST 重新创建子代理，SHALL NOT 接管自审执行。详见 [core-mechanisms/07-agent-model.md §15.11](../core-mechanisms/07-agent-model.md#1511-子代理隔离规则)。
 
@@ -948,21 +968,24 @@ E2E 测试用例编写和 TC-ID 映射完成后，SHALL 执行覆盖率门控检
 ### 自审流程
 
 ```
-10 轮自审执行流程（子代理串行，每轮全维度）:
+自审执行流程（子代理串行，每轮全维度，首次/非首次分级）:
 
-1. 主 Agent 启动第一轮子代理:
+1. 判定首次/非首次：读取 docs/CONTEXT.md 与 docs/designs/detailed-designs/ 判定执行模式
+2. 主 Agent 启动第一轮子代理:
    Agent(
      subagent_type="claude",
      description="Design 自审 Round {N}",
      prompt="读取 detailed-design.md、traceability.md、api-tests/、e2e-tests/ 下的所有文件，按一致性、完备性、可行性、可测性全部四个维度独立检查。发现问题直接修复设计文档，生成审查报告到 self-reviews/design/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。"
    )
-2. 子代理返回审查报告路径
-3. 主 Agent 读取报告，确认修复内容
-4. 修复不合理 → 主 Agent 补充修复
-5. 启动下一轮子代理（Round N+1），步骤同 Round 1
-6. SHALL NOT 并行启动多个子代理（串行执行）
-7. 重复直至完成全部 10 轮
-8. 全部完成后进入四视角交叉审查
+3. 子代理返回审查报告路径
+4. 主 Agent 读取报告，确认修复内容
+5. 修复不合理 → 主 Agent 补充修复
+6. 启动下一轮子代理（Round N+1），步骤同 Round 1
+7. SHALL NOT 并行启动多个子代理（串行执行）
+8. 轮次控制：
+   ├── 首次创建 → 完成全部 10 轮
+   └── 非首次创建 → 按弹性轮次执行，各维度评分均 > 8 即通过；未达标补审至 10 轮上限
+9. 全部完成后进入四视角交叉审查
 ```
 
 ### 自审记录存储
@@ -973,7 +996,8 @@ E2E 测试用例编写和 TC-ID 映射完成后，SHALL 执行覆盖率门控检
 
 ### 强制执行规则
 
-- SHALL 完成全部 10 轮自审，不允许提前终止
+- 首次创建 SHALL 完成全部 10 轮自审，不允许提前终止
+- 非首次创建 SHALL 完成弹性目标轮次，且各维度评分均 > 8 方通过；未达标补审至 10 轮上限
 - SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审
 - SHALL NOT 并行启动多个子代理（串行执行）
 - 自审全部完成后进入四视角交叉审查

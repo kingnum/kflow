@@ -78,8 +78,8 @@ SCAN(扫描 docs/changes/) -> FILTER(排除 archive/) -> INDEX(读 index.md 如�
 过滤逻辑:
 
 1. 对于每个候选变更 dir:
-   ├── Glob: docs/archive/*/{dir}/.status.md 是否存在？
-   ├── 或 Glob: docs/archive/*-{dir}/ 目录是否存在？
+   ├── Glob: docs/changes/archive/*/{dir}/.status.md 是否存在？
+   ├── 或 Glob: docs/changes/archive/*-{dir}/ 目录是否存在？
    ├── 已归档 -> 排除
    └── 未归档 -> 保留
 

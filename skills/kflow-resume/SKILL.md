@@ -30,7 +30,7 @@ allowed-tools:
 | 检查项 | 检查方式 | 失败处理 |
 |--------|---------|---------|
 | 变更目录存在性 | `Bash: test -d docs/changes/{change}/` | 报错：变更不存在 |
-| 归档状态 | `Glob: docs/archive/*/` 搜索变更名 | 报错：变更已归档，无法恢复 |
+| 归档状态 | `Glob: docs/changes/archive/*/` 搜索变更名 | 报错：变更已归档，无法恢复 |
 
 # 输入要求
 
@@ -64,7 +64,7 @@ VERIFY(存在性验证) -> STATE(优先级链读状态) -> LOCATE(断点定位) 
 ├─────────────────────────────────────────────────────────────────┤
 │  1. VERIFY     变更存在性验证                                    │
 │     ├── docs/changes/{change}/ 目录存在？                        │
-│     ├── 不在 docs/archive/ 下？                                  │
+│     ├── 不在 docs/changes/archive/ 下？                                  │
 │     ├── 不存在 -> 报错：变更不存在                               │
 │     └── 已归档 -> 报错：变更已归档，无法恢复                     │
 │  2. STATE      按优先级链读取状态                                 │
@@ -110,8 +110,8 @@ VERIFY(存在性验证) -> STATE(优先级链读状态) -> LOCATE(断点定位) 
 1. 构建变更目录路径: docs/changes/{change}/
 2. 检查目录存在性 (Bash: test -d)
 3. 检查归档状态:
-   ├── Glob: docs/archive/*/{change}/.status.md 是否存在
-   ├── 或 Glob: docs/archive/*-{change}/ 目录是否存在
+   ├── Glob: docs/changes/archive/*/{change}/.status.md 是否存在
+   ├── 或 Glob: docs/changes/archive/*-{change}/ 目录是否存在
    └── 已归档 -> 报错
 4. 均通过 -> 进入 STATE 步骤
 ```

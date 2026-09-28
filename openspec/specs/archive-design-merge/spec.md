@@ -17,7 +17,7 @@
 #### Scenario: 合并详细设计
 - **WHEN** 归档变更
 - **THEN** 系统从 detailed-design.md 提取各章节内容
-- **AND** 合并到 docs/designs/technical-designs/ 下对应 6 个文档（architecture.md、data-model.md、api-catalog.md、nfr-baseline.md、config-items.md、error-handling.md）
+- **AND** 合并到 docs/designs/detailed-designs/ 下对应 6 个文档（architecture.md、data-model.md、api-catalog.md、nfr-baseline.md、config-items.md、error-handling.md）
 
 #### Scenario: 合并原型设计
 - **WHEN** 归档变更
@@ -52,13 +52,13 @@
 - **THEN** 系统定位对应目录或文件
 - **AND** 按 FP-ID 匹配：已存在则替换更新，不存在则追加
 
-### Requirement: 技术设计全景文档组织
+### Requirement: 详细设计全景文档组织
 
-系统 SHALL 将技术设计全景文档放入 docs/designs/technical-designs/ 目录，包含 6 个文件。
+系统 SHALL 将详细设计全景文档放入 docs/designs/detailed-designs/ 目录，包含 6 个文件。
 
 #### Scenario: 技术设计文档创建
-- **WHEN** 归档时需要创建技术设计文档
-- **THEN** 系统在 docs/designs/technical-designs/ 下创建
+- **WHEN** 归档时需要创建详细设计文档
+- **THEN** 系统在 docs/designs/detailed-designs/ 下创建
 - **AND** 包含 architecture.md、data-model.md、api-catalog.md、nfr-baseline.md、config-items.md、error-handling.md
 
 ### Requirement: 草稿标记去除

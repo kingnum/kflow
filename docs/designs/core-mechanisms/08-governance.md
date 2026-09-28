@@ -35,7 +35,7 @@
 | e2e-test | subchanges/{subchange}/test-reports/e2e/*, subchanges/{subchange}/test-reports/api/*, subchanges/{subchange}/.status.md |
 | bug-fix | subchanges/{subchange}/test-reports/fix-reports/*, subchanges/{subchange}/.status.md |
 | integration-test | test-reports/integration/*, .status.md |
-| archive | docs/archive/*, docs/designs/index.md, docs/changes/index.md, .status.md |
+| archive | docs/changes/archive/*, docs/designs/index.md, docs/changes/index.md, .status.md |
 
 **白名单违规处理**：
 - 尝试创建白名单外文件 → 禁止创建

@@ -18,9 +18,9 @@
 
 | 变更名称 | 归档时间 | 归档状态 | 设计合并域 | 归档目录 |
 |----------|----------|----------|-----------|----------|
-| ecommerce-platform-init | 2026-05-04 | 完成 | auth, order, payment | docs/archive/2026-05-04-ecommerce-platform-init/ |
-| initial-setup | 2026-04-28 | 完成 | infrastructure | docs/archive/2026-04-28-initial-setup/ |
-| config-module | 2026-04-27 | 完成 | infrastructure | docs/archive/2026-04-27-config-module/ |
+| ecommerce-platform-init | 2026-05-04 | 完成 | auth, order, payment | docs/changes/archive/2026-05-04-ecommerce-platform-init/ |
+| initial-setup | 2026-04-28 | 完成 | infrastructure | docs/changes/archive/2026-04-28-initial-setup/ |
+| config-module | 2026-04-27 | 完成 | infrastructure | docs/changes/archive/2026-04-27-config-module/ |
 
 ---
 

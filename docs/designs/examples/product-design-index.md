@@ -26,14 +26,14 @@
 
 ---
 
-## 三、技术设计文档
+## 三、详细设计文档
 
 | 文档 | 说明 | 最后更新 |
 |------|------|---------|
-| [technical-designs/architecture.md](technical-designs/architecture.md) | 系统架构全景 | 2026-05-04 |
-| [technical-designs/data-model.md](technical-designs/data-model.md) | 全景数据模型 | 2026-05-03 |
-| [technical-designs/api-catalog.md](technical-designs/api-catalog.md) | API 目录 | 2026-05-04 |
-| [technical-designs/nfr-baseline.md](technical-designs/nfr-baseline.md) | NFR 基线 | 2026-04-30 |
+| [detailed-designs/architecture.md](detailed-designs/architecture.md) | 系统架构全景 | 2026-05-04 |
+| [detailed-designs/data-model.md](detailed-designs/data-model.md) | 全景数据模型 | 2026-05-03 |
+| [detailed-designs/api-catalog.md](detailed-designs/api-catalog.md) | API 目录 | 2026-05-04 |
+| [detailed-designs/nfr-baseline.md](detailed-designs/nfr-baseline.md) | NFR 基线 | 2026-04-30 |
 
 ---
 
@@ -55,7 +55,7 @@
 
 | 变更名称 | 功能模块 | 当前阶段 | 预计影响 |
 |----------|--------|---------|---------|
-| product-search-upgrade | product | 编码 | technical-designs/data-model.md, technical-designs/api-catalog.md |
+| product-search-upgrade | product | 编码 | detailed-designs/data-model.md, detailed-designs/api-catalog.md |
 | fix-payment-callback | payment | 缺陷修复 | functional-designs/payment.md |
 
 ---

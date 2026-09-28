@@ -96,7 +96,7 @@ LEGACY 逆向分析 SHALL 按项目类型采用差异化内容填充策略。
 
 - **WHEN** 逆向扫描完成
 - **THEN** 系统生成 docs/designs/index.md 草稿
-- **AND** 包含：项目概述、功能模块导航表（指向 functional-designs 子目录或文件）、技术设计文档索引、变更日志
+- **AND** 包含：项目概述、功能模块导航表（指向 functional-designs 子目录或文件）、详细设计文档索引、变更日志
 - **AND** 标注生成来源
 
 #### Scenario: 生成功能模块文档草稿（前后端项目）
@@ -116,11 +116,11 @@ LEGACY 逆向分析 SHALL 按项目类型采用差异化内容填充策略。
 #### Scenario: 生成全景文档草稿
 
 - **WHEN** L1+L2+L3 扫描完成
-- **THEN** 系统生成 `docs/designs/technical-designs/architecture.md`（从目录结构推断架构模式）
-- **AND** 生成 `docs/designs/technical-designs/data-model.md`（从 L3 实体扫描聚合）
-- **AND** 生成 `docs/designs/technical-designs/api-catalog.md`（从 L3 路由扫描聚合）
-- **AND** 生成 `docs/designs/technical-designs/config-items.md`（从 L1 配置扫描提取，标注骨架）
-- **AND** 生成 `docs/designs/technical-designs/error-handling.md`（从 L3 异常处理扫描提取，标注骨架）
+- **THEN** 系统生成 `docs/designs/detailed-designs/architecture.md`（从目录结构推断架构模式）
+- **AND** 生成 `docs/designs/detailed-designs/data-model.md`（从 L3 实体扫描聚合）
+- **AND** 生成 `docs/designs/detailed-designs/api-catalog.md`（从 L3 路由扫描聚合）
+- **AND** 生成 `docs/designs/detailed-designs/config-items.md`（从 L1 配置扫描提取，标注骨架）
+- **AND** 生成 `docs/designs/detailed-designs/error-handling.md`（从 L3 异常处理扫描提取，标注骨架）
 - **AND** 每份文档标注生成来源
 
 #### Scenario: 生成 service-guide.md 草稿

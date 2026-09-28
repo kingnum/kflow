@@ -45,8 +45,7 @@ allowed-tools:
 | `functional-designs/index.md` | 存在 | [全部] |
 | `api-tests/index.md` | 存在 | [全部] |
 | `e2e-tests/index.md` | 存在（条件：前端SC + 前后端项目） | [前端子变更] |
-| 四视角审查状态 | 均 = ✅ 完成 | [全部] |
-| `cross-reviews/` | 最新批次 `synthesis.md` 存在且标记审查通过 | [全部] |
+| 设计审查产物 | 按变更类型分支：简化模式（功能缺陷级）→ `cross-reviews/{timestamp}/synthesis.md` 存在且标记审查通过；完整模式（功能需求级/产品需求级）→ 四视角审查状态均 = ✅ 完成 + `cross-reviews/` 四份视角报告存在 + 最新批次 `synthesis.md` 标记审查通过 | [全部] |
 | NFR 章节完整性 | 含 ≥ 1 项性能需求和 ≥ 1 项安全需求 | [全部] |
 | 子变更 HITL 标记 | 所有子变更 SHALL NOT 含 HITL 标记（HITL = 设计不完整，禁止进入 plan） | [全部] |
 

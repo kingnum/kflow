@@ -35,7 +35,7 @@ allowed-tools:
   → 配置项设计 + 错误处理设计
   → api-tests/ + e2e-tests/ 测试用例文档
   → 基于完整设计认知划分子变更（HITL/AFK 分类 + 前端SC依赖API契约声明）
-  → 10 轮自审（一致性/完备性/可行性/可测性）
+  → 自审（首次 10 轮 / 非首次弹性轮次 + 评分底线，一致性/完备性/可行性/可测性）
   → 四视角并行 Agent 审查
   → 审查综合报告（fingerprint 去重 + 问题追踪矩阵）
   → 分级修复（高/中/低严重度 + 重审闭环）
@@ -87,10 +87,10 @@ allowed-tools:
 | 接口测试用例 | `docs/changes/{change}/api-tests/` | ✅ 必须 | index.md + part-NN.md 目录化结构，每分册 ≤ 30 接口 |
 | E2E 测试用例 | `docs/changes/{change}/e2e-tests/` | ✅ 必须 | index.md + part-NN.md 目录化结构，每分册 ≤ 30 场景 |
 | 元素覆盖树 | `prototype/element-coverage-tree.md`（有原型）或 `e2e-tests/element-coverage-tree.md`（无原型） | ✅ 必须（前后端项目） | 四层树状元素覆盖文件，含 TC-ID 映射。替代已废弃的 element-spec.md 和 nav-tree.md |
-| 四视角审查报告 | `docs/changes/{change}/cross-reviews/{timestamp}/*.md` | ✅ 必须 | business-review.md、technical-review.md、security-review.md、quality-review.md |
-| 审查综合报告 | `docs/changes/{change}/cross-reviews/{timestamp}/synthesis.md` | ✅ 必须 | 问题汇总 + fingerprint 去重 + 追踪矩阵 + 关闭条件 |
+| 四视角审查报告（完整模式） | `docs/changes/{change}/cross-reviews/{timestamp}/*.md` | ✅ 必须（功能需求级/产品需求级） | business-review.md、technical-review.md、security-review.md、quality-review.md |
+| 审查综合报告 | `docs/changes/{change}/cross-reviews/{timestamp}/synthesis.md` | ✅ 必须 | 简化模式：单视角综合审查输出单一 synthesis.md；完整模式：四份视角报告 + synthesis.md |
 | 架构决策记录 | `docs/adr/{序号}-{标题}.md` | 🔶 条件 | 满足三条件时创建，含过期条件标注 |
-| 自审报告 | `docs/changes/{change}/self-reviews/design/` | ✅ 必须 | 10 轮自审报告，文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
+| 自审报告 | `docs/changes/{change}/self-reviews/design/` | ✅ 必须 | 自审报告（首次 10 份 / 非首次弹性份数），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
 | 用户评审记录 | `docs/changes/{change}/.status.md` | ✅ 必须 | 详细设计评审状态、评审时间、备注 |
 
 ## 纯后端项目
@@ -205,14 +205,14 @@ detailed-design/
 │  │   9b. 类型一致性校验: 全部一致→✅ / 混合→❌ 拒绝                │
 │  │   9c. 自动推断子变更类型（SHALL NOT 人工手动填写）              │
 │  │   9d. 旧版文档兼容: 缺少类型列→🟡 警告                          │
-│  10. SELFREV   → 10 轮自循环审查（子代理串行 + 重复制）            │
+│  10. SELFREV   → 首次/非首次分级自审（子代理串行 + 重复制）       │
 │  │   每轮: 启动独立 Agent(subagent) 子代理                       │
 │  │   子代理全四维度独立检查（一致性/完备性/可行性/可测性）           │
 │  │   子代理发现问题 → 直接修复 + 生成自审报告                     │
 │  │   主 Agent 读报告 + 确认修复 → 启动下一轮子代理                │
 │  │   报告路径: self-reviews/design/{YYYYMMDD}-{HHMMSS}.md         │
-│  │   串行执行 10 轮，不可提前终止                                  │
-│  11. REVIEW    → 执行四视角交叉审查（并行 Agent，变更级一次）       │
+│  │   首次创建串行 10 轮；非首次创建弹性轮次 + 评分底线 > 8        │
+│  11. REVIEW    → 按变更类型分级审查（简化/完整）       │
 │  12. SYNTH    → 输出审查综合报告（fingerprint 去重 + 追踪矩阵）    │
 │  13. FIX      → 按严重度分级修复（高/中/低 + 重审闭环）            │
 │  14. APPROVAL → 展示设计给用户最终评审（AskUserQuestion）          │
@@ -636,7 +636,7 @@ FOR 每个划分候选组:
 **前端子变更依赖API契约**：依赖列 SHALL 填写「API 契约（detailed-design.md §接口设计）」中的具体接口，格式为 `API: {METHOD} {path}, {METHOD} {path}`。依赖条件：API 契约章节存在且状态为 ✅ 完成。不要求后端子变更编码状态为 ✅ 完成。
 ```
 
-## 步骤 10：SELFREV — 10 轮自循环审查（子代理串行 + 重复制）
+## 步骤 10：SELFREV — 首次/非首次分级自审（子代理串行 + 重复制）
 
 ### 子代理上下文文件加载（基础层 + 创意层）
 
@@ -652,13 +652,22 @@ FOR 每个划分候选组:
 
 详见 [references/self-review.md](references/self-review.md) — 四维度检查规则（一致性/完备性/可行性/可测性）、子代理串行执行流程、边审边修说明、串行约束、强制执行规则。
 
-## 步骤 11：REVIEW — 四视角并行审查
+首次/非首次分级（判定信号、弹性轮次公式、评分底线见 [references/self-review.md](references/self-review.md) §4）：首次创建固定 10 轮；非首次创建按弹性轮次（design 影响范围分数 = 功能点数 × 1 + 接口数 × 1.5 + 数据模型数 × 2，映射 1→1 轮、2–5→ceil(分数)、6–15→max(5, ceil(分数/2))、>15→10 轮）+ 评分底线（各维度评分均 > 8 方通过，未达标补审至 10 轮上限）。
+
+## 步骤 11：REVIEW — 设计审查（按变更类型分级）
 
 > **子代理隔离规则**：审查子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管审查执行。最多重试 3 次，全部失败后标记 ⚠️ 阻塞并提示用户。
 
-使用 Agent 工具并行启动四个审查 Agent（变更级一次执行）。审查批次目录: `cross-reviews/{YYYYMMDD}-{HHMMSS}/`。
+读取 `.status.md` 的变更类型，按变更类型分级执行设计审查：
 
-详见 [references/review-content.md](references/review-content.md) — 业务/技术/安全/质量四视角具体检查项。
+| 变更类型 | 审查模式 | 执行方式 | 产物 |
+|---------|---------|---------|------|
+| 功能缺陷级 | 简化模式 | 单 Agent 串行覆盖业务/技术/安全/质量四视角全部检查项 | 单一 `cross-reviews/{YYYYMMDD}-{HHMMSS}/synthesis.md` |
+| 功能需求级/产品需求级 | 完整模式 | 并行启动四个审查 Agent（业务/技术/安全/质量） | 四份视角报告 + `synthesis.md` |
+
+审查批次目录: `cross-reviews/{YYYYMMDD}-{HHMMSS}/`。
+
+详见 [references/review-content.md](references/review-content.md) — 业务/技术/安全/质量四视角具体检查项（简化模式单 Agent 串行覆盖，完整模式四 Agent 并行覆盖）。
 
 ## 步骤 12：SYNTH — 审查综合报告
 
@@ -666,7 +675,9 @@ FOR 每个划分候选组:
 
 详见 [references/synthesis-report.md](references/synthesis-report.md) — 审查批次索引、问题统计、问题清单、fingerprint 去重、问题追踪矩阵、关闭条件。
 
-## 步骤 13：FIX — 分级修复 + 重审闭环
+## 步骤 13：FIX — 分级修复 + 重审闭环（仅完整模式）
+
+> **简化模式**：单轮出报告，不执行分级重审闭环；若发现高严重度问题，修复后仍走单视角单轮复检。
 
 | 严重度 | 修复要求 | 重审方式 |
 |--------|---------|---------|
@@ -767,8 +778,8 @@ traceability.md 消费链:
 
 - **变更级统一设计**：所有功能点在变更级完成详细设计，不做子变更级拆分设计
 - **子变更划分后置**：在所有设计完成、依赖关系明确、界面契约定义后，基于完整设计认知划分
-- **10 轮自审强制执行（子代理串行 + 重复制）**：在四视角并行审查之前完成，每轮启动独立子代理执行全部四个维度（一致性+完备性+可行性+可测性），子代理边审边修，串行不可并行，废除分工制，不可提前终止
-- **四视角并行审查**：使用 Agent 工具同时启动四个审查 Agent（业务/技术/安全/质量）
+- **自审分级强制执行（子代理串行 + 重复制）**：在四视角并行审查之前完成，首次创建完成全部 10 轮；非首次创建按弹性轮次执行，各维度评分均 > 8 方通过（未达标补审至 10 轮上限）。每轮启动独立子代理执行全部四个维度（一致性+完备性+可行性+可测性），子代理边审边修，串行不可并行，废除分工制，不可提前终止
+- **设计审查按变更类型分级**：功能缺陷级→简化模式（单 Agent 综合审查）；功能需求级/产品需求级→完整模式（四视角并行）
 - **fingerprint 去重合并**：多视角发现同一问题时合并为一个问题记录
 - **分级修复闭环**：高严重度 → 原视角+安全交叉检查；中严重度 → 原视角重审；低严重度 → 随机30%抽查
 - **ADR 三条件过滤**：难以逆转 + 缺上下文会奇怪 + 真正做了权衡，不满足时记录在 detailed-design.md

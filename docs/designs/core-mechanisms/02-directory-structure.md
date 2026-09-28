@@ -125,7 +125,7 @@ docs/
 │   │   │   └── part-NN.md             #     功能设计分册（与变更级 part-NN.md 同结构，额外增加来源标注）
 │   │   ├── {domain}.md                #   纯后端项目：按设计域平铺（backend-domain.md 简化模板）
 │   │   └── ...
-│   ├── technical-designs/             # 产品级技术设计文档（6 文件体系）
+│   ├── detailed-designs/             # 产品级详细设计文档（6 文件体系）
 │   │   ├── architecture.md            #   全景架构文档（含配置项/错误处理索引）
 │   │   ├── data-model.md              #   全景数据模型文档
 │   │   ├── api-catalog.md             #   全景 API 目录
@@ -145,10 +145,7 @@ docs/
 │
 ├── service-guide.md                   # 项目服务指引（init 预生成草稿，code 阶段补充完善，含多环境配置）
 │
-├── skill-suggestion.md                # Skills 优化建议记录
-│
-└── archive/                           # 归档的设计文档
-    └── {YYYY-MM-DD}-{design}/
+└── skill-suggestion.md                # Skills 优化建议记录
 ```
 
 ### 2.2 命名规范
@@ -177,7 +174,7 @@ docs/
 | 自审记录目录 | `self-reviews/{phase}/` | `docs/changes/{change}/self-reviews/explore/` |
 | 自审记录文件 | `{YYYYMMDD}-{HHMMSS}.md` | `docs/changes/{change}/self-reviews/explore/20260514-093000.md` |
 | 交叉审查目录 | `cross-reviews/{YYYYMMDD}-{HHMMSS}/` | `docs/changes/{change}/cross-reviews/20260514-150000/` |
-| 归档目录 | `{YYYY-MM-DD}-{change}` | `2026-05-15-product-init` |
+| 归档目录 | `{YYYY-MM-DD}-{change}` | `docs/changes/archive/2026-05-15-product-init` |
 | 测试报告 | `round-{n}.md` | `round-1.md`, `round-2.md` |
 | 修复报告 | `fix-{timestamp}.md` | `fix-202604291430.md` |
 | 集成测试修复报告 | `fix-{timestamp}.md` | `test-reports/integration/fix-reports/fix-202605041430.md` |
@@ -186,7 +183,7 @@ docs/
 | 产品级索引入口 | `index.md` | `docs/designs/index.md` |
 | 功能模块目录（前后端） | `{menu}/` | `docs/designs/functional-designs/user-auth/` |
 | 功能模块文件（纯后端） | `{domain}.md` | `docs/designs/functional-designs/auth-service.md` |
-| 技术设计文档 | `{type}.md` | `docs/designs/technical-designs/architecture.md` |
+| 详细设计文档 | `{type}.md` | `docs/designs/detailed-designs/architecture.md` |
 | ADR 文件 | `{序号}-{kebab-case标题}.md` | `docs/adr/0001-choose-redis-cluster.md` |
 | ADR 索引 | `index.md` | `docs/adr/index.md` |
 | checkpoint | `{YYYYMMDD-HHMMSS}-checkpoint[-auto].md` | `20260430-143000-checkpoint.md` |
@@ -219,7 +216,7 @@ docs/designs/
 │   │   ├── index.md
 │   │   └── part-01.md
 │   └── ...                   #   纯后端项目则使用 {domain}.md 平铺文件
-├── technical-designs/        # 产品级技术设计文档（6 文件体系）
+├── detailed-designs/        # 产品级详细设计文档（6 文件体系）
 │   ├── architecture.md       #   全景架构文档（含配置项/错误处理索引）
 │   ├── data-model.md         #   全景数据模型文档
 │   ├── api-catalog.md        #   全景 API 目录
@@ -233,7 +230,7 @@ docs/designs/
 - `index.md` 保持轻量，仅提供全局导航和各模块摘要（每模块 2-3 句）
 - 前后端项目：功能设计文档按一级菜单 kebab-case 目录组织，目录内 `index.md` + `part-NN.md` 与变更级 functional-designs 结构一致
 - 纯后端项目：功能设计文档按设计域 `{domain}.md` 平铺，使用 backend-domain.md 简化模板
-- 技术设计文档 (`technical-designs/`) 按类型拆分为 6 文件，与变更级 `detailed-design.md` 六大章节对应
+- 详细设计文档 (`detailed-designs/`) 按类型拆分为 6 文件，与变更级 `detailed-design.md` 六大章节对应
 - 全景文档仅在涉及跨模块变更时更新（如新增数据实体追加到 data-model.md）
 - `changelog.md` 按年归档：文件超过 500 行时触发归档，同时保留年末强制归档
 

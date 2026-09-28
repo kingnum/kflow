@@ -269,7 +269,7 @@ playwright-cli 每次交互命令会自动输出对应的 Playwright TypeScript 
 ### 使用方式
 
 - **当前子变更下一轮测试**：如 generated-test.spec.ts 存在，直接运行 `npx playwright test generated-test.spec.ts` 跳过元素侦查
-- **归档时**：如文件存在，随变更归档到 `docs/archive/`，不合并到产品级文档 `docs/designs/`
+- **归档时**：如文件存在，随变更归档到 `docs/changes/archive/`，不合并到产品级文档 `docs/designs/`
 - **后续变更**：从 playwright-cli snapshot 重新生成，不依赖旧的选择器
 
 ---

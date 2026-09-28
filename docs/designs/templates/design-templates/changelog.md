@@ -19,13 +19,13 @@ template_for: docs/designs/changelog.md
 
 | 日期 | 变更名称 | 变更类型 | 设计域 | 简述 | 归档目录 |
 |------|---------|---------|--------|------|---------|
-| {YYYY-MM-DD} | {change-name} | {产品需求/功能需求/功能缺陷} | {domain} | {简述} | docs/archive/{YYYY-MM-DD}-{change}/ |
+| {YYYY-MM-DD} | {change-name} | {产品需求/功能需求/功能缺陷} | {domain} | {简述} | docs/changes/archive/{YYYY-MM-DD}-{change}/ |
 
 ### {YYYY-MM}
 
 | 日期 | 变更名称 | 变更类型 | 设计域 | 简述 | 归档目录 |
 |------|---------|---------|--------|------|---------|
-| {YYYY-MM-DD} | {change-name} | {产品需求/功能需求/功能缺陷} | {domain} | {简述} | docs/archive/{YYYY-MM-DD}-{change}/ |
+| {YYYY-MM-DD} | {change-name} | {产品需求/功能需求/功能缺陷} | {domain} | {简述} | docs/changes/archive/{YYYY-MM-DD}-{change}/ |
 
 ---
 

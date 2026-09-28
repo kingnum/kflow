@@ -22,4 +22,4 @@ template_description: 变更管理索引模板，记录活跃变更列表和已�
 
 | 变更名称 | 归档时间 | 归档状态 | 归档目录 |
 |----------|----------|----------|----------|
-| {change-old} | {YYYY-MM-DD} | {完成/未完成} | docs/archive/{YYYY-MM-DD}-{change-old}/ |
+| {change-old} | {YYYY-MM-DD} | {完成/未完成} | docs/changes/archive/{YYYY-MM-DD}-{change-old}/ |

@@ -17,5 +17,5 @@
 | [05-execution-services.md](05-execution-services.md) | 七~八、执行服务 | 服务管理（含持久化模式）、编译验证与测试服务刷新分离、批量推进、脚本原则、文档禁止、审查合并、覆盖追溯 |
 | [09-phase-hooks.md](09-phase-hooks.md) | 阶段钩子与服务生命周期 | PRE_HOOK/POST_HOOK 规范、12 阶段钩子配置表、RELOAD 清单、服务停止超时链、端口冲突检测、浏览器进程管理 |
 | [06-recovery.md](06-recovery.md) | 十二、中断恢复机制 | checkpoint 两级存储、恢复优先级链、kflow-resume 流程 |
-| [07-agent-model.md](07-agent-model.md) | 十五~十六、子代理执行模型 + 自审机制 | 重复制、复杂度评估、子代理隔离规则、10 轮自审、VERIFY 子代理验证 |
+| [07-agent-model.md](07-agent-model.md) | 十五~十六、子代理执行模型 + 自审机制 | 重复制、复杂度评估、子代理隔离规则、自审分级、VERIFY 子代理验证 |
 | [08-governance.md](08-governance.md) | 十七~十八、阶段边界 + Git 管理 | 文档白名单、越界禁止、git commit 节点 |

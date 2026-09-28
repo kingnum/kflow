@@ -30,7 +30,7 @@ allowed-tools:
 此阶段为按需恢复阶段，无前置门控要求。但执行时进行以下验证：
 
 - 变更目录存在性检查（`docs/changes/{change}/`）
-- 归档状态检查（不在 `docs/archive/` 下）
+- 归档状态检查（不在 `docs/changes/archive/` 下）
 
 ---
 
