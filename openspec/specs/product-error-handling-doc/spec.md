@@ -1,3 +1,9 @@
+# product-error-handling-doc Specification
+
+## Purpose
+
+定义产品级错误处理设计文档 docs/designs/detailed-designs/error-handling.md 的维护能力，规范其表格内容格式，并在 kflow-init LEGACY 阶段预生成骨架、在 archive 阶段合并更新。
+
 ## Requirements
 
 ### Requirement: 产品级错误处理设计文档

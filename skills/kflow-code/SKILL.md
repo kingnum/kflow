@@ -1,6 +1,6 @@
 ---
 name: kflow-code
-version: 0.17.0
+version: 0.18.0
 description: Use when user needs coding implementation/编码实现、TDD、功能实现, or subchange task plan is ready for execution. 子变更级TDD编码——编译验证、数据库迁移管理、多Agent并行编码、跨变更冲突检测。必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:
@@ -41,12 +41,15 @@ allowed-tools:
 | `.status.md` | 存在 |
 | 计划状态 | = ✅ 完成 |
 | 所有子变更 `tasks.md` | 文件存在 |
-| 依赖子变更 | 已完成编码和接口单元测试（如有依赖） |
+| 依赖子变更 | 已完成编码和接口单元测试（如有依赖；该依赖的接口单元测试被轻量档阶段适用性声明裁剪时视为满足） |
 | NFR 章节完整性 | `detailed-design.md` 中 NFR 章节含性能+安全需求 |
 | 跨变更冲突检测 | 检查活跃变更文件重叠（见 §跨变更冲突检测） |
 | `docs/service-guide.md` | 存在（init 可预生成草稿）或自动生成（见 §服务指引） |
+| 阶段适用性声明 | 轻量档读取变更级 `.status.md` 的「阶段适用性声明」区，据此判定 `api-tests/` 等输入产物不存在是否属合法跳过；`标准`/`完整` 档及声明区缺失时按全部适用处理（判定见共享 `references/gates.md` §1.2、字段定义见 `references/state-values.md` §5） |
 
 不满足则 ❌ 阻塞，提示先完成前置条件。
+
+> 轻量档的单子变更：变更恒为 1 个子变更且无依赖关系，`依赖子变更` 检查项即为空集、直接通过；`api-tests/` 在 `接口单元测试` 判为 `⏭️ 不适用` 时 SHALL NOT 产出，其缺失属合法跳过，SHALL NOT 判为缺项或阻塞。
 
 # 输入要求
 
@@ -55,13 +58,13 @@ allowed-tools:
 | 功能设计文档 | `functional-designs/` | ✅ 必须 | 后端SC | 功能点清单、业务规则、业务流程 |
 | 覆盖追溯矩阵 | `traceability.md` | ✅ 必须 | 后端SC | FP 清单（设计列+计划列已完成） |
 | 变更级详细设计 | `detailed-design.md`（或 `detailed-design/index.md`） | ✅ 必须 | 全部 | 统一详细设计（读取属于当前子变更的章节） |
-| 接口测试用例 | `api-tests/` | ✅ 必须 | 全部 | 接口测试用例 |
+| 接口测试用例 | `api-tests/` | ✅ 必须（轻量档裁剪时豁免） | 全部 | 接口测试用例；`变更档位 = 轻量` 且适用性声明判 `接口单元测试` 为 `⏭️ 不适用` 时该产物不存在属合法跳过 |
 | 领域词汇表 | `CONTEXT.md` | ✅ 必须 | 全部 | 项目级领域词汇表，用于代码命名对齐 |
 | 子变更任务清单 | `tasks.md` | ✅ 必须 | 全部 | 子变更任务清单（含 DoD） |
-| 原型产物清单 | `prototype/index.md` | ✅ 必须 | 前端SC | 原型产物清单（Prototype Manifest），前端子变更编码的核心输入 |
+| 原型产物清单 | `docs/designs/prototypes/manifest.md` | ✅ 必须 | 前端SC | 原型产物清单（Prototype Manifest），前端子变更编码的核心输入 |
 | E2E测试用例 | `e2e-tests/` | 🔶 条件 | 前端SC（前后端项目） | E2E 测试用例，前后端项目需要 |
 
-> **前端SC 输入限定**：前端子变更的输入 SHALL 限定为 `prototype/index.md` 中声明的角色为 entry/page/tokens/coverage/shared 的原型产物。SHALL NOT 将 prototype/design-prompt.md 或 design-system/MASTER.md 列为输入源（过程产物，非编码所需）。
+> **前端SC 输入限定**：前端子变更的输入 SHALL 限定为 `docs/designs/prototypes/manifest.md` 中声明的角色为 entry/page/tokens/shared 的原型产物、变更级 prototype-changes.md 声明的本变更改动，以及变更级 element-coverage-tree.md。SHALL NOT 将 prototype-plan/design-prompt.md 或 design-system/MASTER.md 列为输入源（过程产物，非编码所需）。
 
 # 输出产物
 
@@ -423,13 +426,13 @@ Slice 2: Controller 测试 → Controller → Service → Repository → 全链�
 Phase 1: 工程骨架搭建
   ├── 脚手架初始化（create-react-app / vite / next.js 等，按项目栈选择）
   ├── 路由框架（对齐 element-coverage-tree.md 📄 页面节点层）
-  ├── 全局布局组件（Header/Sidebar/Footer，基于 prototype/index.md 中 entry 角色文件提取）
-  ├── 公共组件库（Button/Input/Modal/Table 等，从 prototype/index.md 中 entry 角色文件提取）
+  ├── 全局布局组件（Header/Sidebar/Footer，基于 docs/designs/prototypes/manifest.md 中 entry 角色文件提取）
+  ├── 公共组件库（Button/Input/Modal/Table 等，从 docs/designs/prototypes/manifest.md 中 entry 角色文件提取）
   ├── 状态管理框架（Redux/Zustand/Context，按项目规模选择）
-  └── 设计令牌注入（从 prototype/index.md 中 tokens 角色文件 → CSS 变量/theme 对象）
+  └── 设计令牌注入（从 docs/designs/prototypes/manifest.md 中 tokens 角色文件 → CSS 变量/theme 对象）
   
 Phase 2: 逐页转译
-  ├── 从 prototype/index.md 页面清单获取各页面对应的 HTML 文件路径 → 解析 DOM 结构
+  ├── 从 docs/designs/prototypes/manifest.md 页面清单获取各页面对应的 HTML 文件路径 → 解析 DOM 结构
   ├── 转译为前端框架组件（React/Vue/Angular）
   ├── 逐页覆盖 element-coverage-tree.md 中该页面的所有 🔘 元素
   └── 逐页实现 element-coverage-tree.md 中该页面的所有 🎯 状态
@@ -444,22 +447,22 @@ Phase 4: 状态覆盖
   └── 弹窗/抽屉的打开/关闭逻辑
 ```
 
-### 原型产物获取方式（基于 prototype/index.md）
+### 原型产物获取方式（基于 docs/designs/prototypes/manifest.md）
 
 | 角色 | 获取方式 | 读取阶段 | 用途 |
 |------|---------|---------|------|
-| entry | 从 prototype/index.md 「产物组织方式」获取入口文件路径 | Phase 1, 2 | 页面结构、全局布局、交互元素 |
-| page | 从 prototype/index.md 「页面清单」获取各页面对应 HTML 文件路径 | Phase 2 | 逐页转译 |
-| tokens | 从 prototype/index.md 「原型文件清单」获取 tokens 角色文件路径 | Phase 1 | CSS 变量注入（颜色/间距/圆角/阴影） |
-| coverage | 从 prototype/index.md 「原型文件清单」获取 coverage 角色文件路径 | Phase 1, 2, 4 | 📄 路由框架、🔘 元素清单、🎯 状态清单 |
+| entry | 从 docs/designs/prototypes/manifest.md 「产物组织方式」获取入口文件路径 | Phase 1, 2 | 页面结构、全局布局、交互元素 |
+| page | 从 docs/designs/prototypes/manifest.md 「页面清单」获取各页面对应 HTML 文件路径 | Phase 2 | 逐页转译 |
+| tokens | 从 docs/designs/prototypes/manifest.md 「原型文件清单」获取 tokens 角色文件路径 | Phase 1 | CSS 变量注入（颜色/间距/圆角/阴影） |
+| coverage | 从变更级 element-coverage-tree.md 获取元素清单 | Phase 1, 2, 4 | 📄 路由框架、🔘 元素清单、🎯 状态清单 |
 
 ### 缺失产物降级（基于清单角色）
 
 | 缺失角色 | 处理 |
 |---------|------|
 | entry | ⚠️ 阻塞，核心输入不可缺失 |
-| coverage | ⚠️ 降级：从 prototype/*.html 手动识别元素和状态 |
-| tokens | ⚠️ 降级：从 prototype/*.html 内联样式中提取 |
+| coverage | ⚠️ 降级：从变更级 element-coverage-tree.md 缺失时，手动识别 docs/designs/prototypes/ 下涉及页面的元素和状态 |
+| tokens | ⚠️ 降级：从 docs/designs/prototypes/ 下 HTML 内联样式中提取 |
 
 ### 前端编译验证
 
@@ -543,6 +546,8 @@ migrations/
 │  等待依赖完成 → 开始编码                             │
 └─────────────────────────────────────────────────────┘
 ```
+
+> **轻量档（单一子变更）退化**：轻量档变更恒为 1 个子变更且无依赖关系，本策略退化为该唯一子变更的单 Agent 编码，无并行调度与依赖排序需求；执行流程中的「选择下一个子变更」步骤在单一子变更时直接通过，SHALL NOT 因无后续子变更而报错或阻塞。
 
 ### Agent 分配原则
 
@@ -635,11 +640,11 @@ migrations/
 
 # 重复制（执行类阶段）
 
-编码阶段属于执行类阶段，在现有多 Agent 并行编码机制基础上采用重复制模式。目标轮次由弹性轮次决策规则确定（参见 `skills/kflow-code/references/repetition.md` §14）：首次执行 10 轮，回退重执行按影响范围分数缩减。
+编码阶段属于执行类阶段，在现有多 Agent 并行编码机制基础上采用档位驱动的弹性重复制模式。目标轮次由变更档位基线决定（轻量 1 / 标准 3 / 完整 10）：读取变更级 `.status.md` 基本信息的「变更档位」字段，字段缺失时按 `完整` 档处理；回退重执行取 `max(档位基线, 影响范围分数映射)`（`.status.md` 无影响范围分数时取档位基线）。统一映射表定义于 `tier-driven-repetition` 能力（本 Skill 仅引用，SHALL NOT 自定义数值区间）。参见 `skills/kflow-code/references/repetition.md` §14。
 
 ## 每轮工作内容
 
-**遍历项**：**双层遍历**——外层遍历全部未完成编码的子变更，内层遍历每个子变更 tasks.md 中的全部功能点
+**遍历项**：**双层遍历**——外层遍历全部未完成编码的子变更，内层遍历每个子变更 tasks.md 中的全部功能点（轻量档为单一子变更，外层遍历即该唯一子变更，无空转）
 
 > **来源**: skill-execution-reliability 变更。编码阶段「工作项」定义为「全部未完成编码的子变更」，每轮自动处理所有未完成子变更，而非逐个子变更询问用户。
 
@@ -669,17 +674,18 @@ migrations/
 低复杂度 (< 20 分) / 中复杂度 (20-50 分) / 高复杂度 (> 50 分)
 ```
 
-分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成全部 10 轮迭代后方可返回。
+分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成目标轮次（由变更档位基线确定：轻量 1 / 标准 3 / 完整 10）迭代后方可返回。
 
 ## 执行流程
 
 ```
 1. 复杂度评估 → 写入 .status.md 备注列（仅信息展示，不驱动执行行为）
 
-1.5 INIT → 主 Agent 按弹性轮次决策确定目标轮次 N，写入 .status.md 执行轮次为 1 / N
+1.5 INIT → 主 Agent 按档位轮次决策（参见 references/repetition.md §14）确定目标轮次 N，写入 .status.md 执行轮次为 1 / N
+    └── 判定流程: 读取变更级 .status.md「变更档位」字段取档位基线（轻量 1 / 标准 3 / 完整 10，字段缺失时按完整档处理）；阶段回退重执行时取 max(档位基线, 影响范围分数映射)，无影响范围分数时取档位基线
 
 2. 构建阶段专属提示词
-   ├── kflow-shared 分层加载（基础层 + 执行层）:
+   ├── 分层加载（基础层 + 执行层）:
    │   ├── skills/kflow-code/references/state-values.md（摘要）
    │   ├── skills/kflow-code/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-code/references/repetition.md
@@ -690,7 +696,8 @@ migrations/
    │   「每轮遍历全部未完成编码的子变更，每个子变更内遍历全部功能点独立执行完整 TDD 流程。
    │     更新 .status.md 中执行轮次计数器为当前轮次号。
    │     禁止按轮次分段分配工作重点——每轮均须对所有子变更的全部功能点执行完整检查。
-   │     必须完成全部 10 轮迭代后才可返回验收报告，禁止在第 10 轮前返回。
+   │     必须完成全部目标轮次迭代后才可返回验收报告，禁止在目标轮次前返回。
+   │     （目标轮次数值由变更档位确定，SHALL NOT 硬编码为 10。）
    │     若当前轮次无新发现且无可执行工作，仍须递增计数器并继续。」
    ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/本轮建议关注），注入下一轮子代理 prompt（参见 repetition-model.md §13）
    └── 完成承诺: COMPLETED
@@ -699,7 +706,7 @@ migrations/
    └── 子代理内维持现有多 Agent 并行编码策略
 
 4. 主 Agent 验收
-   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由弹性轮次决策确定）
+   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由变更档位基线确定）
    ├── 产物: 所有功能点代码已实现且通过测试
    ├── 覆盖率: traceability.md「编码实现」列覆盖率 = 100%
    ├── 迁移: 涉及数据模型变更时迁移脚本+回滚脚本齐全
@@ -711,7 +718,7 @@ migrations/
 | 情况 | 处理方式 |
 |------|---------|
 | 通过 | 更新 .status.md + 填写 traceability.md 对应列 → 释放代码审查阶段门控 |
-| 轮次不足（< 10） | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
+| 轮次不足（< 目标轮次 N） | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
 | 轮次达标但产物不合格 | 记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑 |
 
 ---
@@ -725,7 +732,7 @@ migrations/
 | 前置阶段 | 计划 | 门控依赖 |
 | 后续阶段 | 代码审查 → 接口单元测试 → E2E测试（前后端）/ 接口单元测试（纯后端） | 阶段链 |
 | 关系说明 | 代码审查拆分为独立 Skill | 本 Skill 不再包含审查子阶段 |
-| 执行模式 | 重复制（内嵌多 Agent 并行编码） | 弹性轮次决策（参见 repetition-model.md §14），复杂度评估仅信息展示，主 Agent 验收闭环 |
+| 执行模式 | 重复制（内嵌多 Agent 并行编码） | 档位驱动轮次决策（目标轮次由变更档位基线决定：轻量 1 / 标准 3 / 完整 10，回退重执行取 `max(档位基线, 影响范围分数映射)`；参见 references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环 |
 
 # 核心提醒
 
@@ -736,7 +743,8 @@ migrations/
 - RED 阶段禁止重构，REFACTOR 阶段每次重构后运行全部测试
 - 编码命名 SHALL 对齐 CONTEXT.md 领域词汇表，冲突时以 CONTEXT.md 为准
 - **双层遍历**：每轮遍历全部未完成编码的子变更，每个子变更内遍历全部功能点，禁止逐个子变更询问
-- **原型一致性**：前端SC 编码 SHALL 对齐 prototype/index.md 中声明的产物文件，禁止引用 process artifacts（design-prompt.md / design-system/MASTER.md）
+- **轻量档单一子变更**：轻量档变更恒为 1 个子变更且无依赖关系，多 Agent 并行策略退化为单 Agent 编码，「选择下一个子变更」步骤直接通过；`api-tests/` 可因 `接口单元测试` 被裁剪而不存在，属合法跳过
+- **原型一致性**：前端SC 编码 SHALL 对齐 docs/designs/prototypes/manifest.md 中声明的产物文件，禁止引用过程产物（变更级 prototype-plan/design-prompt.md、design-system/MASTER.md）
 - **子代理工具切换禁令**：子代理遇 API 报错时 SHALL NOT 自行换工具，须阻塞+上报
 - 敏感信息（密码、密钥）禁止明文写入，必须使用环境变量引用
 

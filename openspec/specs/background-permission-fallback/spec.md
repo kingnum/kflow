@@ -1,4 +1,10 @@
-## ADDED Requirements
+# background-permission-fallback Specification
+
+## Purpose
+
+定义后台子代理因权限问题执行失败时自动回退为前台子代理重新执行的机制，并明确该回退不计入重复制轮次级重试上限。
+
+## Requirements
 
 ### Requirement: 后台子代理权限失败自动回退前台子代理
 
@@ -40,12 +46,12 @@
 
 - **WHEN** 后台子代理执行失败
 - **AND** 主 Agent 未检测到权限相关错误模式
-- **THEN** 主 Agent SHALL 按原有轮次级重试机制处理（参见 `kflow-shared/repetition-model.md` §12）
+- **THEN** 主 Agent SHALL 按当前阶段的轮次级重试机制处理（参见该执行类 skill 自身的 `references/repetition.md` §12）
 - **AND** SHALL NOT 执行权限回退前台子代理逻辑
 
 ### Requirement: 权限回退不计入轮次级重试上限
 
-后台子代理权限失败回退前台子代理的执行 SHALL NOT 计入 `kflow-shared/repetition-model.md` §12 定义的轮次级重试 3 次上限。
+后台子代理权限失败回退前台子代理的执行 SHALL NOT 计入该执行类 skill 的 `references/repetition.md` §12 定义的轮次级重试 3 次上限。
 
 #### Scenario: 回退后的重试计数独立
 
@@ -60,3 +66,9 @@
 - **AND** 主 Agent 标记该阶段为阻塞
 - **THEN** 后续的重试操作（如用户触发恢复）SHALL 从轮次级重试计数器的当前值继续
 - **AND** 回退执行不计入该计数器
+
+#### Scenario: 不依赖集中式重复制模型文件
+
+- **WHEN** 任一回退规则的引用目标被解析
+- **THEN** 该目标 SHALL 为当前执行类 skill 自身的 `references/repetition.md`
+- **AND** SHALL NOT 为 `.claude/skills/kflow-shared/repetition-model.md` 或任何 `kflow-shared/` 下的路径

@@ -37,13 +37,13 @@
 
 ### Requirement: with_server.py 作为变更级 agent 的服务管理工具
 
-系统 SHALL 使用 `kflow-shared/scripts/with_server.py` 作为变更级 agent 执行服务启停操作的工具脚本，支持一次性模式和持久化模式两种运行方式，且启动命令必须从 `docs/service-guide.md` 读取。
+系统 SHALL 使用 `skills/kflow-code/scripts/with_server.py` 作为变更级 agent 执行服务启停操作的工具脚本，支持一次性模式和持久化模式两种运行方式，且启动命令必须从 `docs/service-guide.md` 读取。
 
 #### Scenario: 使用 with_server.py 一次性模式（保持现有行为）
 
 - **WHEN** 变更级 agent 需要在执行某命令期间临时启动服务
 - **THEN** 变更级 agent 必须读取 `docs/service-guide.md` 获取 dev 环境的启动命令和端口
-- **AND** 执行 `python kflow-shared/scripts/with_server.py --server "{启动命令}" --port {端口} -- {后续命令}`
+- **AND** 执行 `python skills/kflow-code/scripts/with_server.py --server "{启动命令}" --port {端口} -- {后续命令}`
 - **AND** with_server.py 在 {后续命令} 执行完毕后自动停止服务并清理进程
 
 #### Scenario: 使用 with_server.py 持久化模式
@@ -51,20 +51,20 @@
 - **WHEN** 变更级 agent 需要启动服务并保持运行（如测试阶段的服务刷新）
 - **THEN** 变更级 agent SHALL 使用 `--daemon` 参数启动持久化模式
 - **AND** 使用 `--state-file` 参数指定状态文件路径（`docs/changes/{change}/.service-state.json`）
-- **AND** 执行 `python kflow-shared/scripts/with_server.py --server "{启动命令}" --port {端口} --daemon --state-file {path}`
+- **AND** 执行 `python skills/kflow-code/scripts/with_server.py --server "{启动命令}" --port {端口} --daemon --state-file {path}`
 - **AND** 脚本 SHALL 将服务的 PID、端口、启动命令、启动时间写入指定的状态文件
 - **AND** 脚本 SHALL 在后台保持服务运行，不自动停止
 
 #### Scenario: 查询持久化服务状态
 
 - **WHEN** 变更级 agent 需要查询当前运行的服务状态
-- **THEN** 变更级 agent SHALL 执行 `python kflow-shared/scripts/with_server.py --status --state-file {path}`
+- **THEN** 变更级 agent SHALL 执行 `python skills/kflow-code/scripts/with_server.py --status --state-file {path}`
 - **AND** 脚本 SHALL 读取状态文件并输出服务运行状态（运行中/已停止/健康状态）
 
 #### Scenario: 停止所有持久化服务
 
 - **WHEN** 变更级 agent 需要停止所有持久化服务
-- **THEN** 变更级 agent SHALL 执行 `python kflow-shared/scripts/with_server.py --stop-all --state-file {path}`
+- **THEN** 变更级 agent SHALL 执行 `python skills/kflow-code/scripts/with_server.py --stop-all --state-file {path}`
 - **AND** 脚本 SHALL 读取状态文件中的 PID 列表
 - **AND** 逐一发送 SIGTERM → 等待最多 30s → SIGKILL → 等待 10s
 - **AND** 验证所有端口已释放
@@ -73,7 +73,7 @@
 #### Scenario: 健康检查
 
 - **WHEN** 变更级 agent 需要检查持久化服务的健康状态
-- **THEN** 变更级 agent SHALL 执行 `python kflow-shared/scripts/with_server.py --health --port {端口}`
+- **THEN** 变更级 agent SHALL 执行 `python skills/kflow-code/scripts/with_server.py --health --port {端口}`
 - **AND** 脚本 SHALL curl `/health` 端点并返回 HTTP 状态码
 
 #### Scenario: 多服务同时启动（持久化模式）
@@ -96,6 +96,12 @@
 - **THEN** with_server.py 的 finally 块自动 terminate 所有服务进程
 - **AND** 超时 5s 未终止则 kill
 - **AND** 持久化模式不受此规则影响（不自动停止）
+
+#### Scenario: 脚本路径不依赖集中式目录
+
+- **WHEN** 任一 skill 引用 with_server.py
+- **THEN** 引用路径 SHALL 为 `skills/kflow-code/scripts/with_server.py`（dev）或 `.claude/skills/kflow-code/scripts/with_server.py`（consumer）
+- **AND** SHALL NOT 为 `kflow-shared/scripts/with_server.py` 或任何 `kflow-shared/` 下的路径
 
 ### Requirement: 运行时服务状态文件
 

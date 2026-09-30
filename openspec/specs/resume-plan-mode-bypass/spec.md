@@ -1,7 +1,7 @@
 # resume-plan-mode-bypass Specification
 
 ## Purpose
-TBD - created by archiving change enhance-skill-review-and-quality. Update Purpose after archive.
+定义 RESUME 输入的 Skill 路由优先级规则：当用户输入匹配「继续/恢复/resume + 变更名」时直接进入 kflow-guide → kflow-resume → 目标阶段 Skill 的路由链，禁止被 Claude Code Plan Mode 拦截，并要求 CLAUDE.md 与 kflow-guide SKILL.md 同步声明该规则。
 ## Requirements
 ### Requirement: RESUME 输入禁止进入 Plan Mode
 

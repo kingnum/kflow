@@ -52,7 +52,7 @@
 #### Scenario: 需要模板的产物
 - **WHEN** 阶段产出是一个独立的 Markdown 文件
 - **THEN** 该产物必须有对应模板
-- **AND** 以下产物除外：prototype.pen（Pencil 工具生成）、迁移 SQL 脚本（内容为 DDL/DML）、代码文件（无固定模板结构）
+- **AND** 以下产物除外：HTML 原型产物（`docs/designs/prototypes/` 下的 `screens/*.html`、`components/*`、`assets/*`、`design-tokens.css`、`design-system/MASTER.md`，无固定模板结构）、迁移 SQL 脚本（内容为 DDL/DML）、代码文件（无固定模板结构）
 - **AND** 新增 config-items.md、error-handling.md、backend-domain.md 必须有对应模板
 
 #### Scenario: 自审报告需要模板

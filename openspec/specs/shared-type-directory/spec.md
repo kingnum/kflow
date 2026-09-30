@@ -4,7 +4,7 @@
 
 定义 `changes/{change}/shared-types/` 目录的创建、更新、引用规范。该目录作为条件产物（🔶），存放前后端子变更共同消费的 DTO/interface 类型定义。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: 共享类型目录创建
 

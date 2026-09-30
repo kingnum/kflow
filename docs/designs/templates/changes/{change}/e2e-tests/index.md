@@ -45,7 +45,7 @@ template_for: e2e-tests/index.md
 
 ## 二、元素覆盖树
 
-> **清单引用**: 从 `prototype/index.md`（Prototype Manifest）获取元素覆盖树路径（有原型时）；无原型时为 `e2e-tests/element-coverage-tree.md`
+> **清单引用**: 从变更级 `prototype-changes.md`（原型改动清单）获取元素覆盖树路径（有原型时）；无原型时为 `e2e-tests/element-coverage-tree.md`
 > **生成方式**: {路径A-静态HTML解析 | 路径B-playwright-cli探索}
 > **TC-ID 覆盖率要求**: 100%（design 阶段门控检查）
 
@@ -61,7 +61,7 @@ template_for: e2e-tests/index.md
 
 ### 树文件引用
 
-- **有原型**: 从 `../prototype/index.md`（Prototype Manifest）获取元素覆盖树路径
+- **有原型**: 从变更级 `../element-coverage-tree.md` 获取元素覆盖树路径（由产品级 `docs/designs/prototypes/manifest.md` 与变更级 `../prototype-changes.md` 界定本变更涉及页面）
 - **无原型**: 树位于本目录 `element-coverage-tree.md`
 
 ---

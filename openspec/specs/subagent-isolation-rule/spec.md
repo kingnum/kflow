@@ -6,7 +6,7 @@
 ## Requirements
 ### Requirement: 子代理异常时主代理禁止接管
 
-系统 SHALL 在 `kflow-shared/repetition-model.md` §12 中定义全局强制规则：对于所有使用子代理（Agent subagent）开展工作的任务，如果子代理意外停止、报错退出、返回要求重做或继续做，主代理 MUST 重新创建新的子代理继续执行，SHALL NOT 接管子代理的工作直接开始执行。对于执行类阶段，重试粒度为轮次级——新建 Agent 重跑崩溃轮次，最多重试 3 次，全部失败标记阻塞。子代理执行模式 SHALL 推荐前台模式（run_in_background=false），但在权限已预配置时允许后台模式。
+系统 SHALL 在各执行类 skill 自身的 `references/repetition.md` §12 中定义全局强制规则：对于所有使用子代理（Agent subagent）开展工作的任务，如果子代理意外停止、报错退出、返回要求重做或继续做，主代理 MUST 重新创建新的子代理继续执行，SHALL NOT 接管子代理的工作直接开始执行。对于执行类阶段，重试粒度为轮次级——新建 Agent 重跑崩溃轮次，最多重试 3 次，全部失败标记阻塞。子代理执行模式 SHALL 推荐前台模式（run_in_background=false），但在权限已预配置时允许后台模式。
 
 #### Scenario: 子代理报错退出
 
@@ -29,6 +29,12 @@
 - **THEN** 主代理 MUST 创建新的子代理继续剩余工作
 - **AND** 新子代理应获得之前完成的工作摘要作为起点
 - **AND** SHALL NOT 在主 Agent 上下文中从断点继续
+
+#### Scenario: 规则定义位置为 per-skill 文件
+
+- **WHEN** 隔离规则的权威定义位置被解析
+- **THEN** 该位置 SHALL 为各执行类 skill 自身的 `references/repetition.md` §12
+- **AND** SHALL NOT 为 `.claude/skills/kflow-shared/repetition-model.md` 或任何 `kflow-shared/` 下的路径
 
 ### Requirement: 主 Agent 职责边界硬线声明
 
@@ -82,7 +88,7 @@
 - **WHEN** 读取执行类阶段的 SKILL.md
 - **THEN** SHALL 在角色声明后、任务声明前包含引用框
 - **AND** 引用框包含以下五条规则：(1) 本阶段主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收；(2) 主 Agent SHALL NOT 直接执行本阶段主工作，无例外；(3) 子代理 SHOULD 前台运行（推荐 run_in_background=false），后台模式仅在权限已预配置时使用；(4) 适用场景：直接触发 + triage 路由 + 其他 Skill 调用；(5) 后台子代理权限失败时 SHALL 创建新的前台子代理重新执行，主 Agent SHALL NOT 直接接管
-- **AND** 引用框注明"参见 kflow-shared/repetition-model.md §12"
+- **AND** 引用框注明"参见 `references/repetition.md` §12"，指向该 skill 自身的相对路径
 
 #### Scenario: 适用阶段清单
 
@@ -120,18 +126,19 @@
 #### Scenario: 步骤级标注
 
 - **WHEN** Skill 的某步骤使用子代理
-- **THEN** 该步骤的描述中 SHALL 包含对 `kflow-shared/repetition-model.md` §12 隔离规则的引用
+- **THEN** 该步骤的描述中 SHALL 包含对该 skill 自身 `references/repetition.md` §12 隔离规则的引用
 - **AND** 执行类阶段 SHALL 在文档开头包含「⚠ 子代理强制规则」引用框
-- **AND** 标注形式为 "参见 kflow-shared/repetition-model.md §12"
+- **AND** 标注形式 SHALL 为相对该 skill 的路径引用（如 "参见 `references/repetition.md` §12"）
+- **AND** SHALL NOT 使用 `kflow-shared/repetition-model.md` §12 作为标注形式
 
 ### Requirement: 权限预配置要求
 
-kflow-init SHALL 在目标项目中自动配置 kflow Skills 执行所需的权限（参见 `kflow-shared/permission-model.md`），取代之前要求项目手动预配置 `.claude/settings.json` 的方式。后台子代理权限失败时 SHALL 创建新的前台子代理重新执行，主 Agent SHALL NOT 直接接管。
+kflow-init SHALL 在目标项目中自动配置 kflow Skills 执行所需的权限（参见 `skills/kflow-init/references/permission-model.md`），取代之前要求项目手动预配置 `.claude/settings.json` 的方式。后台子代理权限失败时 SHALL 创建新的前台子代理重新执行，主 Agent SHALL NOT 直接接管。
 
 #### Scenario: 权限预配置
 
 - **WHEN** kflow-init 在目标项目中执行 PERM_CONFIG 步骤后
-- **THEN** 目标项目的 `.claude/settings.json` permissions.allow 列表 SHALL 包含 `kflow-shared/permission-model.md` 中定义的全部权限
+- **THEN** 目标项目的 `.claude/settings.json` permissions.allow 列表 SHALL 包含 `skills/kflow-init/references/permission-model.md` 中定义的全部权限
 - **AND** 权限配置 SHALL 由 kflow-init 自动完成，而非要求项目手动预配置
 
 #### Scenario: 子代理权限继承

@@ -27,7 +27,7 @@
 | 阶段 | 允许创建的文件（白名单） |
 |------|------------------------|
 | explore | functional-designs/index.md, functional-designs/part-NN.md, CONTEXT.md, .status.md |
-| prototype | prototype/index.md, prototype/verify-report.md, .status.md（用户评审记录） |
+| prototype | 产品级 docs/designs/prototypes/（index.html、manifest.md、design-tokens.css、design-system/MASTER.md、screens/*、components/*、assets/*）、变更级 prototype-changes.md, prototype-backup/*, prototype-plan/*, element-coverage-tree.md, self-reviews/prototype/*, .status.md（含审查方式记录） |
 | design | detailed-design.md, traceability.md, api-tests/*, e2e-tests/*, integration-tests/*, self-reviews/design/*.md, cross-reviews/*, .status.md, docs/adr/*（条件） |
 | plan | subchanges/{subchange}/tasks.md, subchanges/{subchange}/.status.md |
 | code | 代码文件, migrations/*, docs/service-guide.md, subchanges/{subchange}/.status.md |
@@ -41,6 +41,17 @@
 - 尝试创建白名单外文件 → 禁止创建
 - 如内容确有必要 → 记录到 `docs/skill-suggestion.md`
 - 如确需扩展文档结构 → 通过 skill-suggestion 提议流程改进
+
+**白名单的档位适配**（轮次与审查形态均由变更级 `.status.md` 的 `变更档位` 字段驱动）：
+
+| 产物目录 | 档位适配规则 |
+|---------|-------------|
+| `self-reviews/{phase}/` | 设计自审目标轮次由变更档位决定（轻量 0 / 标准 2 / 完整 10）。`轻量` 档不执行自审，该目录 SHALL NOT 创建，且不构成白名单违规 |
+| `cross-reviews/` | 目录内视角报告数量按档位确定（轻量仅 `synthesis.md` / 标准两份视角报告 + `synthesis.md` / 完整四份视角报告 + `synthesis.md`）。其余形态不构成白名单违规 |
+| `.status.md` | 基本信息 SHALL 含 `变更档位` 字段；缺省时按 `完整` 档处理 |
+| 裁剪阶段产物 | `轻量` 档下被判定为 `⏭️ 不适用` 的阶段不产出 `api-tests/`、`e2e-tests/`、`test-reports/integration/`，不构成白名单违规 |
+
+> 白名单是「允许创建的集合」而非「必须创建的清单」——档位裁剪掉的产物不创建，不触发违规判定，审计亦不因此判为缺项。
 
 ### 17.3 标准产物强制生成
 
@@ -124,6 +135,23 @@
 | 共享文件处理 | 公共配置文件（如 package.json、路由注册入口）由前端子变更负责，后端子变更不修改；如确需修改，由变更级 agent 统一处理 |
 | 前端 FP > 10 时 | 拆分为「骨架子变更」（脚手架/路由/布局/组件库/设计令牌）+ 串行「页面组子变更」，骨架先行建立共享基础设施 |
 
+### 17.8 阶段裁剪的治理口径
+
+阶段裁剪是变更档位为 `轻量` 时的合法流程，其合法性由**声明依据**而非产物存在性判定。治理口径如下：
+
+| 原则 | 说明 |
+|------|------|
+| 裁剪范围限定 | 仅 `轻量` 档的 `接口单元测试`、`E2E测试`、`集成测试` 三阶段可裁剪；`标准` 与 `完整` 档 SHALL NOT 裁剪 |
+| 合法性凭证 | 裁剪的合法前提是变更级 `.status.md` 的「阶段适用性声明」区中存在对应判定依据 |
+| 无依据一律阻塞 | 无阶段适用性声明依据的 `⏭️`，在阶段门控、轻量自检、归档门控、产物诊断中 SHALL 一律判为阻塞，不因标记来源或标记者而豁免。本规则仅约束声称由**变更档位裁剪**产生的 `⏭️`；由**项目类型**产生的 `⏭️`（如纯后端项目的 E2E测试阶段与 E2E测试列）依据项目类型判定、与档位无关，SHALL NOT 要求适用性声明依据，且优先判定 |
+| 声明与产物一致 | 声明 `⏭️ 不适用` 而产物存在时判为不一致并阻塞；声明 `✅ 适用` 而产物缺失时判为缺项并阻塞 |
+| 白名单豁免 | 被裁剪阶段不创建其产物目录，SHALL NOT 构成 §17.2 白名单违规，审计亦 SHALL NOT 因此判为缺项 |
+| 覆盖率分母排除 | `traceability.md` 中被裁剪的阶段整列填充 `⏭️` 并从覆盖率分母移除（`覆盖率 = 已填充格数 / (总格数 - 不适用格数)`）；该列 SHALL NOT 产生缺口追踪记录 |
+| 保守回退 | 判定依据不可读（产物不存在、格式不符、字段缺失）时该阶段判为 `✅ 适用`——裁剪是优化而非正确性要求，失败方向 MUST 偏向执行 |
+| 禁止降档 | 阶段适用性声明生成后，变更档位只允许升档；档位下调会使已生成的裁剪失去依据，故被禁止 |
+
+> 裁剪的判定条件、声明写入位置与四态判定矩阵分别参见 `03-status-and-tasks.md` §3.1.2 与 `04-gates-and-transitions.md` §5.4。
+
 ---
 
 ## 十八、Git 版本管理机制
@@ -168,4 +196,4 @@
 kflow-init 在向 CLAUDE.md 注入「变更流程强制规则」时，包含以下 git 规则：
 
 1. **首次 init 时，若目录非 git 仓库，询问是否执行 git init**
-2. **归档完成后，询问是否将当前变更及相关文件提交 git**（若确认，则在 commit 前执行版本自增和打包）
+2. **归档完成后，询问是否将当前变更及相关文件提交 git**（若确认，则在 commit 前按序执行六步：判定版本自增级别 → 更新仓库根 `VERSION` 文件 → 运行 `scripts/sync-version.sh` 把版本值同步到各 SKILL.md 的 `version` 字段 → 更新 `README.md` 版本行与版本更新说明条目 → 运行 `scripts/package-skills.sh` 打包 → 执行 git commit。zip 产物位于 `targets/`，受 `.gitignore` 排除，不纳入提交；任一步骤失败不阻塞归档本身）

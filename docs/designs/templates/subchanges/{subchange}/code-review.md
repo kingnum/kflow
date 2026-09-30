@@ -1,18 +1,23 @@
 ---
 stage: 代码审查
 skill: kflow-code-review
-version: 1.0.0
+version: 1.1.0
 created_at: 2026-05-05
 template_for: subchanges/{subchange}/test-reports/review/code-review.md
+template_description: 代码审查报告模板。审查形态按变更档位确定：轻量档为单 Agent 单轮（串行覆盖两视角全部检查项），标准档与完整档为两视角并行。审查 Agent 数、结果汇总表与门控结论按档位分支填写。
 ---
+
+> **变更档位**: {轻量|标准|完整}（读取自变更级 `.status.md`；字段缺失时按 `完整` 档处理）
 
 # 代码审查报告：{subchange-name}
 
 ## 基本信息
 - **审查时间**: {YYYY-MM-DD HH:MM}
 - **子变更**: {subchange-name}
+- **变更档位**: {轻量|标准|完整}
 - **审查文件数**: {数量}
-- **审查 Agent 数**: 2
+- **审查 Agent 数**: {轻量 1 / 标准 2 / 完整 2}
+- **执行轮次**: {N} / {目标轮次}（轻量 1 / 标准 3 / 完整 10）
 
 ## 审查结果汇总
 
@@ -20,6 +25,8 @@ template_for: subchanges/{subchange}/test-reports/review/code-review.md
 |--------|---------|---------|---------|------|
 | Agent 1 (安全+规范) | {n} | {m} | {k} | ✅/❌ |
 | Agent 2 (质量+性能) | {n} | {m} | {k} | ✅/❌ |
+
+> **轻量档填法**：单 Agent 单轮，本表合并为一行——`| 单 Agent (安全+规范 + 质量+性能) | {n} | {m} | {k} | ✅/❌ |`。轻量档 SHALL NOT 要求多份视角报告。
 
 ## 问题清单
 
@@ -32,8 +39,12 @@ template_for: subchanges/{subchange}/test-reports/review/code-review.md
 - [ ] Agent 2 通过（高严重度 = 0 且 中严重度 < 3）
 - [ ] 门控结论: ✅ 审查通过 / ❌ 审查阻塞
 
+> **轻量档结论填法**：`- [ ] 单 Agent 通过（高严重度 = 0 且 中严重度 < 3）`，不含 Agent 1 / Agent 2 两行。
+
 ## 闭环验证记录
 
 | 问题序号 | 严重度 | 验证方式 | 验证结果 | 验证时间 |
 |----------|--------|---------|---------|---------|
 | 1 | 高 | 原视角+安全视角交叉检查 | ✅ | {时间} |
+
+> **验证方式按档位分支**：轻量档为**单轮复检**（由单 Agent 复核全部已修复问题，SHALL NOT 执行高/中/低分级差异化重审）；标准档与完整档为分级重审（高严重度 → 原视角+安全视角交叉检查；中严重度 → 原视角重审；低严重度 → 随机 30% 抽查）。

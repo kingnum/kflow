@@ -1,3 +1,10 @@
+# adr-records Specification
+
+## Purpose
+
+定义 KFlow 架构决策记录（ADR）的创建与维护规则，通过三条件过滤控制记录范围，
+并规范 ADR 文件格式、每变更数量上限、项目级序号管理与索引文件维护，确保架构决策可追溯且不过度记录。
+
 ## Requirements
 
 ### Requirement: ADR 三条件过滤

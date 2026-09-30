@@ -16,7 +16,7 @@ kflow-verify D3 维度 SHALL 在现有 D3.1 输入源检查基础上，新增 D3
 - **THEN** 系统 SHALL 在子变更源码目录中 grep 检测以下模式：
   - `.tsx`、`.jsx`、`.vue`、`.svelte` 文件 → 🟡 警告「后端SC 含前端组件文件」
   - 大量硬编码颜色值（`#[0-9a-fA-F]{3,6}` 或 `rgb(` 模式出现 ≥ 5 次）→ 🔵 建议「后端SC 含疑似样式代码」
-  - `prototype/` 路径引用（import/require 语句）→ 🟡 警告「后端SC 引用了原型文件」
+  - `docs/designs/prototypes/` 路径引用（import/require 语句）→ 🟡 警告「后端SC 引用了原型文件」
 - **AND** 越界检测结果 SHALL 标记为 🟡 警告（不阻塞流程）
 
 #### Scenario: 前端子变更越界检测

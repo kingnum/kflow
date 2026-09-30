@@ -1,3 +1,9 @@
+# doc-split-strategy Specification
+
+## Purpose
+
+定义产品级与变更级设计文档的拆分策略，覆盖多文件拆分、按条目数量拆分与条件拆分判定，以及归档合并时全景文档的增量更新与 changelog 的按年归档。
+
 ## Requirements
 
 ### Requirement: 产品级文档多文件拆分

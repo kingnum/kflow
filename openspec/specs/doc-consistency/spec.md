@@ -1,7 +1,7 @@
 # doc-consistency Specification
 
 ## Purpose
-TBD - created by archiving change cleanup-design-docs. Update Purpose after archive.
+定义 KFlow 项目文档一致性约束：保证 CLAUDE.md 中标注的阶段数与设计文档、工作流链完整且与设计文档一致，设计文档版本号不低于对应运行时 SKILL.md 版本，并清理失效锚点引用、references/ 目录及历史临时工作区。
 ## Requirements
 ### Requirement: CLAUDE.md 阶段数与设计文档一致
 CLAUDE.md 中标注的前后端项目阶段数和纯后端项目阶段数 SHALL 与 `docs/designs/` 下的设计文档完全一致。当前正确值为：前后端 11 阶段，纯后端 9 阶段。

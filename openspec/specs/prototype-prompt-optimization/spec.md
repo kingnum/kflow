@@ -7,7 +7,7 @@
 
 ### Requirement: 原型提示词优化步骤
 
-系统 SHALL 在 INPUT 步骤和 DESIGN 步骤之间执行 OPTIMIZE 步骤，深度分析 functional-designs/ 产出优化后的设计 prompt，并通过 AskUserQuestion 展示给用户确认后方可进入 DESIGN。
+系统 SHALL 在 INPUT 步骤和 DESIGN 步骤之间执行 OPTIMIZE 步骤，深度分析 functional-designs/ 产出优化后的设计 prompt（写入变更级 `docs/changes/{change}/prototype-plan/design-prompt.md`），并通过 AskUserQuestion 展示给用户确认后方可进入 DESIGN。
 
 #### Scenario: 编排层 Agent 深度分析 functional-designs/
 - **WHEN** OPTIMIZE 步骤启动
@@ -39,7 +39,7 @@
 #### Scenario: 优化后的 prompt 注入硬约束
 - **WHEN** 编排层 Agent 组装优化后的 prompt
 - **THEN** prompt SHALL 包含以下硬约束：
-  - 输出到 `docs/changes/{change}/prototype/` 目录，允许多文件结构，`index.html` 为入口
+  - 直写产品级 `docs/designs/prototypes/` 目录，允许多文件结构，`index.html` 为入口
   - 使用 flow demo 模式（可交互业务流程，单台设备状态管理器驱动），禁止 overview 静态平铺
   - 所有资源必须自包含（禁 CDN 外部引用，内联或相对路径，系统字体栈）
 

@@ -4,13 +4,14 @@ skill: kflow-explore / kflow-prototype-design / kflow-design
 version: 1.0.0
 created_at: 2026-05-14
 template_for: self-reviews/{phase}/{YYYYMMDD}-{HHMMSS}.md
-template_description: 自审轮次报告模板，用于 explore/prototype/design 三阶段的自循环审查记录（首次 10 轮 / 非首次弹性轮次 + 评分底线）。每轮独立保存为时间戳命名的文件。
+template_description: 自审轮次报告模板，用于 explore/prototype/design 三阶段的自循环审查记录。**适用档位**：标准档（目标轮次 2）与完整档（目标轮次 10）；轻量档自审目标轮次为 0（跳过自审），不产生自审报告轮次文件，因此不会使用本模板。目标轮次由变更档位确定（标准 2 / 完整 10），评分底线（各维度评分均 > 8）仅完整档适用。每轮独立保存为时间戳命名的文件。
 ---
 
 # 自审报告：{phase} 阶段 — 第 {N} 轮
 
+> **适用档位**: 标准档（2 轮）、完整档（10 轮）。轻量档自审目标轮次为 0，跳过自审且**不产出自审报告轮次文件**（缺少自审报告轮次文件与 `self-reviews/{phase}/` 目录属合法状态，不计入缺项），故不使用本模板。
 > **阶段**: {explore|prototype|design}
-> **轮次**: {N}/{目标轮次}
+> **轮次**: {N}/{目标轮次}（目标轮次由变更档位确定：标准档 2 / 完整档 10；`.status.md` 缺失「变更档位」字段时按 `完整` 档处理，即 10 轮）
 > **审查开始时间**: {YYYY-MM-DD HH:MM:SS}
 > **上一轮报告**: {上一轮文件路径，第 1 轮填写 N/A}
 
@@ -26,6 +27,8 @@ template_description: 自审轮次报告模板，用于 explore/prototype/design
 | {维度4} | {0-10} | {0-10 或 N/A} | {+n/-n/—} |
 
 > 维度取决于阶段：explore（完整性/闭环性/必要性/清晰性）、prototype（覆盖性/一致性/可用性/完整性）、design（一致性/完备性/可行性/可测性）
+>
+> **评分底线按档位适用**：各维度评分均 > 8 的收敛底线**仅完整档**适用（完整档需迭代至满足该底线或达 10 轮）；标准档以完成 2 轮为收敛条件，不强制该评分底线。
 
 ---
 

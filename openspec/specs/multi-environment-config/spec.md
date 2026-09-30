@@ -1,3 +1,9 @@
+# multi-environment-config Specification
+
+## Purpose
+
+定义 service-guide.md 的多环境配置能力，覆盖 dev/test/staging/prod 四类环境的差异化配置、草稿阶段的收敛策略、敏感配置保护以及服务启动前的环境验证。
+
 ## Requirements
 
 ### Requirement: 多环境配置支持
@@ -15,6 +21,10 @@
 - **AND** 配置差异在 service-guide.md 中可见
 
 ### Requirement: 草稿阶段仅 dev 环境完整
+
+系统 SHALL 在 service-guide.md 草稿阶段仅完整填充 dev 环境配置，test/staging/prod 环境标注为待后续补充。
+
+#### Scenario: 草稿阶段环境配置填充
 
 - **WHEN** kflow-init 生成 service-guide.md 草稿
 - **THEN** dev 环境配置从 L1 扫描填充

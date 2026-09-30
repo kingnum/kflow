@@ -2,7 +2,7 @@
 
 ## Purpose
 
-定义功能设计文档的内容维度规范，包括前后端项目的完整章节结构和纯后端项目的简化模板章节结构。
+定义功能设计文档的内容维度规范：前后端项目的功能点完整章节结构（页面导航、可执行操作、表单项、业务规则、配置项关联等），以及纯后端项目的简化模板章节结构。
 
 ## Requirements
 
@@ -168,8 +168,6 @@ functional-designs/index.md SHALL 包含一个汇总所有功能点配置项关�
 - **AND** 矩阵 SHALL 包含字段：配置项名称、类型、默认值、受影响功能点ID列表、影响类型汇总
 - **AND** 矩阵内容 SHALL 与各分册中功能点定义的"关联配置项"章节保持一致
 
-## ADDED by design-change-record
-
 ### Requirement: 功能设计索引包含修订记录不重复
 
 functional-designs/index.md SHALL 仅包含一张修订记录表，不再包含独立的需求变更记录表。
@@ -186,8 +184,6 @@ functional-designs/index.md SHALL 仅包含一张修订记录表，不再包含�
 - **WHEN** functional-designs/index.md 被生成
 - **THEN** SHALL NOT 包含独立的"需求变更记录"节
 - **AND** 原需求变更记录的内容 SHALL 纳入统一修订记录表
-
-## ADDED by subchange-type-enforcement
 
 ### Requirement: 功能点清单包含类型列
 

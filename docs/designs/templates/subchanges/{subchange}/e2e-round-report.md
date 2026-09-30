@@ -52,4 +52,4 @@ template_for: subchanges/{subchange}/test-reports/e2e/round-{n}.md
 | 性能响应 | {score}/100 | 页面加载时间 |
 | 可访问性 | {score}/100 | ARIA 标签、键盘导航 |
 
-> 如 prototype/index.md 不存在（原型设计 ⏭️ 跳过），视觉一致性标记为 N/A。
+> 如产品级 `docs/designs/prototypes/manifest.md` 不存在（原型设计 ⏭️ 跳过），视觉一致性标记为 N/A。

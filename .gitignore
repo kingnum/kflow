@@ -18,8 +18,8 @@ dist/
 # Claude Code
 .claude/
 
-# References
-references/
+# References（仅忽略仓库根目录的参考资料目录；skill 自身的 references/ 属交付物，须纳入版本控制）
+/references/
 
 # OS
 .DS_Store

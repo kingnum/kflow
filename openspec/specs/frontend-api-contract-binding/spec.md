@@ -3,7 +3,7 @@
 ## Purpose
 定义前端子变更如何通过 detailed-design.md「子变更划分」章节中的「依赖API契约」声明获取接口信息，以及该信息如何传递到 plan 和 code 阶段。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: 前端子变更依赖 API 契约声明
 系统 SHALL 在 detailed-design.md「子变更划分」章节中，为每个前端子变更显式声明「依赖API契约」列表。

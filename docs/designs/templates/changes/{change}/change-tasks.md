@@ -36,7 +36,7 @@ template_description: 变更总任务清单模板，记录变更任务信息、�
 - [ ] 确认是否需要原型设计
 - [ ] 检测 huashu-design Skill 可用性
 - [ ] 使用 huashu-design 创建 HTML 原型
-- [ ] 输出 prototype/index.md（原型产物清单）
+- [ ] 直写产品级 docs/designs/prototypes/ 并登记 prototype-changes.md（原型改动清单）
 
 ### 详细设计阶段
 - [ ] 编写 detailed-design.md 统一详细设计文档（变更级）

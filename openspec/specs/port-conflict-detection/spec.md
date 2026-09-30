@@ -1,5 +1,9 @@
 # port-conflict-detection Specification
 
+## Purpose
+
+定义变更级 agent 启动服务前的端口冲突检测能力，要求端口配置统一来自 service-guide.md，并针对端口空闲、被非预期进程占用、被残留服务进程占用等情形给出对应的检测与处理规则。
+
 ## Requirements
 
 ### Requirement: 服务启动前端口冲突检测
@@ -29,8 +33,9 @@
 #### Scenario: 端口检测方式
 
 - **WHEN** 执行端口冲突检测
-- **THEN** 变更级 agent SHALL 使用 `kflow-shared/scripts/with_server.py` 的端口检测功能或系统命令（如 `netstat`、`lsof`、`ss`）
+- **THEN** 变更级 agent SHALL 使用 `skills/kflow-code/scripts/with_server.py` 的端口检测功能或系统命令（如 `netstat`、`lsof`、`ss`）
 - **AND** 检测结果 SHALL 包含：端口号、占用状态、占用进程 PID（如被占用）
+- **AND** SHALL NOT 引用 `kflow-shared/` 下的任何脚本路径
 
 ### Requirement: 端口配置来源强制使用 service-guide.md
 

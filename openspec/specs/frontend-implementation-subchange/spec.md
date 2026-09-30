@@ -49,8 +49,8 @@
 - **WHEN** kflow-plan 为前端子变更生成 tasks.md
 - **THEN** 每个前端 FP 的任务结构 SHALL 包含：输入源（原型页面/设计约束/API 契约）、实现步骤（组件骨架 → 设计令牌注入 → 交互状态 → API 对接 → 原型一致性验证）
 - **AND** SHALL NOT 使用后端 TDD 的 Red → Green → Refactor 步骤结构
-- **AND** 输入源中的「设计约束」SHALL 引用 prototype/design-tokens.css 和 prototype/element-coverage-tree.md
-- **AND** SHALL NOT 引用 prototype/design-prompt.md 或 design-system/MASTER.md
+- **AND** 输入源中的「设计约束」SHALL 引用 `docs/designs/prototypes/design-tokens.css`（`docs/designs/prototypes/manifest.md` 中角色为 tokens 的文件）和变更级 `element-coverage-tree.md`
+- **AND** SHALL NOT 引用 prototype-plan/design-prompt.md 或 design-system/MASTER.md
 
 #### Scenario: 后端 FP 继续使用 TDD 模板
 
@@ -65,16 +65,16 @@
 #### Scenario: 前端工程骨架搭建
 
 - **WHEN** 前端子变更进入编码阶段
-- **THEN** 第一步 SHALL 搭建工程骨架，包含：脚手架初始化、路由框架（对齐 element-coverage-tree.md 📄 节点）、全局布局组件（Header/Sidebar/Footer）、公共组件库（基于 prototype/index.html 中的复用组件模式提取）、状态管理框架、设计令牌注入（design-tokens.css → CSS 变量/theme）
+- **THEN** 第一步 SHALL 搭建工程骨架，包含：脚手架初始化、路由框架（对齐 element-coverage-tree.md 📄 节点）、全局布局组件（Header/Sidebar/Footer）、公共组件库（基于 `docs/designs/prototypes/manifest.md` 中角色为 entry/page 的文件与 `docs/designs/prototypes/components/` 中的复用组件模式提取）、状态管理框架、设计令牌注入（`docs/designs/prototypes/design-tokens.css` → CSS 变量/theme）
 - **AND** 工程骨架 SHALL 在所有页面实现之前完成
-- **AND** 公共组件库 SHALL 以 prototype/index.html 中的实际复用模式为准，非以 design-system/MASTER.md 为准
+- **AND** 公共组件库 SHALL 以 `docs/designs/prototypes/manifest.md` 声明文件与 `docs/designs/prototypes/components/` 中的实际复用模式为准，非以 design-system/MASTER.md 为准
 
 #### Scenario: 逐页原型转译
 
 - **WHEN** 工程骨架搭建完成
-- **THEN** 系统 SHALL 逐页面读取 prototype/*.html → 转译为前端框架组件代码
+- **THEN** 系统 SHALL 逐页面读取 `docs/designs/prototypes/screens/*.html`（页面文件由 `docs/designs/prototypes/manifest.md` 页面清单声明）→ 转译为前端框架组件代码
 - **AND** 每页面实现 SHALL 覆盖 element-coverage-tree.md 中该页面的所有 🔘 元素和 🎯 状态
-- **AND** 样式 SHALL 使用 design-tokens.css 中定义的 CSS 变量，禁止硬编码颜色值/间距/圆角
+- **AND** 样式 SHALL 使用 `docs/designs/prototypes/design-tokens.css` 中定义的 CSS 变量，禁止硬编码颜色值/间距/圆角
 
 #### Scenario: 交互状态覆盖
 
@@ -105,8 +105,6 @@
 - **AND** 各页面组子变更 SHALL 在骨架已建立的路由框架和组件库基础上增量添加页面
 - **AND** 页面组子变更之间不存在共享文件冲突（各自操作独立的页面组件文件）
 
-## ADDED by phase-artifact-verification-and-input-alignment
-
 ### Requirement: 前端子变更 API 契约依赖声明
 
 系统 SHALL 在 detailed-design.md「子变更划分」章节中为前端子变更显式声明「依赖API契约」列表。
@@ -123,17 +121,15 @@
 
 #### Scenario: 核心产物白名单
 - **WHEN** 前端子变更进入编码阶段
-- **THEN** 可引用的原型产物 SHALL 限定为：prototype/index.html、prototype/design-tokens.css、prototype/element-coverage-tree.md
-- **AND** SHALL NOT 读取 prototype/design-prompt.md
+- **THEN** 可引用的原型产物 SHALL 限定为：`docs/designs/prototypes/manifest.md` 中角色为 entry/page/tokens/shared 的文件、变更级 `prototype-changes.md` 声明的本变更改动、变更级 `element-coverage-tree.md`
+- **AND** SHALL NOT 读取 prototype-plan/design-prompt.md
 - **AND** SHALL NOT 读取 design-system/ 目录下任何文件（含 MASTER.md）
 
 #### Scenario: 公共组件库从原型提取
 - **WHEN** 前端编码需要建立公共组件库
-- **THEN** 系统 SHALL 从 prototype/index.html 中分析复用组件模式提取组件清单
+- **THEN** 系统 SHALL 从 `docs/designs/prototypes/manifest.md` 中角色为 entry/page 的文件与 `docs/designs/prototypes/components/` 中分析复用组件模式提取组件清单
 - **AND** SHALL NOT 依赖 design-system/MASTER.md 作为组件库建立依据
-- **AND** 组件样式 SHALL 从 design-tokens.css 中获得 CSS 变量值
-
-## ADDED by subchange-type-enforcement
+- **AND** 组件样式 SHALL 从 `docs/designs/prototypes/design-tokens.css` 中获得 CSS 变量值
 
 ### Requirement: 前端子变更编码前 FP 类型校验
 

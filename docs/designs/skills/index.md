@@ -12,7 +12,7 @@
 |-----------|------|---------|--------|---------|---------|
 | `kflow-guide` | 流程指引 | — | 按需 | 意图识别、活跃变更检测、跨变更冲突检测 | [kflow-guide.md](kflow-guide.md) |
 | `kflow-explore` | 设计探索 | 变更级 | 必须 | 需求澄清、功能点拆分、项目类型检测（不再划分子变更） | [kflow-explore.md](kflow-explore.md) |
-| `kflow-prototype-design` | 原型设计 | 变更级 | 可选 | HTML 原型设计（委托 huashu-design）、用户评审确认 | [kflow-prototype-design.md](kflow-prototype-design.md) |
+| `kflow-prototype-design` | 原型设计 | 变更级 | 可选 | HTML 原型设计（默认复用已锁定工具链，产物直写产品级 `docs/designs/prototypes/`）、BUILD 四项静态门控、审查方式二选一（人工审查 / 子代理自动审查验证）、用户评审确认 | [kflow-prototype-design.md](kflow-prototype-design.md) |
 | `kflow-design` | 详细设计 | **变更级** | 必须 | 统一详细设计（含NFR）、四视角审查、子变更划分、测试用例文档、用户评审确认 | [kflow-design.md](kflow-design.md) |
 | `kflow-plan` | 计划 | 子变更级 | 必须 | Checkbox 任务清单、DoD验收标准、功能点级全展开 | [kflow-plan.md](kflow-plan.md) |
 | `kflow-code` | 编码 | 子变更级 | 必须 | TDD 流程、数据库迁移、跨变更冲突检测、多 Agent 并行编码 | [kflow-code.md](kflow-code.md) |
@@ -76,7 +76,10 @@
 kflow-explore (变更级) ──────────────────────────────────────────────────
     │
     ├─▶ kflow-prototype-design (变更级，可选)
-    │       │
+    │       ├── 直写产品级原型 → docs/designs/prototypes/
+    │       ├── 变更级工作记录 → prototype-changes.md, prototype-backup/, prototype-plan/, element-coverage-tree.md
+    │       └── BUILD 门控 → 审查方式选择 → (可选)VERIFY + SELFREV → REVIEW
+    │
     └───────┴─▶ kflow-design (变更级，统一设计所有功能点)
                     │
                     ├── 输出: detailed-design.md, api-tests/, e2e-tests/, review-reports/*
@@ -165,7 +168,7 @@ kflow-explore (变更级) ──────────────────
 - **代码审查门控**：两视角并行审查通过条件
 - **审查闭环验证**：分级重审规则
 - **functional-designs/ 修订规则**：修订时机/范围/影响
-- **设计合并规则**：归档时功能设计+详细设计合并到产品级文档
+- **设计合并规则**：归档时功能设计+详细设计合并到产品级文档；原型已在原型设计阶段直写产品级，归档仅登记改动到 `docs/designs/prototypes/manifest.md`（不做文件级原型合并）
 
 各 Skill 文件内联具体的门控检查项，便于独立阅读。
 
@@ -180,7 +183,7 @@ kflow-explore (变更级) ──────────────────
 5. **执行子变更**：按依赖顺序，依次执行 `kflow-plan` → `kflow-code` → `kflow-code-review` → 接口单元测试 → E2E测试
 6. **用户反馈问题**：使用 `kflow-bug-triage` 进行四层溯源诊断和问题登记，triage 会路由到正确的修复流程
 7. **测试失败**：使用 `kflow-bug-fix` 进行根因分类和修复（二分法：实现错误/测试错误）
-7. **前端变更**：在 `kflow-explore` 完成后，使用 `kflow-prototype-design` 进行原型设计（前后端项目）
+7. **前端变更**：在 `kflow-explore` 完成后，使用 `kflow-prototype-design` 进行原型设计（前后端项目）；工具链默认复用 `docs/toolchain.md` 已锁定方案，产物直写产品级 `docs/designs/prototypes/`，BUILD 门控通过后由用户选择人工审查或子代理自动审查验证
 8. **所有子变更完成后**：执行变更级集成测试（前后端和纯后端项目均需执行）
 9. **归档变更**：集成测试通过后，使用 `kflow-archive` 归档已完成的变更
 10. **流程指引错误反馈**：记录到 docs/skill-suggestion.md

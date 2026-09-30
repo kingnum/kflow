@@ -4,7 +4,7 @@
 
 定义测试阶段首次运行服务时的 service-guide.md 就绪检测机制，包括存在性检测、内容完整性验证、外部服务依赖连接信息收集与持久化。确保测试阶段 PRE_HOOK 中 READ_SERVICE_GUIDE 步骤在服务启动前完成配置就绪验证，缺失信息通过 AskUserQuestion 收集并持久化，后续会话自动跳过。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: service-guide.md 就绪状态检测
 

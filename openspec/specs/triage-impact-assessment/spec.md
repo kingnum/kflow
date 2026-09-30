@@ -1,4 +1,10 @@
-## ADDED Requirements
+# triage-impact-assessment Specification
+
+## Purpose
+
+定义诊断阶段的影响面评估规则，包括评估证据来源、路由输出中的执行模式声明以及影响评分到重复制轮次的映射关系。
+
+## Requirements
 
 ### Requirement: Triage impact assessment on diagnosis
 
@@ -52,12 +58,19 @@ kflow-bug-triage SHALL include an execution mode declaration when routing to exe
 
 ### Requirement: Impact score to round mapping
 
-The system SHALL provide a mapping from impact scope score to recommended repetition rounds for downstream phases.
+The system SHALL provide a mapping from impact scope score to recommended repetition rounds for downstream phases. This mapping SHALL be defined once in the tier-driven-repetition capability, and kflow-bug-triage SHALL reference it rather than defining its own numeric ranges.
 
 #### Scenario: Round recommendation table
 
 - **WHEN** impact scope score is calculated
-- **THEN** the triage report SHALL include round recommendations:
-  - Score 1-5: recommended 1-3 rounds, with affected items 100% verification + full sweep 1 round
-  - Score 6-15: recommended 3-5 rounds, with affected items 100% verification + full sweep 1 round
-  - Score >15: recommended full 10 rounds (standard repetition)
+- **THEN** the triage report SHALL include round recommendations taken from the tier-driven-repetition mapping:
+  - Score <= 3: 1 round
+  - Score 4-15: 3 rounds
+  - Score > 15: 10 rounds
+- **AND** the recommendation SHALL be presented as the impact mapping component of `max(tier baseline, impact mapping)`, not as an absolute round count
+
+#### Scenario: No locally defined round ranges
+
+- **WHEN** kflow-bug-triage and its `references/` files describe round recommendations
+- **THEN** they SHALL reference the tier-driven-repetition mapping
+- **AND** SHALL NOT define their own score ranges or round counts

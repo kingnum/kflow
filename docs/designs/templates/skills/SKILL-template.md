@@ -9,7 +9,7 @@ created_at: 2026-05-28
 
 > **版本**: 1.0.0
 > **阶段**: {阶段名称}
-> **阶段钩子引用**: `各 skill 的 references/hooks.md`（{需要服务/不需要服务}，RELOAD: {RELOAD 清单}）
+> **阶段钩子引用**: `各 skill 的 references/hooks.md`（{需要服务/不需要服务}，RELOAD：{RELOAD 清单}）
 
 ---
 
@@ -17,7 +17,7 @@ created_at: 2026-05-28
 
 ```yaml
 name: {skill-name}
-description: {阶段中文名} - {简要描述}。阶段钩子引用 `各 skill 的 references/hooks.md`（{需要服务/不需要服务}，RELOAD: {RELOAD 清单}）。
+description: {阶段中文名} - {简要描述}。阶段钩子引用 `各 skill 的 references/hooks.md`（{需要服务/不需要服务}，RELOAD：{RELOAD 清单}）。
 license: MIT
 triggers:
   - {中文触发词1}

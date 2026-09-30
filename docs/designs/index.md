@@ -47,6 +47,18 @@
 - 前后端项目（11 阶段）：设计探索 → 原型设计(可选) → 详细设计 → 计划 → 编码 → 代码审查 → 接口单元测试 → E2E测试 → 集成测试 → 审计(门控) → 归档
 - 纯后端项目（9 阶段）：设计探索 → 详细设计 → 计划 → 编码 → 代码审查 → 接口单元测试 → 集成测试 → 审计(门控) → 归档
 
+**变更档位区分（阶段集合折叠）**：
+
+阶段集合由 `变更档位` 叠加决定。`轻量` 档在项目类型的阶段集合之上，将 `接口单元测试`、`E2E测试`、`集成测试` 三个阶段折叠为**条件适用**，由 design 阶段产出的阶段适用性声明判定：
+
+| 变更档位 | 接口单元测试 | E2E测试 | 集成测试 | 审计形态 |
+|---------|-------------|---------|---------|---------|
+| 轻量 | 条件适用（⏭️ 可裁剪） | 条件适用（⏭️ 可裁剪） | 条件适用（⏭️ 可裁剪） | 主 Agent 轻量自检 |
+| 标准 | 必须 | 前后端必须 | 必须 | 七维度加权评分 |
+| 完整 | 必须 | 前后端必须 | 必须 | 七维度加权评分 |
+
+> 轻量档以单一子变更为前提（跳过 DIVIDE 划分）；功能点类型混合时不成立，系统升档为 `标准`。裁剪仅适用于轻量档，标准档与完整档的阶段集合维持既有规则不变。
+
 **v1.4.0 核心机制**：
 - **阶段回退**：`⚠️ 需修订` 状态 + 三级联动回退（当前子变更 / 接口契约变更 / 架构级变更）
 - **代码审查**：编码阶段新增两视角并行代码审查（安全+规范、质量+性能）
@@ -64,24 +76,44 @@
 | `kflow-guide` | 流程指引 | — | 按需 | 意图识别、活跃变更检测、跨变更冲突检测 |
 | `kflow-explore` | 设计探索 | 变更级 | 必须 | 需求澄清、功能点拆分+类型标记（后端/前端）、项目类型检测（不再划分子变更） |
 | `kflow-prototype-design` | 原型设计 | 变更级 | 可选 | HTML 原型设计（动态工具链选择+STYLE/GENERATE 拆分+增强验证）、用户评审确认 |
-| `kflow-design` | 详细设计 | **变更级** | 必须 | 统一详细设计（含NFR）、四视角审查、子变更划分、测试用例文档、用户评审确认 |
+| `kflow-design` | 详细设计 | **变更级** | 必须 | 统一详细设计（含NFR）、按变更档位分级审查（轻量单 Agent / 标准两视角 / 完整四视角）、子变更划分、测试用例文档、用户评审确认 |
 | `kflow-plan` | 计划 | 子变更级 | 必须 | Checkbox 任务清单、DoD验收标准、功能点级全展开 |
 | `kflow-code` | 编码 | 子变更级 | 必须 | TDD 流程、数据库迁移、跨变更冲突检测、多 Agent 并行编码 |
 | `kflow-code-review` | 代码审查 | 子变更级 | 必须 | 两视角并行审查（安全+规范/质量+性能）、闭环验证 |
-| `kflow-api-test` | 接口单元测试 | 子变更级 | 必须 | curl/HTTP 接口测试、健康评分、所有项目类型必须执行 |
-| `kflow-e2e-test` | E2E测试 | 子变更级 | 前后端必须 | 浏览器自动化测试、仅前后端项目、依赖前置 kflow-api-test |
+| `kflow-api-test` | 接口单元测试 | 子变更级 | 必须（轻量档条件适用） | curl/HTTP 接口测试、健康评分、所有项目类型必须执行 |
+| `kflow-e2e-test` | E2E测试 | 子变更级 | 前后端必须（轻量档条件适用） | 浏览器自动化测试、仅前后端项目、依赖前置 kflow-api-test |
 | `kflow-bug-fix` | 缺陷修复 | 按需 | 按需 | 子变更级二分法根因分类路由、实现/测试错误修复 |
 | `kflow-bug-triage` | 问题分诊 | — | 按需 | 四层溯源诊断、问题登记（bugs/）、路由决策（REVISION或bug-fix） |
-| `kflow-integration-test` | 集成测试 | 变更级 | 必须 | 集成测试执行、内聚四分法修复循环、架构评估自动触发 |
+| `kflow-integration-test` | 集成测试 | 变更级 | 必须（轻量档条件适用） | 集成测试执行、内聚四分法修复循环、架构评估自动触发 |
 | `kflow-status` | 状态总结 | — | 按需 | 未归档变更汇总、子变更进度矩阵 |
 | `kflow-archive` | 归档 | 变更级 | 必须 | 变更归档、集成测试门控、索引更新、设计合并 |
-| `kflow-audit` | 使用评估 | — | 归档门控+按需 | 七维度评估、审计报告、审计回退路由 |
+| `kflow-audit` | 使用评估 | — | 归档门控+按需 | 按变更档位分流：轻量档主 Agent 轻量自检（三项检查项）/ 标准与完整档七维度评估、审计报告、审计回退路由 |
 | `kflow-init` | 环境初始化 | — | 按需 | 环境能力发现、工具推荐矩阵、toolchain.md 输出 |
 | `kflow-resume` | 中断恢复 | — | 按需 | 变更名定位断点、优先级链读取状态、调度阶段 Skill |
 
 ---
 
 ## 文档结构索引
+
+### 产品级设计产物（docs/designs/）
+
+```
+docs/designs/
+├── index.md                      # 产品级设计索引入口
+├── functional-designs/           # 产品级功能设计（由归档阶段合并写入）
+├── detailed-designs/             # 产品级详细设计（6 文件体系，由归档阶段合并写入）
+├── prototypes/                   # 产品级原型（唯一来源，由原型设计阶段直写）
+│   ├── index.html                #   全产品导航入口
+│   ├── manifest.md               #   全产品原型清单（下游阶段读取入口）
+│   ├── design-tokens.css         #   设计令牌
+│   ├── design-system/MASTER.md   #   设计系统主文档
+│   ├── screens/                  #   各屏幕页面 HTML
+│   ├── components/               #   共享组件
+│   └── assets/                   #   静态资源
+└── changelog.md                  # 变更日志
+```
+
+> **写权限归属**：`functional-designs/` 与 `detailed-designs/` 由归档阶段写入；`docs/designs/prototypes/` 由原型设计阶段直写（变更生命周期内即生效），归档时仅登记改动到 `manifest.md`。
 
 ### 设计背景与路线图
 - [overview.md](overview.md) - 设计概述、参考资源、实施计划
@@ -93,7 +125,7 @@
 - [skills/index.md](skills/index.md) - Skills 导航与触发时机
 - [skills/kflow-guide.md](skills/kflow-guide.md) - 流程指引阶段
 - [skills/kflow-explore.md](skills/kflow-explore.md) - 设计探索阶段（变更级，不再划分子变更）
-- [skills/kflow-prototype-design.md](skills/kflow-prototype-design.md) - 原型设计阶段（HTML 原型，动态工具链选择+STYLE/GENERATE 拆分）
+- [skills/kflow-prototype-design.md](skills/kflow-prototype-design.md) - 原型设计阶段（HTML 原型，工具链默认复用+BUILD 门控+审查方式二选一，产物直写 `docs/designs/prototypes/`）
 - [skills/kflow-design.md](skills/kflow-design.md) - 详细设计阶段（**变更级**，含 NFR、子变更划分）
 - [skills/kflow-plan.md](skills/kflow-plan.md) - 计划阶段（子变更级，含 DoD 验收标准）
 - [skills/kflow-code.md](skills/kflow-code.md) - 编码阶段（子变更级，TDD 流程、数据库迁移、跨变更冲突检测、多 Agent 并行）
@@ -104,13 +136,13 @@
 - [skills/kflow-bug-triage.md](skills/kflow-bug-triage.md) - 问题分诊（独立诊断 Skill，四层溯源+问题登记+路由决策）
 - [skills/kflow-integration-test.md](skills/kflow-integration-test.md) - 集成测试阶段（变更级，内聚四分法修复循环 + 架构评估自动触发）
 - [skills/kflow-status.md](skills/kflow-status.md) - 状态总结（含子变更进度矩阵）
-- [skills/kflow-archive.md](skills/kflow-archive.md) - 归档阶段（含集成测试门控、设计合并）
+- [skills/kflow-archive.md](skills/kflow-archive.md) - 归档阶段（含集成测试门控、功能/详细设计合并、原型改动登记）
 - [skills/kflow-audit.md](skills/kflow-audit.md) - 使用评估（含七维度审计、归档门控集成）
 - [skills/kflow-init.md](skills/kflow-init.md) - 环境初始化（含工具推荐矩阵、toolchain.md 输出）
 - [skills/kflow-resume.md](skills/kflow-resume.md) - 中断恢复（变更名定位断点、优先级链读取、直接调度阶段 Skill）
 
 ### 产物模板
-- [templates/index.md](templates/index.md) - 模板目录索引（48 个模板，含 1 个已废弃，五层级分类）
+- [templates/index.md](templates/index.md) - 模板目录索引（54 个模板，含 1 个已废弃，五层级分类）
 
 ### 附录示例
 - [examples/index.md](examples/index.md) - 示例导航
@@ -143,8 +175,8 @@
 | 项目类型区分 | 自动检测 | 设计探索阶段检测项目类型，区分前后端项目和纯后端项目 |
 | 前后端项目流程 | 11 阶段 | 设计探索 → 原型设计(可选) → 详细设计 → 计划 → 编码 → 代码审查 → 接口单元测试 → E2E测试 → 集成测试 → 审计(门控) → 归档 |
 | 纯后端项目流程 | 9 阶段 | 设计探索 → 详细设计 → 计划 → 编码 → 代码审查 → 接口单元测试 → 集成测试 → 审计(门控) → 归档 |
-| 原型设计 | 可选推荐 | 前端变更推荐 HTML 原型设计，委托 huashu-design，但不强制 |
-| 多视角审查 | Agent 并行审查（变更级） | 四视角在变更级一次审查，非每子变更 |
+| 原型设计 | 可选推荐 | 前端变更推荐 HTML 原型设计，委托工具链锁定 Skill，但不强制；产物直写产品级 `docs/designs/prototypes/`，BUILD 静态门控必做，重验证由用户选择 |
+| 多视角审查 | Agent 并行审查（变更级） | 按变更档位分级：完整档四视角并行、标准档两视角并行、轻量档单 Agent 综合；均在变更级一次审查，非每子变更 |
 | 代码审查 | 独立 Skill，两视角并行审查 | `kflow-code-review`：安全+规范、质量+性能，含闭环验证 |
 | 变更级服务刷新 | 编码→测试门控同步点 | 所有子变更编码+审查完成后统一编译-迁移-重启-健康检查 |
 | checkpoint 两级化 | 变更级 + 子变更级分开存储 | 恢复时优先读子变更级，含过期清理规则 |
@@ -172,8 +204,10 @@
 | 设计合并 | 归档时合并到产品级 | 功能设计合并到 docs/designs/functional-designs/（前后端：{menu}/index.md + part-NN.md；纯后端：{domain}.md）+ 详细设计分散更新到 detailed-designs/ 6 文件（含 config-items.md、error-handling.md），标注来源变更 |
 | 文件命名 | 双层目录体系 | functional-designs/（功能设计目录）+ detailed-design.md（详细设计） |
 | 文档拆分 | 产品级多文件 + 变更级目录化拆分 | 产品级从一开始多文件拆分，变更级功能点>30拆分为多文件（index.md + part-NN.md），4 组文档目录化 |
-| 设计自审分级 | explore/prototype/design 三阶段按首次/非首次分级执行 | 首次创建固定 10 轮自循环审查；非首次创建弹性轮次（影响范围分数决定目标轮次）+ 评分底线（各维度 > 8），每轮独立记录时间戳文件，覆盖阶段专属维度 |
-| 执行类阶段重复制 | plan/code/code-review/api-test/e2e-test/integration-test/bug-fix 七阶段统一 | 子代理每轮遍历全部工作项独立执行完整流程，禁止按轮次分段分配工作重点，复杂度评估仅信息展示 |
+| 变更档位判定 | 两段式：explore 初判 + design 复核 | 变更级 `.status.md` 必填字段 `{轻量\|标准\|完整}`；explore 的 SPLIT 后按「变更类型 + 功能点数」初判，design 的 DIVIDE 后按完整公式复核（仅升档）；用户可在 explore 确认环节覆盖；缺省按 `完整` 档 |
+| 设计自审分级 | explore/prototype/design/plan 四阶段按变更档位决定轮次 | 轻量 0 轮（跳过自审，改以产物完整性门控）/ 标准 2 轮 / 完整 10 轮（评分底线各维度 > 8 仅完整档适用）；每轮独立记录时间戳文件，覆盖阶段专属维度；prototype 选择「人工审查」时完全跳过自审 |
+| 轻量档阶段裁剪 | 阶段适用性声明 + 产物存在性双重校验 | 仅 `轻量` 档：design 的 DIVIDE 之后按 `detailed-design.md` 与 `functional-designs/index.md` 的客观信号逐阶段判定 `接口单元测试`、`E2E测试`、`集成测试` 的适用性，写入变更级 `.status.md`；被裁剪阶段整列 `⏭️` 且不计入覆盖率分母；下游门控按「声明 × 产物」四态判定；无声明依据的 `⏭️` 一律阻塞 |
+| 执行类阶段重复制 | plan/code/code-review/api-test/e2e-test/integration-test/bug-fix 七阶段统一 | 目标轮次由变更档位基线决定（轻量 1 / 标准 3 / 完整 10），回退重执行取 `max(档位基线, 影响范围分数映射)`；子代理每轮遍历全部工作项独立执行完整流程，禁止按轮次分段分配工作重点，复杂度评估仅信息展示 |
 | 阶段边界强制 | 文档白名单 + 标准产物强制 + 越界禁止 | 每阶段仅允许创建输出产物表列出的文件，信息不足记录到 skill-suggestion.md，禁止越界输出 |
 | 功能设计升维 | functional-designs/ 扩展为用户体验规格说明书 | 新增页面菜单、可执行操作、表单项定义、业务规则、业务流程闭环，为 prototype 提供精确输入 |
 | 审查目录分离 | self-reviews/ + cross-reviews/ | 自审与交叉审查分目录存储，语义明确，时间戳命名自然排序 |

@@ -75,7 +75,7 @@
 | 阶段 | 产物文件 | 状态 |
 |------|----------|------|
 | 设计探索 | functional-designs/ | ✅ 已创建 |
-| 原型设计 | prototype/index.html | ✅ 已创建 |
+| 原型设计 | docs/designs/prototypes/manifest.md + prototype-changes.md | ✅ 已创建 |
 | 详细设计 | detailed-design.md | ⚠️ 待修订 |
 | 详细设计 | api-tests/ | ⚠️ 待修订 |
 | 详细设计 | e2e-tests/ | ✅ 已创建 |

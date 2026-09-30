@@ -1,3 +1,9 @@
+# diagnose-feedback-loop Specification
+
+## Purpose
+
+定义缺陷诊断阶段以可证伪假设为核心的诊断流程，通过构建快速确定的缺陷反馈循环、提升非确定性缺陷复现率、生成并排序验证多个假设，以及选择正确的回归测试 seam，确保根因定位可信。
+
 ## Requirements
 
 ### Requirement: Feedback Loop 构建

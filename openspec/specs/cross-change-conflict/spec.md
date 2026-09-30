@@ -1,3 +1,9 @@
+# cross-change-conflict Specification
+
+## Purpose
+
+定义跨变更冲突检测能力，在启动新变更与进入编码阶段前检查与其他活跃变更的文件冲突，并通过变更索引的影响文件字段为冲突判定提供追踪依据。
+
 ## Requirements
 
 ### Requirement: 跨变更冲突检测

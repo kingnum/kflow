@@ -1,6 +1,6 @@
 ---
 name: kflow-resume
-version: 0.17.0
+version: 0.18.0
 description: Use when user needs to resume interrupted work/继续、恢复、resume {change-name}, or when kflow-guide routes to RESUME mode.
 license: MIT
 triggers:
@@ -199,7 +199,7 @@ Priority 5: tasks.md（兜底）
    │       └── 要求: 导航验证 = 5 / 5, Playwright 验证 = 5 / 5
    ├── 3b. 产物文件存在性:
    │   ├── 设计探索: functional-designs/index.md + part-NN.md + CONTEXT.md
-   │   ├── 原型设计: prototype/index.md + design-prompt.md
+   │   ├── 原型设计: docs/designs/prototypes/manifest.md + prototype-changes.md
    │   ├── 详细设计: detailed-design.md + 子变更划分结果
    │   ├── 计划: tasks.md（功能点级全展开）
    │   ├── 编码: 代码变更文件 + migration-log.md（如涉及迁移）
@@ -255,7 +255,7 @@ Priority 5: tasks.md（兜底）
 | 当前阶段 | 设计依据指向 |
 |---------|-------------|
 | 设计探索 | `functional-designs/index.md` |
-| 原型设计 | `functional-designs/index.md` + `prototype/index.md` |
+| 原型设计 | `functional-designs/index.md` + `docs/designs/prototypes/manifest.md` |
 | 详细设计 | `functional-designs/index.md` |
 | 计划 | `detailed-design.md` 子变更划分章节 |
 | 编码 | `detailed-design.md` 对应功能点的技术设计章节 |

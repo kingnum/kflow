@@ -1,10 +1,22 @@
 # phase-file-reload Specification
 
+## Purpose
+
+定义各阶段 PRE_HOOK 中 RELOAD 步骤的强制重读机制——阶段执行前重新读取基础信息文件清单，确保流程基于最新文件内容而非对话上下文缓存，且 RELOAD 清单由各阶段 skill 自身的 `references/hooks.md` 定义。
+
 ## Requirements
 
 ### Requirement: 阶段执行前强制重读基础信息文件
 
-每个阶段 Skill 在 PRE_HOOK 的 RELOAD 步骤中 SHALL 重新读取该阶段钩子配置表中定义的基础信息文件，不得使用对话上下文缓存中的旧版本。RELOAD 的目标是确保阶段执行基于最新的文件内容。
+每个阶段 Skill 在 PRE_HOOK 的 RELOAD 步骤中 SHALL 重新读取该阶段钩子配置表中定义的基础信息文件，不得使用对话上下文缓存中的旧版本。RELOAD 清单 SHALL 包含以下新增文件：
+
+- prototype-design 阶段：新增 RELOAD `docs/designs/prototypes/manifest.md`（条件）、RELOAD `prototype-changes.md`（条件）
+- design 阶段：新增 RELOAD `docs/designs/prototypes/manifest.md`（如存在）、RELOAD `prototype-changes.md`（如存在）、RELOAD `functional-designs/index.md`
+- plan 阶段：新增 RELOAD `functional-designs/index.md`、RELOAD `functional-designs/part-NN.md`、RELOAD `docs/designs/prototypes/manifest.md`（条件，前端SC）、RELOAD `prototype-changes.md`（条件，前端SC）、RELOAD `api-tests/index.md`
+- code 阶段：新增 RELOAD `CONTEXT.md`、RELOAD `docs/designs/prototypes/manifest.md`（条件，前端SC）、RELOAD `prototype-changes.md`（条件，前端SC）
+- code-review 阶段：新增 RELOAD `docs/designs/prototypes/manifest.md`（条件，前端SC）、RELOAD `prototype-changes.md`（条件，前端SC）
+- api-test、e2e-test、integration-test 阶段：新增 RELOAD `functional-designs/index.md`、RELOAD 目标设计目录 index.md 以获取最新修订记录
+- e2e-test 阶段：新增 RELOAD `docs/designs/prototypes/manifest.md`（条件，前端SC）、RELOAD `prototype-changes.md`（条件，前端SC）
 
 #### Scenario: 重读 service-guide.md
 
@@ -37,37 +49,17 @@
 - **THEN** 变更级 agent MAY 跳过该文件的重读
 - **AND** 以对话上下文中的缓存版本为准
 
-### Requirement: RELOAD 清单由共享钩子文件统一定义
-
-各阶段的 RELOAD 文件清单 SHALL 在 `.claude/skills/kflow-shared/phase-hooks.md` 中统一定义，各阶段 Skill 的 SKILL.md 不得自行增删。
-
-#### Scenario: 集中式 RELOAD 清单
-
-- **WHEN** 阶段的 RELOAD 文件清单需要修改
-- **THEN** 修改 SHALL 在 `kflow-shared/phase-hooks.md` 中进行
-- **AND** 各阶段 SKILL.md 无需同步修改
-
-## MODIFIED by design-change-record
-
-### Requirement: 阶段执行前强制重读基础信息文件
-
-每个阶段 Skill 在 PRE_HOOK 的 RELOAD 步骤中 SHALL 重新读取该阶段钩子配置表中定义的基础信息文件，不得使用对话上下文缓存中的旧版本。RELOAD 清单 SHALL 包含以下新增文件：
-
-- prototype-design 阶段：新增 RELOAD `prototype/index.md`
-- design 阶段：新增 RELOAD `prototype/index.md`（如存在）、RELOAD `functional-designs/index.md`
-- plan、code、code-review、api-test、e2e-test、integration-test 阶段：新增 RELOAD `prototype/index.md`（如存在，前后端项目）、RELOAD `functional-designs/index.md`、RELOAD 目标设计目录 index.md 以获取最新修订记录
-
 #### Scenario: 重读 functional-designs/index.md
 
 - **WHEN** design、plan、code、code-review、api-test、e2e-test、integration-test 阶段执行
 - **THEN** 变更级 agent SHALL 在 PRE_HOOK 中重新读取 `docs/changes/{change}/functional-designs/index.md`
 - **AND** SHALL 检查修订记录表的最新版本和修订内容
 
-#### Scenario: 重读 prototype/index.md
+#### Scenario: 重读产品级原型清单与变更级原型改动清单
 
-- **WHEN** 原型设计、详细设计、计划、编码、代码审查、接口测试、E2E 测试阶段执行且 prototype/index.md 存在
-- **THEN** 变更级 agent SHALL 在 PRE_HOOK 中重新读取 `docs/changes/{change}/prototype/index.md`
-- **AND** SHALL 检查修订记录和设计系统引用
+- **WHEN** 原型设计、详细设计、计划、编码、代码审查、接口测试、E2E 测试阶段执行且产品级 `docs/designs/prototypes/manifest.md` 或变更级 `prototype-changes.md` 存在
+- **THEN** 变更级 agent SHALL 在 PRE_HOOK 中重新读取产品级 `docs/designs/prototypes/manifest.md` 与变更级 `prototype-changes.md`
+- **AND** SHALL 检查产品级清单中的文件清单与角色划分、页面清单，以及本变更的原型改动记录
 
 #### Scenario: 重读 detailed-design 修订记录
 
@@ -75,25 +67,11 @@
 - **THEN** 变更级 agent SHALL 在 PRE_HOOK 中重新读取 `detailed-design.md` 或 `detailed-design/index.md`
 - **AND** SHALL 检查其中的修订记录节以发现设计变更
 
-## MODIFIED by phase-artifact-verification-and-input-alignment
-
-### Requirement: 阶段执行前强制重读基础信息文件
-
-每个阶段 Skill 在 PRE_HOOK 的 RELOAD 步骤中 SHALL 重新读取该阶段钩子配置表中定义的基础信息文件，不得使用对话上下文缓存中的旧版本。RELOAD 清单 SHALL 包含以下新增文件：
-
-- prototype-design 阶段：新增 RELOAD `prototype/index.md`
-- design 阶段：新增 RELOAD `prototype/index.md`（如存在）、RELOAD `functional-designs/index.md`
-- plan 阶段：新增 RELOAD `functional-designs/index.md`、RELOAD `functional-designs/part-NN.md`、RELOAD `prototype/index.html`（条件，前端SC）、RELOAD `prototype/design-tokens.css`（条件，前端SC）、RELOAD `prototype/element-coverage-tree.md`（条件，前端SC）、RELOAD `api-tests/index.md`
-- code 阶段：新增 RELOAD `CONTEXT.md`、RELOAD `prototype/design-tokens.css`（条件，前端SC）、RELOAD `prototype/element-coverage-tree.md`（条件，前端SC）
-- code-review 阶段：新增 RELOAD `prototype/design-tokens.css`（条件，前端SC）、RELOAD `prototype/element-coverage-tree.md`（条件，前端SC）
-- api-test、e2e-test、integration-test 阶段：新增 RELOAD `functional-designs/index.md`、RELOAD 目标设计目录 index.md 以获取最新修订记录
-- e2e-test 阶段：新增 RELOAD `prototype/element-coverage-tree.md`（条件，前端项目）
-
 #### Scenario: Plan 阶段 RELOAD 原型核心产物
 
 - **WHEN** plan 阶段执行且当前子变更为前端子变更
-- **THEN** 变更级 agent SHALL 在 PRE_HOOK 中重新读取 `prototype/index.html`、`prototype/design-tokens.css`、`prototype/element-coverage-tree.md`
-- **AND** SHALL NOT 读取 prototype/design-prompt.md 或 design-system/MASTER.md
+- **THEN** 变更级 agent SHALL 在 PRE_HOOK 中重新读取产品级 `docs/designs/prototypes/manifest.md` 与变更级 `prototype-changes.md`
+- **AND** SHALL NOT 读取 prototype-plan/design-prompt.md 或 design-system/MASTER.md
 
 #### Scenario: Code 阶段 RELOAD CONTEXT.md
 - **WHEN** code 阶段执行
@@ -105,29 +83,32 @@
 - **THEN** 变更级 agent SHALL 在 PRE_HOOK 中重新读取 element-coverage-tree.md
 - **AND** SHALL 使用树中的 🎯 状态节点和 TC-ID 映射验证 E2E 测试覆盖率
 
-## MODIFIED by token-opt-layered-context-loading
-
 ### Requirement: RELOAD mechanism aligns with layered loading
+
 RELOAD mechanism SHALL integrate with layered loading — subagent RELOAD steps SHALL only reload files from the loaded tiers.
 
 #### Scenario: RELOAD respects tier boundaries
+
 - **WHEN** a subagent executes RELOAD
 - **THEN** it SHALL only reload files that belong to its loaded tiers
 
-## MODIFIED by token-opt-incremental-reload
-
 ### Requirement: Phase hooks RELOAD清单 adds module-summary.md
-The RELOAD 清单 for explore/design/plan phases SHALL add `module-summary.md` as an optional load item.
+
+The RELOAD 清单 for explore/design/plan phases SHALL add `module-summary.md` as an optional load item. The RELOAD 清单 SHALL be read from each phase's own `references/hooks.md`.
 
 #### Scenario: RELOAD清单 updated
-- **WHEN** `kflow-shared/phase-hooks.md` RELOAD清单 is read
-- **THEN** explore/design/plan phases SHALL include `module-summary.md` as an optional load item
 
-## MODIFIED by token-opt-archive-summarization
+- **WHEN** the RELOAD清单 is read for one of the explore, design, or plan phases
+- **THEN** it SHALL be read from that phase's own `references/hooks.md` file
+- **AND** explore/design/plan phases SHALL include `module-summary.md` as an optional load item
+- **AND** the read SHALL NOT depend on a `kflow-shared/phase-hooks.md` file
 
 ### Requirement: RELOAD清单 adds module-summary.md for relevant phases
+
 explore/design/plan phase RELOAD清单 SHALL include `module-summary.md` as an optional load item. (Content identical to token-opt-incremental-reload; retained for traceability to archive-summarization change.)
 
 #### Scenario: RELOAD清单 updated
-- **WHEN** `kflow-shared/phase-hooks.md` RELOAD清单 is read
+
+- **WHEN** the RELOAD清单 is read for one of the explore, design, or plan phases
 - **THEN** explore/design/plan phases SHALL list `module-summary.md` as an optional load
+- **AND** the RELOAD清单 source SHALL be that phase's own `references/hooks.md`, not a `kflow-shared/phase-hooks.md` file

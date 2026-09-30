@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# skill-suggestion-logging Specification
+
+## Purpose
+
+定义流程指引错误场景与 AI 对话特定触发模式的记录规范：将用户纠正、指引错误、Skill 执行异常，以及 AI 回复中的阻塞模式、因果链模式与用户纠正后的附和模式统一记录到 `docs/skill-suggestion.md`。
+
+## Requirements
 
 ### Requirement: 错误场景记录
 

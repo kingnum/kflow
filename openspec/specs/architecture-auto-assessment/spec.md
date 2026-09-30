@@ -1,7 +1,7 @@
 # architecture-auto-assessment Specification
 
 ## Purpose
-TBD - created by archiving change design-review-fixes. Update Purpose after archive.
+定义集成测试连续失败触发的架构评估机制：当同一测试用例连续 3 轮失败时自动收集失败证据、深挖根因、输出至少两个改造方案报告，并交由用户决策后再执行，避免陷入无效修复循环。
 ## Requirements
 ### Requirement: 架构评估自动触发
 

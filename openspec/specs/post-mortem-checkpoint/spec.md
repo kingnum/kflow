@@ -1,3 +1,9 @@
+# post-mortem-checkpoint Specification
+
+## Purpose
+
+定义缺陷修复完成且本地验证通过后的 post-mortem 检查点能力，要求回答“什么可以防止此缺陷发生”、传递架构改进建议、清理调试日志并记录修复假设，形成从缺陷到设计改进的闭环。
+
 ## Requirements
 
 ### Requirement: Post-mortem 检查点

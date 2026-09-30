@@ -28,12 +28,12 @@
 
 #### Scenario: 图片资源自包含
 - **WHEN** 原型 HTML 文件包含图片资源
-- **THEN** 图片 SHALL 使用 base64 data URI 内联，或存为 `prototype/` 目录下的本地文件并通过相对路径引用
+- **THEN** 图片 SHALL 使用 base64 data URI 内联，或存为产品级 `docs/designs/prototypes/` 目录下的本地文件并通过相对路径引用
 - **AND** SHALL NOT 通过 `http://` 或 `https://` URL 引用远程图片
 
 #### Scenario: VERIFY 步骤增加 CDN 扫描
 - **WHEN** 原型 HTML 文件生成完成，进入 VERIFY 步骤
-- **THEN** 系统 SHALL 扫描 `prototype/` 目录下所有 `.html` 文件
+- **THEN** 系统 SHALL 扫描产品级 `docs/designs/prototypes/` 目录下所有 `.html` 文件
 - **AND** 检测是否存在 `http://` 或 `https://` 模式的外部资源引用
 - **AND** 若发现外部依赖，SHALL 在验证报告中列出违规文件和具体引用
 - **AND** 标记为验证不通过，需返回 DESIGN 步骤修复

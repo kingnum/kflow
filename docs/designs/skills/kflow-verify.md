@@ -72,7 +72,7 @@ kflow-verify (独立诊断)               kflow-audit (流程阶段)
 │                    VERIFY WORKFLOW                           │
 ├─────────────────────────────────────────────────────────────┤
 │  1. LOAD      → 读取 .status.md，确认变更信息                │
-│  2. D1        → 产物存在性检查                               │
+│  2. D1        → 产物存在性检查（含轻量档裁剪产物判定）       │
 │  3. D2        → 产物内容完整性检查                           │
 │  4. D3        → 输入源正确性检查                             │
 │  5. D4        → 交叉引用一致性检查                           │
@@ -99,6 +99,20 @@ kflow-verify (独立诊断)               kflow-audit (流程阶段)
 - 条件产物基于上下文缺失 → 🔴 阻塞
 - 条件产物基于上下文不适用 → 跳过
 
+#### 裁剪产物判定（仅轻量档）
+
+变更档位为 `轻量` 时，D1 SHALL 依据变更级 `.status.md` 的「阶段适用性声明」区，判定裁剪产物（`api-tests/`、`e2e-tests/`、`test-reports/integration/`）的缺失是否合法：
+
+| 分支 | 判定条件 | 判定结果 |
+|------|---------|---------|
+| 有声明依据的裁剪产物缺失 | 该阶段在「阶段适用性声明」区标记为 `⏭️ 不适用`，且该阶段产物不存在 | 正常，SHALL NOT 报缺项 |
+| 无声明依据的 `⏭️` | 某阶段被标记 `⏭️`（如 `traceability.md` 中对应列整列 `⏭️`，或阶段状态表标记 `⏭️ 不适用`），但「阶段适用性声明」区无对应的判定依据 | 🔴 阻塞（B-），提示缺失裁剪依据。仅约束声称由变更档位裁剪产生的 `⏭️`；按项目类型产生的 `⏭️`（纯后端项目的 E2E测试列与阶段）依据项目类型判定，不要求声明依据 |
+| 声明 `✅ 适用` 但产物缺失 | 该阶段在「阶段适用性声明」区标记为 `✅ 适用`，且该阶段产物不存在 | 🔴 阻塞（B-），按缺项处理（既有行为，明确保留） |
+
+- 裁剪判定 SHALL 仅适用于变更档位为 `轻量` 的变更
+- `标准` 与 `完整` 档 SHALL NOT 应用裁剪判定，其产物诊断维持 D1 既有规则
+- 「阶段适用性声明」区缺失时，接口单元测试、E2E测试、集成测试三个阶段 SHALL 按 `✅ 适用` 处理
+
 ### D2 产物内容完整性检查
 
 检查每个产物文件是否非空、是否无占位符（TODO/TBD/{待填写}/...等）、必填章节是否存在。
@@ -115,11 +129,11 @@ kflow-verify (独立诊断)               kflow-audit (流程阶段)
 - functional-designs/、detailed-design.md、api-tests/、CONTEXT.md、tasks.md 可访问性
 
 前端子变更 SHALL 检查：
-- prototype/index.md（含 entry 角色文件）、detailed-design.md 可访问性
-- SHALL NOT 将 prototype/design-prompt.md 或 design-system/MASTER.md 列为输入
+- docs/designs/prototypes/manifest.md（含 entry 角色文件）、prototype-changes.md、detailed-design.md 可访问性
+- SHALL NOT 将 prototype-plan/design-prompt.md 或 design-system/MASTER.md 列为输入
 
 - 输入源缺失 → 🔴 阻塞
-- 前端子变更引用了过程产物（design-prompt.md、design-system/*）→ 🟡 警告
+- 前端子变更引用了过程产物（prototype-plan/design-prompt.md、prototype-plan/style-decision.md、design-system/*）→ 🟡 警告
 
 ### D4 交叉引用一致性检查
 
@@ -162,7 +176,7 @@ kflow-verify (独立诊断)               kflow-audit (流程阶段)
 
 | 严重度 | 编号前缀 | 判定标准 | 建议处理 |
 |--------|---------|---------|---------|
-| 🔴 阻塞 | B- | 必须产物缺失、阶段跳转、输入源严重缺漏、审查问题未关闭 | 进入下一阶段前修复 |
+| 🔴 阻塞 | B- | 必须产物缺失、阶段跳转、输入源严重缺漏、审查问题未关闭、无声明依据的 `⏭️` | 进入下一阶段前修复 |
 | 🟡 警告 | W- | 内容不完整（含占位符）、交叉引用不一致、覆盖率不足、HITL 未决议 | 合适时机修复 |
 | 🔵 建议 | S- | 文档格式不规范、版本号滞后、ADR 过期 | 不阻塞流程，可自行决定 |
 

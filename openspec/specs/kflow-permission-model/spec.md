@@ -1,12 +1,18 @@
-## ADDED Requirements
+# kflow-permission-model Specification
+
+## Purpose
+
+定义 KFlow 权限声明的集中化模型，涵盖 kflow-init 自动配置目标项目权限、权限配置状态写入 toolchain.md、PERM_CONFIG 步骤插入位置以及移除本项目硬编码 settings.json 的要求。
+
+## Requirements
 
 ### Requirement: KFlow 权限声明集中定义
 
-系统 SHALL 在 `kflow-shared/permission-model.md` 中集中定义 kflow Skills 执行所需的全部权限清单，作为权限配置的 source of truth。
+系统 SHALL 在 `skills/kflow-init/references/permission-model.md` 中集中定义 kflow Skills 执行所需的全部权限清单，作为权限配置的 source of truth。
 
 #### Scenario: 权限声明文件存在且包含必需权限
 
-- **WHEN** `kflow-shared/permission-model.md` 被读取
+- **WHEN** `skills/kflow-init/references/permission-model.md` 被读取
 - **THEN** 文件 SHALL 包含以下节：
   - §1 全局必需权限（所有 Skill 共享）
   - §2 权限聚合规则
@@ -25,11 +31,12 @@
 #### Scenario: 权限清单跟随 Skill 分发
 
 - **WHEN** `package-skills.sh` 执行打包
-- **THEN** `kflow-shared/permission-model.md` SHALL 被包含在打包产物中（因 `kflow-shared/` 在 `kflow-*/` 通配范围内）
+- **THEN** `permission-model.md` SHALL 作为 `kflow-init` 的 `references/` 内容被包含在打包产物中
+- **AND** 该包含 SHALL 由 `kflow-*/` 的 skill 目录通配完成，SHALL NOT 依赖一个独立的 `kflow-shared/` 目录
 
 ### Requirement: kflow-init 自动配置目标项目权限
 
-kflow-init SHALL 在目标项目首次执行时，读取 `kflow-shared/permission-model.md` 中的权限声明，自动配置目标项目的 `.claude/settings.json`。
+kflow-init SHALL 在目标项目首次执行时，读取 `skills/kflow-init/references/permission-model.md` 中的权限声明，自动配置目标项目的 `.claude/settings.json`。
 
 #### Scenario: 目标项目不存在 settings.json
 
@@ -67,6 +74,12 @@ kflow-init SHALL 在目标项目首次执行时，读取 `kflow-shared/permissio
 - **AND** settings.json 已包含全部所需权限
 - **THEN** kflow-init SHALL NOT 重复添加权限条目
 - **AND** SHALL NOT 重复询问用户确认
+
+#### Scenario: 权限声明读取路径不依赖集中式目录
+
+- **WHEN** kflow-init 读取权限声明
+- **THEN** 读取路径 SHALL 为 `skills/kflow-init/references/permission-model.md`（dev）或 `.claude/skills/kflow-init/references/permission-model.md`（consumer）
+- **AND** SHALL NOT 为 `.claude/skills/kflow-shared/permission-model.md` 或任何 `kflow-shared/` 下的路径
 
 ### Requirement: 权限配置状态输出到 toolchain.md
 

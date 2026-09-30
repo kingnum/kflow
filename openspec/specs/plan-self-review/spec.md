@@ -1,11 +1,11 @@
 # plan-self-review Specification
 
 ## Purpose
-TBD - created by archiving change enhance-skill-review-and-quality. Update Purpose after archive.
+定义 kflow-plan 阶段强制执行的 10 轮子代理串行自审机制：每轮由独立子代理按任务覆盖完整性、DoD 验收标准、HITL 标注准确性与任务粒度四个定制维度检查 tasks.md，边审边修并向 self-reviews/plan/ 输出每轮自审报告。
 ## Requirements
-### Requirement: 计划阶段 10 轮子代理自审强制执行
+### Requirement: 计划阶段档位驱动的子代理自审
 
-系统 SHALL 在 kflow-plan 阶段执行 10 轮子代理串行自循环审查（SELFREV），每轮启动独立子代理执行全部 4 个定制维度检查，不允许提前终止。
+系统 SHALL 在 kflow-plan 阶段执行由变更档位决定轮次的子代理串行自循环审查（SELFREV）：轻量 0 轮、标准 2 轮、完整 10 轮。目标轮次大于 0 时，每轮 SHALL 启动独立子代理执行全部 4 个定制维度检查，不允许在达到目标轮次前终止。
 
 #### Scenario: plan SELFREV 步骤位置
 
@@ -13,12 +13,19 @@ TBD - created by archiving change enhance-skill-review-and-quality. Update Purpo
 - **THEN** 在步骤 8（VERIFY）之后、步骤 9（COMPLETE）之前插入 SELFREV 步骤
 - **AND** SELFREV 步骤序号为 8.5，原 COMPLETE 步骤序号顺延为 9
 
-#### Scenario: 10 轮强制执行
+#### Scenario: 轻量档跳过自审
 
-- **WHEN** plan SELFREV 执行中
-- **THEN** SHALL 完成全部 10 轮子代理自审
+- **WHEN** 变更档位为 `轻量`
+- **THEN** kflow-plan SHALL 完全跳过 SELFREV 步骤
+- **AND** SHALL NOT 启动任何自审子代理
+- **AND** 系统 SHALL 以产物完整性门控替代自审门控
+
+#### Scenario: 目标轮次强制执行
+
+- **WHEN** plan SELFREV 执行中 且 目标轮次大于 0
+- **THEN** SHALL 完成全部目标轮次子代理自审（标准 2 轮 / 完整 10 轮）
 - **AND** SHALL NOT 因中间某轮无新问题而提前终止
-- **AND** 即使连续多轮无新问题也必须完成全部 10 轮
+- **AND** 即使连续多轮无新问题也必须完成全部目标轮次
 
 #### Scenario: 子代理串行执行
 

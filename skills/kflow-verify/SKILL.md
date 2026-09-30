@@ -1,6 +1,6 @@
 ---
 name: kflow-verify
-version: 0.17.0
+version: 0.18.0
 description: Use when user needs artifact diagnosis/诊断、验证产物、检查产物、产物完整性、输入源检查、verify, or before archive to check all artifacts. 独立诊断 Skill（非流程阶段），七维度全阶段产物诊断、严重度分级（🔴阻塞/🟡警告/🔵建议）、修复路由到对应阶段 REVISION 模式。可随时手动调用 + 归档前自动触发。不写入 .status.md 阶段状态表。
 license: MIT
 triggers:
@@ -43,7 +43,7 @@ allowed-tools:
 | 阶段 | 关键产物 | 条件 |
 |------|---------|------|
 | 设计探索 | functional-designs/index.md, CONTEXT.md | — |
-| 原型设计 | prototype/index.md | 前后端项目 + 未跳过 |
+| 原型设计 | docs/designs/prototypes/manifest.md, prototype-changes.md, self-reviews/prototype/cdn-crossref-check/report.md | 前后端项目 + 未跳过 |
 | 详细设计 | detailed-design.md, api-tests/index.md, traceability.md | e2e-tests/ 仅前后端 |
 | 计划 | subchanges/*/tasks.md | — |
 | 编码 | (代码变更) | — |
@@ -55,6 +55,17 @@ allowed-tools:
 - 缺失的必须产物 → 🔴 阻塞
 - 条件产物基于上下文缺失 → 🔴 阻塞
 - 条件产物基于上下文不适用 → 跳过
+
+**轻量档裁剪产物判定**（仅 `变更档位 = 轻量`，依据变更级 `.status.md` 的「阶段适用性声明」区）：
+
+| 分支 | 判定条件 | 结果 |
+|------|---------|------|
+| 有声明依据的裁剪产物缺失 | 声明区标记 `⏭️ 不适用` 且产物不存在 | 正常，SHALL NOT 报缺项 |
+| 无声明依据的 `⏭️` | 阶段被标记 `⏭️`（`traceability.md` 对应列整列 `⏭️` 或阶段状态表标记 `⏭️ 不适用`），但声明区无对应判定依据 | 🔴 阻塞，提示缺失裁剪依据。仅约束声称由变更档位裁剪产生的 `⏭️`；按项目类型产生的 `⏭️`（纯后端项目的 E2E测试列与阶段）不要求声明依据 |
+| 声明 `✅ 适用` 但产物缺失 | 声明区标记 `✅ 适用` 且产物不存在 | 🔴 阻塞，按缺项处理 |
+
+- 裁剪判定 SHALL 仅适用于 `轻量` 档；`标准`/`完整` 档 SHALL NOT 应用，维持既有规则
+- 声明区缺失时，三个阶段 SHALL 按 `✅ 适用` 处理
 
 ## D2 产物内容完整性检查
 
@@ -74,8 +85,8 @@ allowed-tools:
 - functional-designs/、detailed-design.md、api-tests/、CONTEXT.md、tasks.md
 
 **前端子变更 SHALL 检查**：
-- prototype/index.md、detailed-design.md
-- SHALL NOT 将 prototype/design-prompt.md 或 design-system/MASTER.md 列为输入
+- docs/designs/prototypes/manifest.md、变更级 prototype-changes.md、变更级 element-coverage-tree.md、detailed-design.md
+- SHALL NOT 将 prototype-plan/design-prompt.md 或 design-system/MASTER.md 列为输入
 
 - 输入源缺失 → 🔴 阻塞
 - 前端子变更引用了过程产物 → 🟡 警告
@@ -111,7 +122,7 @@ allowed-tools:
 
 | 严重度 | 编号前缀 | 含义 | 建议处理 |
 |--------|---------|------|---------|
-| 🔴 阻塞 | B- | 必须产物缺失、阶段跳转、输入源严重缺漏、审查问题未关闭 | 进入下一阶段前修复 |
+| 🔴 阻塞 | B- | 必须产物缺失、阶段跳转、输入源严重缺漏、审查问题未关闭、无声明依据的 `⏭️` | 进入下一阶段前修复 |
 | 🟡 警告 | W- | 内容不完整（含占位符）、交叉引用不一致、覆盖率不足、HITL 未决议 | 合适时机修复 |
 | 🔵 建议 | S- | 文档格式不规范、版本号滞后、ADR 过期 | 不阻塞流程 |
 
@@ -126,7 +137,7 @@ allowed-tools:
 
 ```
 1. LOAD    → 读取 .status.md，确认变更信息（项目类型、子变更列表、阶段状态）
-2. D1      → 产物存在性检查（逐个阶段检查关键产物文件）
+2. D1      → 产物存在性检查（逐个阶段检查关键产物文件；轻量档含裁剪产物判定）
 3. D2      → 产物内容完整性检查（读取产物文件，检查非空/占位符/必填章节）
 4. D3      → 输入源正确性检查（按子变更类型检查输入源）
 5. D4      → 交叉引用一致性检查（验证跨文档引用）

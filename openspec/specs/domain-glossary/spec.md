@@ -1,3 +1,9 @@
+# domain-glossary Specification
+
+## Purpose
+
+定义项目级领域词汇表 `CONTEXT.md` 的全生命周期管理，涵盖初始化阶段的存在性检测、探索阶段的构建与增补、文件格式规范，以及各 Skill 在涉及领域概念时对其的统一引用。
+
 ## Requirements
 
 ### Requirement: CONTEXT.md 存在性检测

@@ -26,8 +26,12 @@ docs/
 │   │   ├── functional-designs/        # 功能设计阶段输出（目录化结构）
 │   │   │   ├── index.md               #   功能设计索引入口（全部功能点清单、依赖关系图）
 │   │   │   └── part-NN.md             #   功能设计分册文件（每个分册 ≤30 个功能点）
-│   │   ├── prototype/                 # 原型设计阶段输出（可选，变更级，HTML 格式）
-│   │   │   └── index.html              #   HTML 交互原型入口文件
+│   │   ├── prototype-changes.md       # 原型改动清单（可选，变更级；含改动前哈希）
+│   │   ├── prototype-backup/          # 原型改动前快照（可选，变更级；按产品级相对路径镜像）
+│   │   ├── prototype-plan/            # 原型设计过程产物（可选，变更级）
+│   │   │   ├── design-prompt.md       #   设计提示词（7 章节，DESIGN 步骤唯一输入）
+│   │   │   └── style-decision.md      #   风格决策记录
+│   │   ├── element-coverage-tree.md   # 元素覆盖树（可选，变更级；TC-ID 待 design 阶段填充）
 │   │   ├── detailed-design.md         # 统一详细设计（变更级，合并原 architecture.md + 所有子变更设计）
 │   │   ├── api-tests/                 # 统一接口测试用例（目录化结构）
 │   │   │   ├── index.md               #   接口测试索引入口
@@ -132,9 +136,16 @@ docs/
 │   │   ├── nfr-baseline.md            #   NFR 基线文档
 │   │   ├── config-items.md            #   配置项设计文档（新增，对齐 detailed-design.md §五）
 │   │   └── error-handling.md          #   错误处理设计文档（新增，对齐 detailed-design.md §六）
+│   ├── prototypes/                    # 产品级原型（唯一来源，由原型设计阶段直写）
+│   │   ├── index.html                 #   全产品导航入口（卡片网格按功能模块分组）
+│   │   ├── manifest.md                #   全产品原型清单（产物/角色/来源变更/修订记录）
+│   │   ├── design-tokens.css          #   设计令牌（色板/字号/间距/圆角/阴影 CSS 变量）
+│   │   ├── design-system/             #   设计系统
+│   │   │   └── MASTER.md              #     设计系统主文档（色彩/字体/间距/组件/交互规则）
+│   │   ├── screens/                   #   各屏幕页面 HTML
+│   │   ├── components/                #   共享组件
+│   │   └── assets/                    #   静态资源
 │   ├── changelog.md                   # 变更日志（按年归档）
-│   ├── prototypes/
-│   │   └── index.html
 │   └── ...
 │
 ├── CONTEXT.md                         # 项目级领域词汇表（设计探索阶段构建和增补，所有阶段引用）
@@ -158,6 +169,10 @@ docs/
 | 功能设计索引 | `index.md` | `docs/changes/{change}/functional-designs/index.md` |
 | 功能设计分册 | `part-NN.md` | `docs/changes/{change}/functional-designs/part-01.md` |
 | 详细设计文件 | `detailed-design.md` | `docs/changes/{change}/detailed-design.md` |
+| 原型改动清单 | `prototype-changes.md` | `docs/changes/{change}/prototype-changes.md` |
+| 原型改动前快照 | `prototype-backup/{产品级相对路径}` | `docs/changes/{change}/prototype-backup/screens/login.html` |
+| 原型过程产物目录 | `prototype-plan/` | `docs/changes/{change}/prototype-plan/` |
+| 元素覆盖树 | `element-coverage-tree.md` | `docs/changes/{change}/element-coverage-tree.md` |
 | API测试目录 | `api-tests/` | `docs/changes/{change}/api-tests/` |
 | API测试索引 | `index.md` | `docs/changes/{change}/api-tests/index.md` |
 | API测试分册 | `part-NN.md` | `docs/changes/{change}/api-tests/part-01.md` |
@@ -184,6 +199,12 @@ docs/
 | 功能模块目录（前后端） | `{menu}/` | `docs/designs/functional-designs/user-auth/` |
 | 功能模块文件（纯后端） | `{domain}.md` | `docs/designs/functional-designs/auth-service.md` |
 | 详细设计文档 | `{type}.md` | `docs/designs/detailed-designs/architecture.md` |
+| 产品级原型目录 | `prototypes/` | `docs/designs/prototypes/` |
+| 产品级原型入口 | `index.html` | `docs/designs/prototypes/index.html` |
+| 产品级原型清单 | `manifest.md` | `docs/designs/prototypes/manifest.md` |
+| 设计令牌 | `design-tokens.css` | `docs/designs/prototypes/design-tokens.css` |
+| 设计系统主文档 | `design-system/MASTER.md` | `docs/designs/prototypes/design-system/MASTER.md` |
+| 原型屏幕页面 | `screens/{screen}.html` | `docs/designs/prototypes/screens/login.html` |
 | ADR 文件 | `{序号}-{kebab-case标题}.md` | `docs/adr/0001-choose-redis-cluster.md` |
 | ADR 索引 | `index.md` | `docs/adr/index.md` |
 | checkpoint | `{YYYYMMDD-HHMMSS}-checkpoint[-auto].md` | `20260430-143000-checkpoint.md` |
@@ -223,6 +244,14 @@ docs/designs/
 │   ├── nfr-baseline.md       #   NFR 基线文档
 │   ├── config-items.md       #   配置项设计文档（新增）
 │   └── error-handling.md     #   错误处理设计文档（新增）
+├── prototypes/               # 产品级原型（唯一来源，由原型设计阶段直写）
+│   ├── index.html            #   全产品导航入口
+│   ├── manifest.md           #   全产品原型清单
+│   ├── design-tokens.css     #   设计令牌
+│   ├── design-system/        #   设计系统
+│   ├── screens/              #   各屏幕页面 HTML
+│   ├── components/           #   共享组件
+│   └── assets/               #   静态资源
 └── changelog.md              # 变更日志（按年归档，文件超过 500 行触发归档）
 ```
 

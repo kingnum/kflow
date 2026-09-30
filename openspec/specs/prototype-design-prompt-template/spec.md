@@ -2,18 +2,18 @@
 
 ## Purpose
 
-定义原型设计阶段 OPTIMIZE 步骤完成后输出的 `prototype/design-prompt.md` 提示词文件模板结构和内容要求。
+定义原型设计阶段 OPTIMIZE 步骤完成后输出的 `prototype-plan/design-prompt.md` 提示词文件模板结构和内容要求。
 
 ## Requirements
 
 ### Requirement: design-prompt.md 文件输出
 
-系统 SHALL 在 OPTIMIZE 步骤完成后，将优化后的完整提示词写入 `prototype/design-prompt.md` 文件，经用户确认后作为 DESIGN 步骤的唯一输入。
+系统 SHALL 在 OPTIMIZE 步骤完成后，将优化后的完整提示词写入 `docs/changes/{change}/prototype-plan/design-prompt.md` 文件，经用户确认后作为 DESIGN 步骤的唯一输入。
 
 #### Scenario: 文件输出时机
 
-- **WHEN** OPTIMIZE 步骤完成（4.1 菜单树提取 + 4.2 页面元素穷举 + 4.3 业务流程脚本 + 4.4 硬约束注入）
-- **THEN** 系统 SHALL 将完整提示词写入 `docs/changes/{change}/prototype/design-prompt.md`
+- **WHEN** OPTIMIZE 步骤完成（5.1 菜单树提取 + 5.2 页面元素穷举 + 5.3 业务流程脚本 + 5.4 硬约束注入）
+- **THEN** 系统 SHALL 将完整提示词写入 `docs/changes/{change}/prototype-plan/design-prompt.md`
 - **AND** 文件 SHALL 包含全部 7 个章节
 - **AND** 系统 SHALL NOT 在未生成该文件前进入 DESIGN 步骤
 
@@ -22,12 +22,12 @@
 - **WHEN** design-prompt.md 写入完成
 - **THEN** 系统 SHALL 通过 AskUserQuestion 向用户展示提示词摘要
 - **AND** 用户确认后 SHALL 进入 DESIGN 步骤
-- **AND** 用户需要修订时 SHALL 收集反馈并回到 4.1 修订
+- **AND** 用户需要修订时 SHALL 收集反馈并回到 5.1 修订
 
 #### Scenario: 文件作为 DESIGN 步骤输入
 
 - **WHEN** DESIGN 步骤开始
-- **THEN** 系统 SHALL 从 `prototype/design-prompt.md` 读取完整提示词
+- **THEN** 系统 SHALL 从 `docs/changes/{change}/prototype-plan/design-prompt.md` 读取完整提示词
 - **AND** SHALL NOT 使用 OPTIMIZE 步骤内存中的 prompt 摘要
 
 ### Requirement: 7 章节模板结构
@@ -71,14 +71,15 @@ design-prompt.md SHALL 包含以下 7 个章节。
 #### Scenario: 第六章 — 硬约束
 
 - **WHEN** design-prompt.md 生成
-- **THEN** 第六章 SHALL 注入多文件输出约束（输出到 prototype/ 目录，index.html 为入口）
+- **THEN** 第六章 SHALL 注入直写产品级原型目录约束（输出到 `docs/designs/prototypes/`，`index.html` 为全产品入口，屏幕写入 `screens/`、共享组件写入 `components/`、静态资源写入 `assets/`）
+- **AND** 注入改动记录与备份约束（受影响文件的改动前副本备份到 `docs/changes/{change}/prototype-backup/`，改动登记到 `docs/changes/{change}/prototype-changes.md`）
 - **AND** 注入 flow demo 模式约束（AppPhone 状态管理器驱动，禁止 overview 静态平铺）
 - **AND** 注入离线自包含约束（禁 CDN，系统字体栈）
 
 #### Scenario: 第七章 — 高保真要求
 
 - **WHEN** design-prompt.md 生成
-- **THEN** 第七章 SHALL 列出参考资源索引（产品级原型/设计令牌/品牌资产路径）
+- **THEN** 第七章 SHALL 列出参考资源索引（产品级原型目录 `docs/designs/prototypes/`、产品级原型清单 `manifest.md`、设计令牌 `design-tokens.css`、设计系统 `design-system/MASTER.md`、品牌资产路径）
 - **AND** 包含交互细节规格（按钮 hover/active 态、输入框 focus 态、弹窗过渡动画、表格行 hover 态、Tab 切换动画）
 - **AND** 包含响应式要求（桌面端优先/移动端基准，如有）
 

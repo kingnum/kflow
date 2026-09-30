@@ -50,8 +50,8 @@
 - **WHEN** 执行输入源存在性诊断
 - **THEN** 系统 SHALL 对每个子变更判定其类型（后端/前端）
 - **AND** 后端子变更 SHALL 检查 functional-designs/、detailed-design.md、api-tests/、CONTEXT.md、tasks.md 可访问性
-- **AND** 前端子变更 SHALL 检查 prototype/index.html、prototype/design-tokens.css、prototype/element-coverage-tree.md、detailed-design.md 可访问性
-- **AND** 前端子变更 SHALL NOT 将 prototype/design-prompt.md 或 design-system/MASTER.md 列为输入
+- **AND** 前端子变更 SHALL 检查 docs/designs/prototypes/manifest.md、变更级 prototype-changes.md、变更级 element-coverage-tree.md、detailed-design.md 可访问性
+- **AND** 前端子变更 SHALL NOT 将 prototype-plan/design-prompt.md 或 design-system/MASTER.md 列为输入
 - **AND** 输入源缺失 SHALL 标记为 🔴 阻塞
 - **AND** 若 functional-designs/index.md 缺少 FP 类型列，SHALL 标记 🟡 警告（旧版文档兼容）
 
@@ -61,7 +61,7 @@
 - **THEN** 系统 SHALL grep 检测子变更源码目录中：
   - `.tsx`、`.jsx`、`.vue`、`.svelte` 文件 → 🟡 警告
   - 硬编码颜色值（`#[0-9a-fA-F]{3,6}` 或 `rgb(` 模式 ≥ 5 次）→ 🔵 建议
-  - `prototype/` 路径引用 → 🟡 警告
+  - `docs/designs/prototypes/` 路径引用 → 🟡 警告
 - **AND** 排除 `node_modules/`、`.next/`、`dist/`、`build/`、`.git/`、`*.d.ts`、`*.test.*`、`*.spec.*`、`__tests__/`、`mocks/`、`__mocks__/`
 
 #### Scenario: D3.2 前端子变更输出越界检查
@@ -158,8 +158,6 @@
 - **WHEN** 输出诊断问题
 - **THEN** 每条问题 SHALL 包含：编号（B/W/S-前缀）、阶段、描述、影响说明、修复路由
 - **AND** 🔴 阻塞使用 B-编号，🟡 警告使用 W-编号，🔵 建议使用 S-编号
-
-## ADDED by subchange-type-enforcement
 
 ### Requirement: FP 类型列存在性检查
 

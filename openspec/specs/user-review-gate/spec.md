@@ -1,3 +1,9 @@
+# user-review-gate Specification
+
+## Purpose
+
+定义原型设计阶段与详细设计阶段的人工用户评审门控，规范评审记录在 .status.md 中的持久化方式以及在阶段门控检查中的自动校验，确保关键设计产物经用户确认后方可进入下一阶段。
+
 ## Requirements
 
 ### Requirement: 原型设计用户评审门控
@@ -6,7 +12,7 @@
 
 #### Scenario: 前后端项目原型设计完成后用户确认通过
 
-- **WHEN** 原型设计阶段产物（prototype.pen）输出完成，且项目类型为前后端项目
+- **WHEN** 原型设计阶段产物（产品级 `docs/designs/prototypes/` 下的原型产物与 `manifest.md`）输出完成，且项目类型为前后端项目
 - **THEN** 系统通过 AskUserQuestion 展示原型设计摘要，提供「确认通过」和「需要修订」两个选项
 - **AND** 用户选择「确认通过」后，系统在 .status.md 用户评审记录中将「原型设计」标记为 `✅ 已确认`
 - **AND** 系统将详细设计阶段状态更新为 `🔄 进行中`

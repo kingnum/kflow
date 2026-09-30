@@ -1,4 +1,10 @@
-## ADDED Requirements
+# prototype-decision-gate Specification
+
+## Purpose
+
+定义原型设计阶段的决策门控规则，要求在设计前完成必要的用户询问决策，并明确 guide RESUME 路由不触发原型询问。
+
+## Requirements
 
 ### Requirement: 原型设计决策门控
 

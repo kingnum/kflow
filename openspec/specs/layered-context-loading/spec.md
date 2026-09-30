@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# layered-context-loading Specification
+
+## Purpose
+
+本能力定义子代理调用的分层上下文加载策略，规定各加载层级的来源文件位于各 Skill 自身的 `references/` 目录内，子代理 prompt 仅加载当前阶段相关的层级，且不得依赖任何外部共享目录。
+
+## Requirements
 
 ### Requirement: Layered context loading strategy
 The system SHALL define a layered context loading strategy for subagent invocations. The sources for each loading tier SHALL reside in the skill's own `references/` subdirectory. Subagent prompts SHALL load only the tiers relevant to the current phase.
@@ -17,9 +23,3 @@ The system SHALL define a layered context loading strategy for subagent invocati
 - **WHEN** any KFlow Skill constructs a subagent prompt
 - **THEN** the loading instructions SHALL NOT reference `kflow-shared/`
 - **AND** all file paths SHALL point to the skill's own `references/` directory
-
-## REMOVED Requirements
-
-### Requirement: Shared file loading tier annotation in kflow-shared headers
-**Reason**: `kflow-shared/` directory is removed. Loading tier annotations are now implicit based on which `references/` files a skill includes.
-**Migration**: Each skill's SKILL.md SHALL document which `references/` files belong to which loading tier in its subagent construction instructions.

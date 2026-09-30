@@ -1,7 +1,7 @@
 ---
 name: kflow-design
-version: 0.17.0
-description: Use when user needs detailed design/详细设计、技术设计、架构设计、设计审查. 变更级统一详细设计——系统架构、数据模型、接口设计、NFR定义、四视角并行审查（业务/技术/安全/质量）、子变更划分（含HITL/AFK分类）、ADR架构决策记录。必须阶段，依赖 kflow-explore 输出。
+version: 0.18.0
+description: Use when user needs detailed design/详细设计、技术设计、架构设计、设计审查. 变更级统一详细设计——系统架构、数据模型、接口设计、NFR定义、按变更档位分级审查（轻量单 Agent 综合 / 标准两视角 / 完整四视角并行）、变更档位复核、子变更划分（含HITL/AFK分类）、ADR架构决策记录。必须阶段，依赖 kflow-explore 输出。
 license: MIT
 triggers:
   - 详细设计
@@ -33,9 +33,12 @@ allowed-tools:
   → 高复杂度 FP 逐项用户确认
   → NFR 章节（性能/安全/可用性/可维护性）
   → 配置项设计 + 错误处理设计
-  → api-tests/ + e2e-tests/ 测试用例文档
+  → api-tests/ + e2e-tests/ 测试用例文档（轻量档：条件适用）
   → 基于完整设计认知划分子变更（HITL/AFK 分类 + 前端SC依赖API契约声明）
-  → 自审（首次 10 轮 / 非首次弹性轮次 + 评分底线，一致性/完备性/可行性/可测性）
+    └── 轻量档：跳过划分表直接产出单一子变更；FP 类型混合时升档为「标准」
+  → 变更档位复核（完整公式 + 单向升档安全阀）
+  → 阶段适用性声明（仅轻量档：DIVIDE 之后判定三个测试阶段适用性并写入 .status.md）
+  → 自审（按变更档位轮次：轻量 0 / 标准 2 / 完整 10，一致性/完备性/可行性/可测性）
   → 四视角并行 Agent 审查
   → 审查综合报告（fingerprint 去重 + 问题追踪矩阵）
   → 分级修复（高/中/低严重度 + 重审闭环）
@@ -72,7 +75,7 @@ allowed-tools:
 |------|------|------|
 | functional-designs/ | ✅ 必须 | 设计探索阶段输出，包含功能点清单（含用户故事/业务规则/业务流程）、项目类型 |
 | CONTEXT.md | ✅ 必须 | 项目级领域词汇表，用于术语一致性审查（见 kflow-explore 消费链） |
-| prototype/index.html | 🔶 条件 | 原型设计阶段输出，前后端项目如存在则作为元素覆盖树生成来源（路径 A 静态 HTML 解析） |
+| docs/designs/prototypes/manifest.md + prototype-changes.md | 🔶 条件 | 产品级原型清单与变更级原型改动清单，前后端项目如存在则作为元素覆盖树生成来源（路径 A 静态 HTML 解析）与涉及页面界定依据 |
 
 > **图例说明**：✅ 必须 ＝ 不可或缺的前置输入；🔶 条件 ＝ 满足特定条件时需要；⏭️ 跳过 ＝ 被跳过的阶段，产物不存在。
 
@@ -84,18 +87,19 @@ allowed-tools:
 |------|------|------|---------|
 | 覆盖追溯矩阵 | `docs/changes/{change}/traceability.md` | ✅ 必须 | 基于 FP 清单初始化矩阵，功能点ID 列已填充，后续各阶段独立填写对应列 |
 | 统一详细设计 | `docs/changes/{change}/detailed-design.md`（FP ≤ 20）或 `docs/changes/{change}/detailed-design/` 目录（FP > 20） | ✅ 必须 | 系统架构 + 所有功能点设计 + NFR 章节 + 子变更划分 + 配置项 + 错误处理 + 修订记录（七部分完整结构，修订记录为统一格式：版本/日期/修订类型/修订内容/影响功能点/触发阶段），含复杂度分布表和高复杂度 FP 确认记录 |
-| 接口测试用例 | `docs/changes/{change}/api-tests/` | ✅ 必须 | index.md + part-NN.md 目录化结构，每分册 ≤ 30 接口 |
-| E2E 测试用例 | `docs/changes/{change}/e2e-tests/` | ✅ 必须 | index.md + part-NN.md 目录化结构，每分册 ≤ 30 场景 |
-| 元素覆盖树 | `prototype/element-coverage-tree.md`（有原型）或 `e2e-tests/element-coverage-tree.md`（无原型） | ✅ 必须（前后端项目） | 四层树状元素覆盖文件，含 TC-ID 映射。替代已废弃的 element-spec.md 和 nav-tree.md |
-| 四视角审查报告（完整模式） | `docs/changes/{change}/cross-reviews/{timestamp}/*.md` | ✅ 必须（功能需求级/产品需求级） | business-review.md、technical-review.md、security-review.md、quality-review.md |
-| 审查综合报告 | `docs/changes/{change}/cross-reviews/{timestamp}/synthesis.md` | ✅ 必须 | 简化模式：单视角综合审查输出单一 synthesis.md；完整模式：四份视角报告 + synthesis.md |
+| 接口测试用例 | `docs/changes/{change}/api-tests/` | ✅ 必须（轻量档：🔶 条件适用） | index.md + part-NN.md 目录化结构，每分册 ≤ 30 接口；轻量档下由阶段适用性声明判定，判为 `⏭️ 不适用` 时 SHALL NOT 产出 |
+| E2E 测试用例 | `docs/changes/{change}/e2e-tests/` | ✅ 必须（轻量档：🔶 条件适用） | index.md + part-NN.md 目录化结构，每分册 ≤ 30 场景；轻量档下由阶段适用性声明判定，判为 `⏭️ 不适用` 时 SHALL NOT 产出 |
+| 元素覆盖树 | 变更级 `element-coverage-tree.md`（有原型）或 `e2e-tests/element-coverage-tree.md`（无原型） | ✅ 必须（前后端项目；轻量档下 E2E测试判为 `⏭️ 不适用` 时不产出） | 四层树状元素覆盖文件，含 TC-ID 映射。替代已废弃的 element-spec.md 和 nav-tree.md |
+| 视角审查报告 | `docs/changes/{change}/cross-reviews/{timestamp}/*.md` | 🔶 条件 | 视角报告数量按变更档位确定：完整档四份独立视角报告（business-review.md、technical-review.md、security-review.md、quality-review.md）；标准档两份合成视角报告（business-technical-review.md、security-quality-review.md）；轻量档不产出独立视角报告 |
+| 审查综合报告 | `docs/changes/{change}/cross-reviews/{timestamp}/synthesis.md` | ✅ 必须 | 全部档位均产出单一 synthesis.md（轻量档为唯一审查产物；标准档与完整档为综合产物） |
 | 架构决策记录 | `docs/adr/{序号}-{标题}.md` | 🔶 条件 | 满足三条件时创建，含过期条件标注 |
-| 自审报告 | `docs/changes/{change}/self-reviews/design/` | ✅ 必须 | 自审报告（首次 10 份 / 非首次弹性份数），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
+| 自审报告 | `docs/changes/{change}/self-reviews/design/` | 🔶 条件 | 自审报告（标准档 2 份 / 完整档 10 份；轻量档 0 份不产出且不创建目录），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
 | 用户评审记录 | `docs/changes/{change}/.status.md` | ✅ 必须 | 详细设计评审状态、评审时间、备注 |
+| 阶段适用性声明 | `docs/changes/{change}/.status.md`「阶段适用性声明」区 | 🔶 条件（仅轻量档） | 逐阶段记录 接口单元测试 / E2E测试 / 集成测试 的适用性与判定依据；标准档与完整档 SHALL NOT 生成 |
 
 ## 纯后端项目
 
-与前后端项目相同，但不输出 `e2e-tests/` 目录。
+与前后端项目相同，但不输出 `e2e-tests/` 目录；轻量档下 `api-tests/` 亦为条件适用（由阶段适用性声明判定）。
 
 # 详细设计文档拆分规则
 
@@ -198,21 +202,43 @@ detailed-design/
 │  6. NFR       → 编写 NFR 章节（性能/安全/可用性/可维护性）          │
 │  6.5 CONFIG   → 配置项设计                                        │
 │  6.6 ERROR    → 错误处理设计                                       │
-│  7. APITESTS  → 编写统一 api-tests/                               │
-│  8. E2ETESTS  → (前后端项目) EXPLORE 元素覆盖树 → DESIGN TC-ID 映射 → VERIFY 覆盖率门控 → 编写统一 e2e-tests/ │
+│  7. APITESTS  → 编写统一 api-tests/（轻量档：见 9.6 顺序约束）    │
+│  8. E2ETESTS  → (前后端项目) EXPLORE 元素覆盖树 → DESIGN TC-ID 映射 → VERIFY 覆盖率门控 → 编写统一 e2e-tests/（轻量档：见 9.6 顺序约束） │
 │  9. DIVIDE    → 划分子变更 + FP 类型一致性校验（HITL/AFK 分类）  │
-│  │   9a. 读取 functional-designs/index.md 每 FP 的「类型」列       │
-│  │   9b. 类型一致性校验: 全部一致→✅ / 混合→❌ 拒绝                │
-│  │   9c. 自动推断子变更类型（SHALL NOT 人工手动填写）              │
-│  │   9d. 旧版文档兼容: 缺少类型列→🟡 警告                          │
-│  10. SELFREV   → 首次/非首次分级自审（子代理串行 + 重复制）       │
+│  │   ├── 轻量档分支: 跳过依赖关系分析与划分表 → 直接产出单一子变更 │
+│  │   │   · 类型由 FP 类型一致性校验自动推断（SHALL NOT 人工填写） │
+│  │   │   · FP 类型混合（后端+前端）→ ⬆️ 升档为「标准」            │
+│  │   │     （AskUserQuestion 告知原因并确认；按标准档重新划分；    │
+│  │   │      SHALL NOT 阻塞；SHALL NOT 回退 explore；不生成声明）  │
+│  │   └── 标准/完整档分支:                                        │
+│  │      9a. 读取 functional-designs/index.md 每 FP 的「类型」列   │
+│  │      9b. 类型一致性校验: 全部一致→✅ / 混合→❌ 拒绝            │
+│  │      9c. 自动推断子变更类型（SHALL NOT 人工手动填写）          │
+│  │      9d. 旧版文档兼容: 缺少类型列→🟡 警告                      │
+│  9.5 TIER_RECHECK → 变更档位复核（完整公式 + 单向升档安全阀）     │
+│  │   9.5a. 影响范围分数 = 功能点数×1 + 接口数×1.5 + 数据模型变更数×2│
+│  │         阈值: <=3→轻量 / 4~15→标准 / >15→完整                  │
+│  │         变更类型为产品需求 → 下限抬升为完整                     │
+│  │   9.5b. 复核档位 > 当前档位 → AskUserQuestion 确认后升档        │
+│  │         （覆写 .status.md；SHALL NOT 回退 kflow-explore）      │
+│  │        复核档位 <= 当前档位 → 维持，SHALL NOT 降档             │
+│  9.6 APPLICABILITY → (仅轻量档) 阶段适用性声明                    │
+│  │   逐阶段判定 接口单元测试 / E2E测试 / 集成测试 的适用性         │
+│  │   · 判定依据: detailed-design.md 接口设计章节 / 跨子变更接口契约 │
+│  │     章节；functional-designs/index.md 项目类型与页面/组件/路由  │
+│  │   · 保守回退: 依据缺失或格式不符 → 该阶段判为 ✅ 适用           │
+│  │   · 写入变更级 .status.md「阶段适用性声明」区                  │
+│  │   · 被裁剪阶段 → traceability.md 对应列一次性整列填 ⏭️         │
+│  │   · 标准档与完整档 SHALL NOT 执行本步骤                       │
+│  10. SELFREV   → 按变更档位自审（子代理串行 + 重复制）           │
 │  │   每轮: 启动独立 Agent(subagent) 子代理                       │
 │  │   子代理全四维度独立检查（一致性/完备性/可行性/可测性）           │
 │  │   子代理发现问题 → 直接修复 + 生成自审报告                     │
 │  │   主 Agent 读报告 + 确认修复 → 启动下一轮子代理                │
 │  │   报告路径: self-reviews/design/{YYYYMMDD}-{HHMMSS}.md         │
-│  │   首次创建串行 10 轮；非首次创建弹性轮次 + 评分底线 > 8        │
-│  11. REVIEW    → 按变更类型分级审查（简化/完整）       │
+│  │   轻量 0 轮（跳过，改以产物完整性门控）/ 标准 2 轮 / 完整 10 轮 │
+│  │   评分底线 > 8 仅完整档适用                                   │
+│  11. REVIEW    → 按变更档位分级审查（轻量单 Agent / 标准两视角 / 完整四视角）│
 │  12. SYNTH    → 输出审查综合报告（fingerprint 去重 + 追踪矩阵）    │
 │  13. FIX      → 按严重度分级修复（高/中/低 + 重审闭环）            │
 │  14. APPROVAL → 展示设计给用户最终评审（AskUserQuestion）          │
@@ -475,6 +501,10 @@ ELSE（FP ≤ 20）:
 
 ## 步骤 7-8：APITESTS + E2ETESTS — 测试用例文档
 
+> **轻量档执行顺序**：`轻量` 档下本步骤的产出动作 SHALL 延后至步骤 9.6 APPLICABILITY 之后执行，且仅产出判定为 `✅ 适用` 者的产物；判为 `⏭️ 不适用` 者 SHALL NOT 产出。详见「步骤 9.6：APPLICABILITY」的「轻量档下的执行顺序约束」。
+>
+> **轻量档产物约束**：判为 `⏭️ 不适用` 时 `api-tests/` 与 `e2e-tests/`（含元素覆盖树）SHALL NOT 产出。
+
 ### api-tests/
 
 ```
@@ -493,7 +523,7 @@ api-tests/
 
 ```
 1. 检测 element-coverage-tree.md 是否存在
-2. 若存在: 读取生成时间戳，比对来源（prototype/index.html 修改时间）
+2. 若存在: 读取生成时间戳，比对来源（docs/designs/prototypes/manifest.md 最后更新时间与本变更涉及页面对应屏幕文件的修改时间）
    - 来源已更新 → AskUserQuestion: "元素覆盖树可能已过期。是否重新生成？"
      选项: [重新生成] [增量更新] [保持不变]
 3. 若不存在: 进入 8.1 生成树
@@ -503,11 +533,11 @@ api-tests/
 
 **路径 A — 有原型（静态 HTML 解析）**:
 ```
-1. 解析 prototype/*.html 的 DOM 树
+1. 解析 docs/designs/prototypes/ 下本变更涉及页面及其入口 index.html 的 DOM 树
 2. 提取交互元素: <button>, <a>, <input>, <select>, <textarea>, <dialog>, [role="dialog"]
 3. 提取 CSS 伪类状态 + class 命名推测状态
 4. 提取 JS 事件绑定推断操作链
-5. 输出 prototype/element-coverage-tree.md（初始版，TC-ID 为空）
+5. 输出变更级 docs/changes/{change}/element-coverage-tree.md（初始版，TC-ID 为空）
 ```
 
 **路径 B — 无原型（playwright-cli 动态探索）**:
@@ -521,8 +551,8 @@ api-tests/
 
 | 条件 | 落点 |
 |------|------|
-| prototype/index.html 存在 | `prototype/element-coverage-tree.md` |
-| 无 prototype + 前端项目 | `e2e-tests/element-coverage-tree.md` |
+| 有原型（docs/designs/prototypes/manifest.md 存在） | `docs/changes/{change}/element-coverage-tree.md`（变更根目录） |
+| 无原型 + 前端项目 | `e2e-tests/element-coverage-tree.md` |
 | 纯后端项目 | 无 |
 
 #### 8.2 DESIGN — TC-ID 映射
@@ -553,6 +583,43 @@ api-tests/
 > **拆分模式**（FP > 20）：子变更划分写入 `detailed-design/subchange-division.md`（独立文件），非 `detailed-design.md` 章节。
 
 > **划分时机**：所有功能点的数据模型、接口、流程已完整设计，依赖关系已明确，基于完整设计认知进行划分。
+
+### 轻量档分支（变更档位 = 轻量）
+
+读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理）：
+
+```
+IF 档位 = 轻量:
+  1. 跳过依赖关系分析与子变更划分表生成
+  2. 直接产出单一子变更（变更的子变更数量恒为 1）
+  3. 子变更类型由 FP 类型一致性校验自动推断:
+     ├── 全部「后端」→ 后端子变更
+     ├── 全部「前端」→ 前端子变更
+     └── 混合「后端」+「前端」→ ⬆️ 升档为「标准」（见下）
+  4. 类型 SHALL NOT 由人工手动填写
+  5. 依赖关系图与实现顺序标注为「单一子变更，无依赖」
+  6. HITL/AFK 分类与前端子变更「依赖API契约」声明仍 SHALL 标注
+ELSE（标准/完整档）:
+  走下方「FP 类型一致性校验」与「划分原则」的既有流程
+```
+
+### FP 类型混合升档（轻量档专属）
+
+子变更类型严格二分为「后端子变更」与「前端子变更」，混合类型必须拆分为多个子变更，而轻量档恒为单一子变更；两个规则冲突时选择升档。
+
+```
+WHEN 档位 = 轻量 且 所含 FP 同时存在「后端」与「前端」类型
+THEN:
+  1. AskUserQuestion 告知升档原因（子变更类型严格二分，单一子变更前提不成立）并请求确认
+  2. 确认后覆写 .status.md 的「变更档位」字段为「标准」
+  3. 按标准档流程重新执行子变更划分（含依赖关系分析与划分表生成）
+  4. 后续阶段按标准档的轮次与审查形态执行
+  5. SHALL NOT 以类型混合为由阻塞变更
+  6. SHALL NOT 回退 kflow-explore 阶段
+  7. SHALL NOT 生成阶段适用性声明（已生成的亦失效，按全阶段适用处理）
+```
+
+> **与 TIER_RECHECK 的关系**：类型混合升档发生在 DIVIDE 步骤内，先于步骤 9.5；升档后按 `标准` 档继续执行 TIER_RECHECK（单向升档，SHALL NOT 降档）。标准/完整档下候选组内 FP 类型混合仍按既有规则 ❌ 拒绝该组划分并提示拆分，该规则不变。
 
 ### FP 类型一致性校验（划分前执行）
 
@@ -636,11 +703,122 @@ FOR 每个划分候选组:
 **前端子变更依赖API契约**：依赖列 SHALL 填写「API 契约（detailed-design.md §接口设计）」中的具体接口，格式为 `API: {METHOD} {path}, {METHOD} {path}`。依赖条件：API 契约章节存在且状态为 ✅ 完成。不要求后端子变更编码状态为 ✅ 完成。
 ```
 
-## 步骤 10：SELFREV — 首次/非首次分级自审（子代理串行 + 重复制）
+## 步骤 9.5：TIER_RECHECK — 变更档位复核（单向升档安全阀）
+
+DIVIDE 完成后、SELFREV 之前执行档位复核，使用完整影响范围分数公式（explore 初判时接口数与数据模型数尚不可知，此处才具备完整信息）。
+
+### 9.5a. 复核公式与阈值
+
+```
+影响范围分数 = 功能点数 × 1 + 接口数 × 1.5 + 数据模型变更数 × 2
+阈值映射: 分数 <= 3 → 轻量；4 ~ 15 → 标准；> 15 → 完整
+变更类型为 产品需求 → 档位下限抬升为 完整（不适用分数映射）
+```
+
+### 9.5b. 与当前档位比较
+
+| 比较结果 | 动作 |
+|---------|------|
+| 复核档位 > 当前档位 | 通过 AskUserQuestion 请求用户确认升档；确认后覆写 `.status.md` 的「变更档位」字段，按新档位执行后续阶段（步骤 10 起）；SHALL NOT 回退 kflow-explore 阶段 |
+| 复核档位 <= 当前档位 | 维持当前档位执行；SHALL NOT 降档 |
+
+> **单向升档的理由**：explore 产物在两种档位下只是深度不同，功能点清单已完整，回退不产生新信息；而允许降档会给「先按低档声明、后按低档执行」留下绕过门控的通道。
+>
+> **档位读取**：当前档位读取自变更级 `.status.md`；字段缺失时按 `完整` 档处理。
+
+## 步骤 9.6：APPLICABILITY — 阶段适用性声明（仅轻量档）
+
+DIVIDE（含 9.5 TIER_RECHECK）之后、SELFREV 之前执行。变更档位为 `轻量` 时，SHALL 逐阶段判定测试阶段的适用性并写入变更级 `.status.md`；`标准` 与 `完整` 档 SHALL NOT 执行本步骤，三个阶段按各档既有规则执行。
+
+### 适用范围
+
+| 维度 | 规则 |
+|------|------|
+| 生成条件 | 仅 `变更档位 = 轻量`；`标准` 与 `完整` 档 SHALL NOT 生成该声明区 |
+| 适用对象 | 仅 `接口单元测试`、`E2E测试`、`集成测试` 三个阶段 |
+| 写入位置 | 变更级 `.status.md` 的「阶段适用性声明」区 |
+| 依据必填 | 每个 `⏭️ 不适用` MUST 携带判定依据；无判定依据的 `⏭️` 在下游一律阻塞 |
+| 执行顺序 | `轻量` 档下步骤 7-8 的产出动作 SHALL 延后至本步骤之后执行，且仅产出判定为 `✅ 适用` 者 |
+
+### 轻量档下的执行顺序约束
+
+本步骤的判定输入全部来自 `detailed-design.md` 与 `functional-designs/index.md`，与步骤 7-8 的产出无关；而步骤 7-8 的产出必须受本步骤结果支配。因此 `轻量` 档的执行顺序为：
+
+```
+… 6. NFR → 9. DIVIDE → 9.5 TIER_RECHECK → 9.6 APPLICABILITY（判定并写入声明）
+                                                  │
+                                                  ▼
+                  7-8. APITESTS / E2ETESTS（仅当对应阶段判定为 ✅ 适用）
+                                                  │
+                                                  ▼
+                                            10. SELFREV → REVIEW
+```
+
+- 本步骤之前 SHALL NOT 产出 `api-tests/`、`e2e-tests/` 及其元素覆盖树
+- 判定为 `⏭️ 不适用` 的阶段，其目录 SHALL NOT 产出，亦 SHALL NOT 保留既有残留
+- 理由：「声明不适用但产物存在」在门控中判为不一致并阻塞，先产出再裁剪会直接触发该状态
+- `标准` 与 `完整` 档不生成适用性声明，步骤 7-8 维持既有顺序不变
+
+### 三项判定条件
+
+```
+1. 接口单元测试:
+   读取 detailed-design.md「二、设计域章节 → 接口设计」子章节
+   （拆分模式 FP > 20 时为 detailed-design/domains/{domain}.md 的同名子章节）
+   ├── 接口表中含本变更新增或修改的接口条目 → ✅ 适用
+   └── 否则 → ⏭️ 不适用
+
+2. E2E测试:
+   读取 functional-designs/index.md 的「项目类型」字段与功能点的页面/组件/路由信息
+   ├── 项目类型为前后端项目 且 本变更含页面/组件/路由的新增或变更 → ✅ 适用
+   └── 否则 → ⏭️ 不适用
+
+3. 集成测试:
+   读取 detailed-design.md 的「接口设计」子章节 或「跨子变更接口契约」子章节
+   ├── 接口设计章节含本变更新增或修改的接口条目，
+   │   或跨子变更接口契约章节含本变更条目 → ✅ 适用
+   └── 否则 → ⏭️ 不适用
+```
+
+**保守回退**：任一判定依据产物不存在、章节缺失、格式不符或字段缺失时（如 `detailed-design.md` 无接口设计章节、`functional-designs/index.md` 缺项目类型字段），该阶段 SHALL 判定为 `✅ 适用`。裁剪是优化不是正确性要求，判定失败方向 MUST 偏向执行。
+
+### 写入动作
+
+```
+1. 读取变更级 .status.md 的「变更档位」字段（缺失按 完整 档处理）
+   └── 档位 ≠ 轻量 → SHALL NOT 执行本步骤，直接进入步骤 10
+2. 按上述三项条件逐阶段判定
+3. 写入变更级 .status.md 的「阶段适用性声明」区:
+
+   | 阶段 | 适用性 | 判定依据 | 声明时间 |
+   |------|--------|---------|---------|
+   | 接口单元测试 | ⏭️ 不适用 | detailed-design.md 接口设计章节无本变更新增或修改的接口条目 | 2026-04-29 15:00 |
+   | E2E测试 | ✅ 适用 | 前后端项目且本变更含页面/组件/路由变更 | 2026-04-29 15:00 |
+   | 集成测试 | ⏭️ 不适用 | 接口设计章节与「跨子变更接口契约」章节均无本变更条目 | 2026-04-29 15:00 |
+
+   判定依据列 MUST 写明所读取的章节与判定结论；取值仅 `✅ 适用` / `⏭️ 不适用`。
+
+4. 同步标记 .status.md 阶段状态表: 判为 ⏭️ 不适用 的阶段行标记为 `⏭️ 不适用`，
+   备注列注明「轻量档裁剪」（与可选阶段的 `⏭️ 跳过` 区分）
+5. 联动 traceability.md: 被裁剪阶段对应列（接口测试(ID) / E2E测试(ID) /
+   集成测试(ID)）一次性整列填充 `⏭️`，阶段覆盖统计表中该列标记为
+   `⏭️ 不适用`、覆盖率显示 `N/A`，且该列 SHALL NOT 计入覆盖率分母
+6. 不适用阶段的产物约束: 接口单元测试不适用 → api-tests/ SHALL NOT 产出；
+   E2E测试不适用 → e2e-tests/ 与元素覆盖树 SHALL NOT 产出
+7. 纯后端项目跳过 E2E测试的既有规则与变更档位无关，不由本声明产生
+```
+
+> **档位隔离**：轻量档因 FP 类型混合升档为 `标准` 时 SHALL NOT 生成该声明区（已生成的亦失效，按全阶段适用处理）。
+>
+> **裁剪以列为单位**：适用性是阶段级的，被裁剪阶段 SHALL 整列填充 `⏭️`，SHALL NOT 逐格填充，以保证覆盖率分母一致。
+>
+> 门控四态判定与裁剪分支见 [references/gates.md](references/gates.md) §1.2；声明字段定义见 [references/state-values.md](references/state-values.md) §5；裁剪阶段的钩子豁免见 [references/hooks.md](references/hooks.md) §1。
+
+## 步骤 10：SELFREV — 按变更档位自审（子代理串行 + 重复制）
 
 ### 子代理上下文文件加载（基础层 + 创意层）
 
-自审子代理 prompt 中 SHALL 包含以下 kflow-shared 文件：
+自审子代理 prompt 中 SHALL 包含以下分层加载文件（基础层 + 创意层）：
 
 - skills/kflow-design/references/state-values.md（摘要）
 - skills/kflow-design/references/gates.md（当前阶段相关门控）
@@ -652,22 +830,27 @@ FOR 每个划分候选组:
 
 详见 [references/self-review.md](references/self-review.md) — 四维度检查规则（一致性/完备性/可行性/可测性）、子代理串行执行流程、边审边修说明、串行约束、强制执行规则。
 
-首次/非首次分级（判定信号、弹性轮次公式、评分底线见 [references/self-review.md](references/self-review.md) §4）：首次创建固定 10 轮；非首次创建按弹性轮次（design 影响范围分数 = 功能点数 × 1 + 接口数 × 1.5 + 数据模型数 × 2，映射 1→1 轮、2–5→ceil(分数)、6–15→max(5, ceil(分数/2))、>15→10 轮）+ 评分底线（各维度评分均 > 8 方通过，未达标补审至 10 轮上限）。
+变更档位轮次（轮次取值、评分底线与轻量档产物门控见 [references/self-review.md](references/self-review.md) §4）：读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理），轻量档 0 轮（跳过 SELFREV，改以产物完整性门控替代，不创建 `self-reviews/design/` 目录）、标准档 2 轮、完整档 10 轮 + 评分底线（各维度评分均 > 8 方通过，未达标补审至 10 轮上限）。
 
-## 步骤 11：REVIEW — 设计审查（按变更类型分级）
+> **轻量档产物门控与阶段适用性声明的交集**：门控范围为「本阶段应产出的产物」——被步骤 9.6 阶段适用性声明判为 `⏭️ 不适用` 的阶段产物（`api-tests/`、`e2e-tests/` 及其元素覆盖树）SHALL NOT 产出，其缺失 SHALL NOT 判为缺项；判为 `✅ 适用` 的阶段产物缺失时该阶段阻塞。
+
+## 步骤 11：REVIEW — 设计审查（按变更档位分级）
 
 > **子代理隔离规则**：审查子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管审查执行。最多重试 3 次，全部失败后标记 ⚠️ 阻塞并提示用户。
 
-读取 `.status.md` 的变更类型，按变更类型分级执行设计审查：
+读取 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理），按档位分级执行设计审查：
 
-| 变更类型 | 审查模式 | 执行方式 | 产物 |
+| 变更档位 | 审查模式 | 执行方式 | 产物 |
 |---------|---------|---------|------|
-| 功能缺陷级 | 简化模式 | 单 Agent 串行覆盖业务/技术/安全/质量四视角全部检查项 | 单一 `cross-reviews/{YYYYMMDD}-{HHMMSS}/synthesis.md` |
-| 功能需求级/产品需求级 | 完整模式 | 并行启动四个审查 Agent（业务/技术/安全/质量） | 四份视角报告 + `synthesis.md` |
+| 轻量 | 简化模式 | 单 Agent 串行覆盖业务/技术/安全/质量四视角全部检查项 | 单一 `cross-reviews/{YYYYMMDD}-{HHMMSS}/synthesis.md` |
+| 标准 | 两视角模式 | 并行启动两个审查 Agent：业务+技术视角、安全+质量视角 | `business-technical-review.md` + `security-quality-review.md` + `synthesis.md` |
+| 完整 | 完整模式 | 并行启动四个审查 Agent（业务/技术/安全/质量） | 四份视角报告 + `synthesis.md` |
+
+> **检查项不得缩减**：轻量档单 Agent 与标准档两视角 SHALL 覆盖完整档四视角的全部检查项，仅并行度与产物形态随档位变化。
 
 审查批次目录: `cross-reviews/{YYYYMMDD}-{HHMMSS}/`。
 
-详见 [references/review-content.md](references/review-content.md) — 业务/技术/安全/质量四视角具体检查项（简化模式单 Agent 串行覆盖，完整模式四 Agent 并行覆盖）。
+详见 [references/review-content.md](references/review-content.md) — 业务/技术/安全/质量四视角具体检查项（轻量档单 Agent 串行覆盖，标准档两 Agent 分组覆盖，完整档四 Agent 并行覆盖）。
 
 ## 步骤 12：SYNTH — 审查综合报告
 
@@ -675,9 +858,11 @@ FOR 每个划分候选组:
 
 详见 [references/synthesis-report.md](references/synthesis-report.md) — 审查批次索引、问题统计、问题清单、fingerprint 去重、问题追踪矩阵、关闭条件。
 
-## 步骤 13：FIX — 分级修复 + 重审闭环（仅完整模式）
+## 步骤 13：FIX — 分级修复 + 重审闭环（完备档专属）
 
-> **简化模式**：单轮出报告，不执行分级重审闭环；若发现高严重度问题，修复后仍走单视角单轮复检。
+> **轻量档与标准档**：单轮出报告，不执行分级重审闭环；若发现高严重度问题，修复后仍走单轮复检。轻量档由单 Agent 复核全部已修复问题；标准档由原两视角复核。
+
+> **完整档**：
 
 | 严重度 | 修复要求 | 重审方式 |
 |--------|---------|---------|
@@ -694,7 +879,7 @@ FOR 每个划分候选组:
 
 ## 步骤 14：APPROVAL — 用户评审
 
-在 AI 四视角审查完成、所有高/中严重度问题已修复后触发。使用 AskUserQuestion 展示设计摘要并请求确认。
+在 AI 设计审查（形态按变更档位）完成、所有高/中严重度问题已修复后触发。使用 AskUserQuestion 展示设计摘要并请求确认。
 
 详见 [references/approval-flow.md](references/approval-flow.md) — 评审时机、摘要展示、评审交互、结果处理、评审记录写入。
 
@@ -722,8 +907,9 @@ FOR 每个划分候选组:
 | 数据模型 | 实体定义、表结构、索引、约束、关系 |
 | 接口设计 | API 路径、方法、入参、出参、错误码 |
 | NFR | 性能/安全/可用性/可维护性需求定义 |
-| 子变更划分 | 基于完整设计认知划分子变更 |
-| 测试用例 | api-tests/ 和 e2e-tests/ 测试用例文档 |
+| 子变更划分 | 基于完整设计认知划分子变更（轻量档为单一子变更） |
+| 阶段适用性声明 | 轻量档下逐阶段判定 接口单元测试 / E2E测试 / 集成测试 的适用性并写入变更级 `.status.md` |
+| 测试用例 | api-tests/ 和 e2e-tests/ 测试用例文档（轻量档条件适用） |
 | ADR | 满足三条件的架构决策记录 |
 | 跨子变更接口契约 | 子变更间接口契约定义 |
 
@@ -732,7 +918,7 @@ FOR 每个划分候选组:
 | 内容类别 | 说明 | 应由哪个阶段处理 |
 |---------|------|----------------|
 | 功能定义修改 | 新增/删除/修改 functional-designs/ 中的功能点 | explore（回退） |
-| UI 布局修改 | 修改 prototype/ 中的 UI 设计 | prototype（回退） |
+| UI 布局修改 | 修改 docs/designs/prototypes/ 中的 UI 设计 | `kflow-prototype-design` REVISION 模式（回退） |
 | 业务规则修改 | 修改功能设计中的业务规则 | explore（回退） |
 | 代码实现 | 任何代码文件 | code |
 
@@ -741,7 +927,7 @@ FOR 每个划分候选组:
 当 design 阶段发现上游产物存在缺陷时：
 1. 记录到 `docs/skill-suggestion.md`
 2. 提示用户是否需要阶段回退
-3. **禁止**直接修改 functional-designs/ 或 prototype/ 内容
+3. **禁止**直接修改 functional-designs/ 内容，也禁止直接修改产品级 `docs/designs/prototypes/`（UI 布局问题须经 `kflow-prototype-design` REVISION 模式回退处理）
 
 ---
 
@@ -752,7 +938,7 @@ kflow-explore（设计探索）
   ├── functional-designs/
   └── CONTEXT.md
         └── kflow-prototype-design（原型设计，可选）
-              └── prototype/index.html
+              └── 产品级 docs/designs/prototypes/ + 变更级 prototype-changes.md
                     └── kflow-design（本阶段，必须，变更级）
                           ├── detailed-design.md
                           ├── traceability.md
@@ -778,15 +964,18 @@ traceability.md 消费链:
 
 - **变更级统一设计**：所有功能点在变更级完成详细设计，不做子变更级拆分设计
 - **子变更划分后置**：在所有设计完成、依赖关系明确、界面契约定义后，基于完整设计认知划分
-- **自审分级强制执行（子代理串行 + 重复制）**：在四视角并行审查之前完成，首次创建完成全部 10 轮；非首次创建按弹性轮次执行，各维度评分均 > 8 方通过（未达标补审至 10 轮上限）。每轮启动独立子代理执行全部四个维度（一致性+完备性+可行性+可测性），子代理边审边修，串行不可并行，废除分工制，不可提前终止
-- **设计审查按变更类型分级**：功能缺陷级→简化模式（单 Agent 综合审查）；功能需求级/产品需求级→完整模式（四视角并行）
+- **轻量档 DIVIDE 简化**：轻量档跳过依赖关系分析与子变更划分表，直接产出单一子变更，类型由 FP 类型一致性校验自动推断（SHALL NOT 人工填写）；所含 FP 同时含「后端」与「前端」时，经用户确认升档为 `标准` 后按标准档重新划分，SHALL NOT 阻塞、SHALL NOT 回退 explore
+- **阶段适用性声明（仅轻量档）**：DIVIDE 之后、SELFREV 之前，按 `detailed-design.md` 接口设计章节与「跨子变更接口契约」子章节、`functional-designs/index.md` 的项目类型与页面/组件/路由信息，逐阶段判定 接口单元测试 / E2E测试 / 集成测试 的适用性，写入变更级 `.status.md`「阶段适用性声明」区；判定依据缺失时保守回退为 `✅ 适用`；被裁剪阶段在 `traceability.md` 中整列填 `⏭️` 且不计入覆盖率分母；标准档与完整档 SHALL NOT 生成
+- **变更档位复核（单向升档）**：DIVIDE 后按完整公式复核档位；复核档位高于当前档位时经用户确认后升档，仅升不降，不回退 explore
+- **档位自审强制执行（子代理串行 + 重复制）**：在交叉审查之前完成，轮次按变更档位取值（轻量 0 轮跳过 / 标准 2 轮 / 完整 10 轮）；完整档各维度评分均 > 8 方通过（未达标补审至 10 轮上限）。每轮启动独立子代理执行全部四个维度（一致性+完备性+可行性+可测性），子代理边审边修，串行不可并行，废除分工制，不可提前终止
+- **设计审查按变更档位分级**：轻量档→简化模式（单 Agent 综合审查）；标准档→两视角并行（业务+技术 / 安全+质量）；完整档→完整模式（四视角并行）。各档位检查项不得缩减
 - **fingerprint 去重合并**：多视角发现同一问题时合并为一个问题记录
 - **分级修复闭环**：高严重度 → 原视角+安全交叉检查；中严重度 → 原视角重审；低严重度 → 随机30%抽查
 - **ADR 三条件过滤**：难以逆转 + 缺上下文会奇怪 + 真正做了权衡，不满足时记录在 detailed-design.md
 - **ADR 每变更上限**：功能需求 ≤ 2、产品级 ≤ 5、功能缺陷 0
 - **HITL/AFK 分类**：HITL = 设计不完整标记，阻塞 plan 入口；AFK = 设计完整可执行。前端子变更依赖列 SHALL 填写「依赖API契约」
 - **NFR 章节**：至少包含 1 项性能需求和 1 项安全需求（门控检查）
-- **禁止越界**：不得修改 functional-designs/ 或 prototype/ 内容
+- **禁止越界**：不得修改 functional-designs/ 内容，也不得直接修改产品级 docs/designs/prototypes/
 - **ADR 索引维护**：创建 ADR 后需同步更新 `docs/adr/index.md`
 - **高复杂度 FP 必须逐项经用户确认**：全部设计域完成后，所有标记为「高」复杂度的 FP 必须逐项通过 AskUserQuestion 与用户确认设计方案，不可批量确认或跳过，确认通过后方可进入子变更划分
 

@@ -1,3 +1,9 @@
+# dod-acceptance Specification
+
+## Purpose
+
+定义在计划阶段为每个功能点补充 Definition of Done 验收标准的规则，明确验收标准区块的格式与编写要求，使功能点是否完成具备客观可判定的依据。
+
 ## Requirements
 
 ### Requirement: 每功能点定义 DoD 验收标准

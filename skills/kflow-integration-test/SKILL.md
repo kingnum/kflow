@@ -1,7 +1,7 @@
 ---
 name: kflow-integration-test
-version: 0.17.0
-description: Use when user needs integration testing/集成测试、跨子变更测试、integration test, or all subchanges complete and ready for cross-subchange verification. 变更级集成测试，内聚四分法修复循环，架构评估自动触发。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子。
+version: 0.18.0
+description: Use when user needs integration testing/集成测试、跨子变更测试、integration test, or all subchanges complete and ready for cross-subchange verification. 变更级集成测试，内聚四分法修复循环，架构评估自动触发。必须阶段（轻量档下按阶段适用性声明条件适用），变更级。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:
   - 集成测试
@@ -22,6 +22,8 @@ allowed-tools:
 
 变更级集成测试执行器。所有子变更完成后执行跨子变更集成测试，验证接口契约和端到端流程。内聚四分法缺陷修复循环，不委托给 `kflow-bug-fix`。适用于前后端和纯后端项目。
 
+变更档位为 `轻量` 且阶段适用性声明判定为 `⏭️ 不适用`（有判定依据）时，本 Skill SHALL NOT 启动，SHALL 直接进入审计阶段（见「阶段适用性入口门控」）。`标准` 与 `完整` 档 SHALL NOT 应用该机制。
+
 > ⚠ **子代理强制规则**（参见 skills/kflow-integration-test/references/repetition.md §12）:
 > 1. 本阶段主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收
 > 2. 主 Agent SHALL NOT 直接执行本阶段主工作，无例外
@@ -36,12 +38,48 @@ allowed-tools:
 # 门控检查
 
 进入集成测试阶段前检查：
+- 阶段适用性声明按四态判定（仅轻量档，见「阶段适用性入口门控」）
 - 所有子变更编码 + 审查状态 = ✅ 完成
-- 所有子变更接口单元测试状态 = ✅ 完成
-- 前后端项目：所有子变更 E2E 测试状态 = ✅ 完成
+- 所有子变更接口单元测试状态 = ✅ 完成 或 ⏭️ 不适用（有声明依据）
+- 前后端项目：所有子变更 E2E 测试状态 = ✅ 完成 或 ⏭️ 不适用（有声明依据）
 - 变更级服务刷新已完成并通过（服务编译、迁移执行、重启、健康检查）
 - `integration-tests/index.md` 文件存在
 - 任一不满足则提示先完成前置条件
+
+> 前置测试阶段的完成判定为「✅ 完成 **或** 已标记 `⏭️ 不适用`（有声明依据）」，轻量档裁剪掉的测试阶段 SHALL 视为满足前置条件。
+
+# 阶段适用性入口门控
+
+> **四态判定矩阵**参见 `skills/kflow-integration-test/references/gates.md` §1.2；**声明字段**参见 `skills/kflow-integration-test/references/state-values.md` §5；**钩子豁免**参见 `skills/kflow-integration-test/references/hooks.md` §1
+
+仅 `变更档位 = 轻量` 时适用，`标准` 与 `完整` 档 SHALL NOT 应用本机制。变更档位读取自变更级 `.status.md` 基本信息，字段缺失时按 `完整` 档处理。
+
+## 适用性判定
+
+判定依据为变更级 `detailed-design.md`：接口设计章节含本变更新增或修改的接口条目，**或**「跨子变更接口契约」章节含本变更条目 → `✅ 适用`；否则 `⏭️ 不适用`。判定依据产物不存在 / 格式不符 / 字段缺失时 SHALL 判为 `✅ 适用`（保守回退）。
+
+## 四态判定
+
+| 阶段适用性声明 | `test-reports/integration/` | 判定 | 处理 |
+|--------------|---------------------------|------|------|
+| `⏭️ 不适用` | 不存在 | 合法跳过 | 直接进入审计阶段 |
+| `⏭️ 不适用` | 存在 | 不一致，❌ 阻塞 | 提示声明与产物矛盾 |
+| `✅ 适用` | 存在 | 通过 | 正常执行本阶段 |
+| `✅ 适用` | 不存在 | ❌ 阻塞 | 输出缺失产物清单 |
+
+无声明依据的 `⏭️` 一律 ❌ 阻塞。
+
+## 裁准时行为
+
+声明 `⏭️ 不适用`、`test-reports/integration/` 不存在且存在判定依据时：
+
+- SHALL NOT 启动本 Skill，SHALL NOT 创建子代理
+- SHALL NOT 执行任何 PRE_HOOK / POST_HOOK 步骤（含变更级服务刷新、编译重启、浏览器清理）
+- SHALL NOT 产出 `test-reports/integration/summary.md` 与轮次报告
+- SHALL **直接进入审计阶段**，跳过本文件「执行流程」的全部步骤
+- 归档门控 SHALL 视为满足
+
+轻量档集成测试仍适用时，按轻量档轮次（1 轮）执行。
 
 # 输入要求
 
@@ -64,6 +102,8 @@ allowed-tools:
 | 架构评估报告 | `test-reports/integration/fix-reports/arch-assessment-{timestamp}.md` | 🔶 条件 | 连续3轮同用例失败时 |
 | 状态文件更新 | `.status.md` | ✅ 必须 | 标记集成测试阶段完成 |
 
+> 阶段适用性声明判定为 `⏭️ 不适用` 时（仅轻量档），SHALL NOT 产出上述任何产物。
+
 # 执行流程
 
 ```
@@ -72,6 +112,9 @@ allowed-tools:
 ┌─────────────────────────────────────────────────────────────┐
 │                INTEGRATION TEST WORKFLOW                     │
 ├─────────────────────────────────────────────────────────────┤
+│  0. GATE      → 阶段适用性声明四态判定（仅轻量档）              │
+│  │   ├── ⏭️ 不适用 + 无产物 + 有依据 → 直接进入审计阶段       │
+│  │   └── ✅ 适用 / 无声明 → 继续步骤 1                          │
 │  1. PRE_HOOK  → CHECK_STATE → RELOAD → 引用                           │
 │  │              skills/kflow-integration-test/references/hooks.md integration-test PRE_HOOK  │
 │  2. CHECK     → 门控检查（子变更全部完成 + 服务刷新）        │
@@ -306,7 +349,19 @@ allowed-tools:
 
 # 重复制（执行类阶段）
 
-集成测试阶段属于执行类阶段，采用重复制模式。目标轮次由弹性轮次决策规则确定（参见 `skills/kflow-integration-test/references/repetition.md` §14）：首次执行 10 轮，回退重执行按影响范围分数缩减。
+集成测试阶段属于执行类阶段，采用档位驱动的弹性重复制模式，目标轮次按**档位基线**确定（参见 `skills/kflow-integration-test/references/repetition.md` §14）：
+
+| 变更档位 | 目标轮次 |
+|---------|---------|
+| 轻量 | 1 |
+| 标准 | 3 |
+| 完整 | 10 |
+
+- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段。
+- **缺省回退**：`.status.md` 不含「变更档位」字段时按 `完整` 档处理。
+- **回退重执行**：目标轮次取 `max(档位基线, 影响范围分数映射)`；`.status.md` 中无影响范围分数时取档位基线。
+
+> **统一映射**：影响范围分数 → 轮次的映射唯一定义于 `tier-driven-repetition` 能力，本 Skill 仅引用，SHALL NOT 自行定义分数区间或轮次数值。
 
 ## 每轮工作内容
 
@@ -338,17 +393,18 @@ allowed-tools:
 低复杂度 (< 20 分) / 中复杂度 (20-50 分) / 高复杂度 (> 50 分)
 ```
 
-分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成全部 10 轮迭代后方可返回。
+分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成目标轮次（由变更档位基线确定：轻量 1 / 标准 3 / 完整 10）迭代后方可返回。
 
 ## 执行流程
 
 ```
 1. 复杂度评估 → 写入 .status.md 备注列（仅信息展示，不驱动执行行为）
 
-1.5 INIT → 主 Agent 按弹性轮次决策确定目标轮次 N，写入 .status.md 执行轮次为 1 / N
+1.5 INIT → 主 Agent 按档位轮次决策（参见 references/repetition.md §14）确定目标轮次 N，写入 .status.md 执行轮次为 1 / N
+    └── 判定流程: 读取变更级 .status.md「变更档位」字段取档位基线（轻量 1 / 标准 3 / 完整 10，字段缺失时按完整档处理）；阶段回退重执行时取 max(档位基线, 影响范围分数映射)，无影响范围分数时取档位基线
 
 2. 构建阶段专属提示词
-   ├── kflow-shared 分层加载（基础层 + 执行层 + 服务层）:
+   ├── 分层加载（基础层 + 执行层 + 服务层）:
    │   ├── skills/kflow-integration-test/references/state-values.md（摘要）
    │   ├── skills/kflow-integration-test/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-integration-test/references/repetition.md
@@ -358,7 +414,7 @@ allowed-tools:
    ├── 执行要求: 集成测试执行 + 四分法修复循环
    ├── traceability.md 待填充列: 集成测试(ID)
    ├── 覆盖率目标: 100%
-   ├── 重复制遍历指令: 「每轮遍历全部集成场景逐条独立执行。更新 .status.md 中执行轮次计数器为当前轮次号。禁止按轮次分段分配工作重点——每轮均须运行全部集成场景。必须完成全部 10 轮迭代后才可返回验收报告，禁止在第 10 轮前返回。若当前轮次无新发现且无可执行工作，仍须递增计数器并继续。」
+   ├── 重复制遍历指令: 「每轮遍历全部集成场景逐条独立执行。更新 .status.md 中执行轮次计数器为当前轮次号。禁止按轮次分段分配工作重点——每轮均须运行全部集成场景。必须完成全部目标轮次迭代后才可返回验收报告，禁止在目标轮次前返回（目标轮次数值由变更档位确定，SHALL NOT 硬编码为 10）。若当前轮次无新发现且无可执行工作，仍须递增计数器并继续。」
    ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/本轮建议关注），注入下一轮子代理 prompt（参见 repetition-model.md §13）
    └── 完成承诺: COMPLETED
 
@@ -366,7 +422,7 @@ allowed-tools:
    └── 子代理内维持现有四分法修复循环 + 架构评估自动触发
 
 4. 主 Agent 验收
-   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由弹性轮次决策确定）
+   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由变更档位基线确定）
    ├── 产物: round-{n}.md + summary.md 存在且格式正确
    ├── 覆盖率: traceability.md「集成测试」列覆盖率 = 100%
    ├── summary.md 标记「集成测试通过」
@@ -386,18 +442,21 @@ allowed-tools:
 - **输入来自**：
   - 前后端项目：`kflow-e2e-test`（所有子变更 E2E 测试通过后）
   - 纯后端项目：接口单元测试（所有子变更接口单元测试通过后）
-- **输出给**：`kflow-audit`（审计门控）→ `kflow-archive`（归档）
-- **前置阶段**：所有子变更编码 + 审查 + 测试通过 + 服务刷新
+- **输出给**：`kflow-audit`（审计门控）→ `kflow-archive`（归档）；轻量档本阶段被判定为 `⏭️ 不适用`（有声明依据）时 SHALL 直接进入 `kflow-audit`，SHALL NOT 执行服务刷新与阶段钩子
+- **前置阶段**：所有子变更编码 + 审查 + 测试通过（测试阶段可标记 `⏭️ 不适用`，须有声明依据）+ 服务刷新
+- **阶段裁剪**：仅轻量档可被阶段适用性声明裁剪，裁剪时本 Skill SHALL NOT 启动；`标准` 与 `完整` 档 SHALL NOT 应用
 - **后续阶段**：审计 → 归档
 - **内聚功能**：变更级缺陷修复（四分法），不跳转到 `kflow-bug-fix`
 - **服务管理**：变更级 agent 独占服务生命周期管理，每轮集成测试前编译重启
 - **关系说明**：`kflow-bug-fix` 仅处理子变更级缺陷修复（二分法），变更级修复由本 Skill 内聚处理
-- **执行模式**：重复制，弹性轮次决策（参见 repetition-model.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
+- **执行模式**：档位驱动的弹性重复制，目标轮次按变更档位基线（轻量 1 / 标准 3 / 完整 10）确定，回退重执行取 `max(档位基线, 影响范围分数映射)`（参见 references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
 
 ---
 
 # 核心提醒
 
+- 入口先做阶段适用性四态判定（仅轻量档）：声明 `⏭️ 不适用` 且有判定依据时 SHALL NOT 启动本 Skill，直接进入审计阶段，归档门控视为满足
+- 无声明依据的 `⏭️` 一律阻塞；判定依据不可读时按 `✅ 适用` 保守回退
 - 内聚四分法修复循环，不委托给 kflow-bug-fix
 - 接口契约错误需联动评估受影响子变更，更新 detailed-design.md
 - 架构评估连续 3 轮同用例失败自动触发
@@ -405,7 +464,7 @@ allowed-tools:
 - 架构设计错误触发阶段回退（设计阶段 ⚠️ 需修订）
 - 所有测试通过后才允许进入审计和归档
 - traceability.md「集成测试」列覆盖率目标 100%
-- 强制完成全部 10 轮迭代后才可返回验收报告，禁止在第 10 轮前返回
+- 强制完成全部目标轮次（由变更档位基线确定：轻量 1 / 标准 3 / 完整 10）迭代后才可返回验收报告，禁止在目标轮次前返回
 - 轮次不足时拒收并直接重新启动 Agent 子代理，不进入 AskUserQuestion
 
 # 反馈机制

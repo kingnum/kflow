@@ -2,8 +2,8 @@
 
 > **版本**: 参见仓库根目录 `VERSION` 文件
 > **创建时间**: 2026-05-05
-> **更新时间**: 2026-05-28
-> **总模板数**: 49（含 1 个已废弃）
+> **更新时间**: 2026-09-29
+> **总模板数**: 54（含 1 个已废弃）
 
 本文档是 KFlow Skills 体系中所有阶段产物模板的索引入口。模板目录按镜像实际 `docs/` 输出结构组织，模板路径与产物路径形成直接映射。
 
@@ -32,14 +32,19 @@ templates/
 │   │   ├── integration-summary.md              #     集成测试总结模板
 │   │   ├── contract-error-report.md            #     接口契约错误报告模板
 │   │   └── arch-assessment.md                  #     架构评估报告模板
-│   ├── review-reports/                         #   交叉审查报告
-│   │   ├── business-review.md                  #     业务视角审查报告模板
-│   │   ├── technical-review.md                 #     技术视角审查报告模板
-│   │   ├── security-review.md                  #     安全视角审查报告模板
-│   │   ├── quality-review.md                   #     质量视角审查报告模板
-│   │   └── review-synthesis.md                 #     审查综合报告模板
-│   ├── self-reviews/                           #   自循环审查报告
-│   │   └── review-round.md                     #     自审轮次报告模板
+│   ├── review-reports/                         #   交叉审查报告（产物形态按变更档位：完整四视角 / 标准两视角 / 轻量单 synthesis）
+│   │   ├── business-review.md                  #     业务视角审查报告模板（完整档；标准档并入 business-technical-review.md）
+│   │   ├── technical-review.md                 #     技术视角审查报告模板（完整档；标准档并入 business-technical-review.md）
+│   │   ├── security-review.md                  #     安全视角审查报告模板（完整档；标准档并入 security-quality-review.md）
+│   │   ├── quality-review.md                   #     质量视角审查报告模板（完整档；标准档并入 security-quality-review.md）
+│   │   └── review-synthesis.md                 #     审查综合报告模板（全档位均产出；轻量档为唯一审查产物）
+│   ├── self-reviews/                           #   自循环审查报告（标准档 2 份 / 完整档 10 份；轻量档 0 份不产出）
+│   │   └── review-round.md                     #     自审轮次报告模板（轻量档不使用）
+│   ├── prototype-plan/                         #   原型过程产物（镜像 docs/changes/{change}/prototype-plan/）
+│   │   ├── design-prompt.md                    #     原型设计提示词模板
+│   │   └── style-decision.md                   #     风格选择决策模板
+│   ├── prototype-changes.md                    #   原型改动清单模板
+│   ├── element-coverage-tree.md                #   元素覆盖树模板
 │   ├── change-status.md                        #   变更级状态文件模板
 │   ├── change-tasks.md                         #   变更总任务清单模板
 │   ├── detailed-design.md                      #   统一详细设计模板
@@ -71,6 +76,8 @@ templates/
 │   │   ├── nfr-baseline.md                     #     NFR 基线文档模板（已修订：兼容性说明）
 │   │   ├── config-items.md                     #     配置项设计模板（新）
 │   │   └── error-handling.md                   #     错误处理设计模板（新）
+│   ├── prototypes/                             #   产品级原型模板（镜像 docs/designs/prototypes/）
+│   │   └── manifest.md                         #     产品级原型清单模板（新）
 │   └── changelog.md                            #   产品级变更日志模板
 ├── docs/                                       # 项目级文档模板（镜像 docs/）
 │   ├── service-guide.md                        #   项目服务指引模板
@@ -92,76 +99,83 @@ templates/
 | 2 | changes/{change}/change-tasks.md | tasks.md（变更级） | kflow-explore | 抽取 |
 | 3 | changes/{change}/functional-designs/index.md | functional-designs/index.md | kflow-explore | 新建 |
 | 4 | changes/{change}/functional-designs/part-NN.md | functional-designs/part-NN.md | kflow-explore | 新建 |
-| 5 | changes/{change}/detailed-design.md | detailed-design.md | kflow-design | 抽取 |
-| 6 | changes/{change}/review-reports/review-synthesis.md | cross-reviews/{timestamp}/synthesis.md | kflow-design | 抽取 |
-| 7 | changes/{change}/self-reviews/review-round.md | self-reviews/{phase}/{YYYYMMDD}-{HHMMSS}.md | kflow-explore / kflow-prototype-design / kflow-design | 新建 |
-| 8 | changes/{change}/review-reports/business-review.md | cross-reviews/{timestamp}/business-review.md | kflow-design | 新建 |
-| 9 | changes/{change}/review-reports/technical-review.md | cross-reviews/{timestamp}/technical-review.md | kflow-design | 新建 |
-| 10 | changes/{change}/review-reports/security-review.md | cross-reviews/{timestamp}/security-review.md | kflow-design | 新建 |
-| 11 | changes/{change}/review-reports/quality-review.md | cross-reviews/{timestamp}/quality-review.md | kflow-design | 新建 |
-| 12 | changes/{change}/api-tests/index.md | api-tests/index.md | kflow-design | 新建 |
-| 13 | changes/{change}/api-tests/part-NN.md | api-tests/part-NN.md | kflow-design | 新建 |
-| 14 | changes/{change}/e2e-tests/index.md | e2e-tests/index.md | kflow-design | 新建 |
-| 15 | changes/{change}/e2e-tests/part-NN.md | e2e-tests/part-NN.md | kflow-design | 新建 |
-| 16 | changes/{change}/integration-tests/index.md | integration-tests/index.md | kflow-design | 新建 |
-| 17 | changes/{change}/integration-tests/part-NN.md | integration-tests/part-NN.md | kflow-design | 新建 |
-| 18 | changes/{change}/audit-report.md | audit-report.md | kflow-audit | 抽取 |
-| 19 | changes/{change}/change-index.md | docs/changes/index.md | kflow-archive | 抽取 |
-| 20 | changes/{change}/migration-log.md | migrations/migration-log.md | kflow-code | 抽取 |
-| 21 | changes/{change}/traceability.md | docs/changes/{change}/traceability.md | kflow-design | 新建 |
-| 22 | changes/{change}/checkpoint.md | checkpoints/{timestamp}-checkpoint.md | kflow-resume | 抽取 |
+| 5 | changes/{change}/prototype-changes.md | prototype-changes.md（变更级原型改动清单） | kflow-prototype-design | 新建 |
+| 6 | changes/{change}/prototype-plan/design-prompt.md | prototype-plan/design-prompt.md | kflow-prototype-design | 修订 |
+| 7 | changes/{change}/prototype-plan/style-decision.md | prototype-plan/style-decision.md | kflow-prototype-design | 修订 |
+| 8 | changes/{change}/element-coverage-tree.md | element-coverage-tree.md | kflow-prototype-design / kflow-design | 新建 |
+| 9 | changes/{change}/detailed-design.md | detailed-design.md | kflow-design | 抽取 |
+| 10 | changes/{change}/review-reports/review-synthesis.md | cross-reviews/{timestamp}/synthesis.md | kflow-design | 抽取 |
+| 11 | changes/{change}/self-reviews/review-round.md | self-reviews/{phase}/{YYYYMMDD}-{HHMMSS}.md | kflow-explore / kflow-prototype-design / kflow-design | 新建 |
+| 12 | changes/{change}/review-reports/business-review.md | cross-reviews/{timestamp}/business-review.md | kflow-design | 新建 |
+| 13 | changes/{change}/review-reports/technical-review.md | cross-reviews/{timestamp}/technical-review.md | kflow-design | 新建 |
+| 14 | changes/{change}/review-reports/security-review.md | cross-reviews/{timestamp}/security-review.md | kflow-design | 新建 |
+| 15 | changes/{change}/review-reports/quality-review.md | cross-reviews/{timestamp}/quality-review.md | kflow-design | 新建 |
+| 15a | changes/{change}/review-reports/（复用上文 4 份视角模板） | cross-reviews/{timestamp}/business-technical-review.md（标准档合并产物） | kflow-design | 复用 |
+| 15b | changes/{change}/review-reports/（复用上文 4 份视角模板） | cross-reviews/{timestamp}/security-quality-review.md（标准档合并产物） | kflow-design | 复用 |
+| 16 | changes/{change}/api-tests/index.md | api-tests/index.md | kflow-design | 新建 |
+| 17 | changes/{change}/api-tests/part-NN.md | api-tests/part-NN.md | kflow-design | 新建 |
+| 18 | changes/{change}/e2e-tests/index.md | e2e-tests/index.md | kflow-design | 新建 |
+| 19 | changes/{change}/e2e-tests/part-NN.md | e2e-tests/part-NN.md | kflow-design | 新建 |
+| 20 | changes/{change}/integration-tests/index.md | integration-tests/index.md | kflow-design | 新建 |
+| 21 | changes/{change}/integration-tests/part-NN.md | integration-tests/part-NN.md | kflow-design | 新建 |
+| 22 | changes/{change}/audit-report.md | audit-report.md | kflow-audit | 抽取 |
+| 23 | changes/{change}/change-index.md | docs/changes/index.md | kflow-archive | 抽取 |
+| 24 | changes/{change}/migration-log.md | migrations/migration-log.md | kflow-code | 抽取 |
+| 25 | changes/{change}/traceability.md | docs/changes/{change}/traceability.md | kflow-design | 新建 |
+| 26 | changes/{change}/checkpoint.md | checkpoints/{timestamp}-checkpoint.md | kflow-resume | 抽取 |
 
 ### 集成测试模板 (changes/{change}/integration/)
 
 | 序号 | 模板文件 | 对应产物 | 产出 Skill | 类型 |
 |------|---------|---------|-----------|------|
-| 23 | changes/{change}/integration/integration-round-report.md | test-reports/integration/round-{n}.md | kflow-integration-test | 抽取 |
-| 24 | changes/{change}/integration/integration-summary.md | test-reports/integration/summary.md | kflow-integration-test | 抽取 |
-| 25 | changes/{change}/integration/contract-error-report.md | test-reports/integration/fix-reports/contract-error-{timestamp}.md | kflow-integration-test | 新建 |
-| 26 | changes/{change}/integration/arch-assessment.md | test-reports/integration/fix-reports/arch-assessment-{timestamp}.md | kflow-integration-test | 新建 |
+| 27 | changes/{change}/integration/integration-round-report.md | test-reports/integration/round-{n}.md | kflow-integration-test | 抽取 |
+| 28 | changes/{change}/integration/integration-summary.md | test-reports/integration/summary.md | kflow-integration-test | 抽取 |
+| 29 | changes/{change}/integration/contract-error-report.md | test-reports/integration/fix-reports/contract-error-{timestamp}.md | kflow-integration-test | 新建 |
+| 30 | changes/{change}/integration/arch-assessment.md | test-reports/integration/fix-reports/arch-assessment-{timestamp}.md | kflow-integration-test | 新建 |
 
 ### 子变更级模板 (subchanges/{subchange}/)
 
 | 序号 | 模板文件 | 对应产物 | 产出 Skill | 类型 |
 |------|---------|---------|-----------|------|
-| 27 | subchanges/{subchange}/subchange-status.md | subchanges/{subchange}/.status.md | kflow-plan / 多个阶段更新 | 抽取 |
-| 28 | subchanges/{subchange}/subchange-tasks.md | subchanges/{subchange}/tasks.md | kflow-plan | 抽取 |
-| 29 | subchanges/{subchange}/code-review.md | subchanges/{subchange}/test-reports/review/code-review.md | kflow-code-review | 抽取 |
-| 30 | subchanges/{subchange}/e2e-round-report.md | subchanges/{subchange}/test-reports/e2e/round-{n}.md | kflow-e2e-test | 抽取 |
-| 31 | subchanges/{subchange}/fix-report.md | subchanges/{subchange}/test-reports/fix-reports/fix-{timestamp}.md | kflow-bug-fix | 抽取 |
-| 32 | subchanges/{subchange}/api-round-report.md | subchanges/{subchange}/test-reports/api/round-{n}.md | kflow-api-test | 新建 |
-| 33 | subchanges/{subchange}/api-summary.md | subchanges/{subchange}/test-reports/api/summary.md | kflow-api-test | 新建 |
-| 34 | subchanges/{subchange}/e2e-summary.md | subchanges/{subchange}/test-reports/e2e/summary.md | kflow-e2e-test | 新建 |
-| 35 | subchanges/{subchange}/design-error-report.md | subchanges/{subchange}/test-reports/fix-reports/design-error-{timestamp}.md | kflow-bug-fix | 新建 |
+| 31 | subchanges/{subchange}/subchange-status.md | subchanges/{subchange}/.status.md | kflow-plan / 多个阶段更新 | 抽取 |
+| 32 | subchanges/{subchange}/subchange-tasks.md | subchanges/{subchange}/tasks.md | kflow-plan | 抽取 |
+| 33 | subchanges/{subchange}/code-review.md | subchanges/{subchange}/test-reports/review/code-review.md | kflow-code-review | 抽取 |
+| 34 | subchanges/{subchange}/e2e-round-report.md | subchanges/{subchange}/test-reports/e2e/round-{n}.md | kflow-e2e-test | 抽取 |
+| 35 | subchanges/{subchange}/fix-report.md | subchanges/{subchange}/test-reports/fix-reports/fix-{timestamp}.md | kflow-bug-fix | 抽取 |
+| 36 | subchanges/{subchange}/api-round-report.md | subchanges/{subchange}/test-reports/api/round-{n}.md | kflow-api-test | 新建 |
+| 37 | subchanges/{subchange}/api-summary.md | subchanges/{subchange}/test-reports/api/summary.md | kflow-api-test | 新建 |
+| 38 | subchanges/{subchange}/e2e-summary.md | subchanges/{subchange}/test-reports/e2e/summary.md | kflow-e2e-test | 新建 |
+| 39 | subchanges/{subchange}/design-error-report.md | subchanges/{subchange}/test-reports/fix-reports/design-error-{timestamp}.md | kflow-bug-fix | 新建 |
 
 ### 产品级设计模板 (design-templates/)
 
 | 序号 | 模板文件 | 对应产物 | 产出 Skill | 类型 |
 |------|---------|---------|-----------|------|
-| 36 | design-templates/functional-designs/index.md | docs/designs/functional-designs/{menu}/index.md | kflow-archive | 新建 |
-| 37 | design-templates/functional-designs/part-NN.md | docs/designs/functional-designs/{menu}/part-NN.md | kflow-archive | 新建 |
-| 38 | design-templates/functional-designs/backend-domain.md | docs/designs/functional-designs/{domain}.md | kflow-archive | 新建 |
-| 39 | design-templates/functional-designs/module.md | docs/designs/functional-designs/{module}.md | kflow-archive | ⚠️ 废弃 |
-| 40 | design-templates/detailed-designs/architecture.md | docs/designs/detailed-designs/architecture.md | kflow-archive | 修订 |
-| 41 | design-templates/detailed-designs/data-model.md | docs/designs/detailed-designs/data-model.md | kflow-archive | 修订 |
-| 42 | design-templates/detailed-designs/api-catalog.md | docs/designs/detailed-designs/api-catalog.md | kflow-archive | 修订 |
-| 43 | design-templates/detailed-designs/nfr-baseline.md | docs/designs/detailed-designs/nfr-baseline.md | kflow-archive | 修订 |
-| 44 | design-templates/detailed-designs/config-items.md | docs/designs/detailed-designs/config-items.md | kflow-archive | 新建 |
-| 45 | design-templates/detailed-designs/error-handling.md | docs/designs/detailed-designs/error-handling.md | kflow-archive | 新建 |
-| 46 | design-templates/changelog.md | docs/designs/changelog.md | kflow-archive | 新建 |
+| 40 | design-templates/functional-designs/index.md | docs/designs/functional-designs/{menu}/index.md | kflow-archive | 新建 |
+| 41 | design-templates/functional-designs/part-NN.md | docs/designs/functional-designs/{menu}/part-NN.md | kflow-archive | 新建 |
+| 42 | design-templates/functional-designs/backend-domain.md | docs/designs/functional-designs/{domain}.md | kflow-archive | 新建 |
+| 43 | design-templates/functional-designs/module.md | docs/designs/functional-designs/{module}.md | kflow-archive | ⚠️ 废弃 |
+| 44 | design-templates/detailed-designs/architecture.md | docs/designs/detailed-designs/architecture.md | kflow-archive | 修订 |
+| 45 | design-templates/detailed-designs/data-model.md | docs/designs/detailed-designs/data-model.md | kflow-archive | 修订 |
+| 46 | design-templates/detailed-designs/api-catalog.md | docs/designs/detailed-designs/api-catalog.md | kflow-archive | 修订 |
+| 47 | design-templates/detailed-designs/nfr-baseline.md | docs/designs/detailed-designs/nfr-baseline.md | kflow-archive | 修订 |
+| 48 | design-templates/detailed-designs/config-items.md | docs/designs/detailed-designs/config-items.md | kflow-archive | 新建 |
+| 49 | design-templates/detailed-designs/error-handling.md | docs/designs/detailed-designs/error-handling.md | kflow-archive | 新建 |
+| 50 | design-templates/prototypes/manifest.md | docs/designs/prototypes/manifest.md | kflow-prototype-design | 新建 |
+| 51 | design-templates/changelog.md | docs/designs/changelog.md | kflow-archive | 新建 |
 
 ### 项目级文档模板 (docs/)
 
 | 序号 | 模板文件 | 对应产物 | 产出 Skill | 类型 |
 |------|---------|---------|-----------|------|
-| 47 | docs/service-guide.md | docs/service-guide.md | kflow-init（预生成）+ kflow-code（补充完善） | 抽取 |
-| 48 | docs/toolchain.md | docs/toolchain.md | kflow-init | 抽取 |
+| 52 | docs/service-guide.md | docs/service-guide.md | kflow-init（预生成）+ kflow-code（补充完善） | 抽取 |
+| 53 | docs/toolchain.md | docs/toolchain.md | kflow-init | 抽取 |
 
 ### Skill 模板 (skills/)
 
 | 序号 | 模板文件 | 对应产物 | 产出 Skill | 类型 |
 |------|---------|---------|-----------|------|
-| 49 | skills/SKILL-template.md | .claude/skills/{skill-name}/SKILL.md | skill-creator | 新建 |
+| 54 | skills/SKILL-template.md | .claude/skills/{skill-name}/SKILL.md | skill-creator | 新建 |
 
 ---
 

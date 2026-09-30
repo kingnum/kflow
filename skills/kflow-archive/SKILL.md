@@ -1,7 +1,7 @@
 ---
 name: kflow-archive
-version: 0.17.0
-description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD: 全量产物, .status.md）。
+version: 0.18.0
+description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md）。
 license: MIT
 triggers:
   - 归档
@@ -23,7 +23,7 @@ allowed-tools:
 
 # 任务
 
-门控检查（集成测试 + 审计门控 + 所有子变更阶段完成）→ 用户确认归档 → 设计合并到产品级（EXTRACT → MATCH → MERGE → ANNOTATE → CONFLICT → CHANGELOG → SUMMARY）→ 功能模块摘要更新 → ADR 索引更新检查 → 移动变更目录到 archive/ → 更新状态文件和索引 → 输出归档完成信息 → 分析归档内容 → 询问是否 git commit。
+门控检查（集成测试 + 审计门控 + 所有子变更阶段完成）→ 用户确认归档 → 设计合并到产品级（EXTRACT → MATCH → MERGE → ANNOTATE → CONFLICT → CHANGELOG → SUMMARY）→ 原型改动登记到 docs/designs/prototypes/manifest.md → 功能模块摘要更新 → ADR 索引更新检查 → 移动变更目录到 archive/ → 更新状态文件和索引 → 输出归档完成信息 → 分析归档内容 → 询问是否 git commit。
 
 # 门控检查
 
@@ -31,7 +31,8 @@ allowed-tools:
 - 主变更 `.status.md` 存在
 - 主变更 `.status.md` 中所有阶段标记完成（✅ 完成 或 ⏭️ 跳过）
 - 所有子变更各阶段完成检查（计划、编码、接口单元测试、E2E测试）
-- 集成测试通过检查（`test-reports/integration/summary.md` 存在且标记"集成测试通过"）
+- **裁剪合法性检查**：标记 `⏭️ 不适用` 的阶段均须在变更级 `.status.md` 的「阶段适用性声明」区有对应判定依据；无声明依据的 `⏭️` SHALL 阻塞归档
+- 集成测试通过检查（`test-reports/integration/summary.md` 存在且标记"集成测试通过"；集成测试阶段被合法裁剪时视为满足，SHALL NOT 要求该文件存在，见「归档条件」）
 - **审计门控通过**（kflow-audit 七维度评估通过，无阻塞/严重问题）
 - **用户验收确认通过**（`.status.md` 中「用户验收确认」状态 = ✅ 已确认 或 ⏭️ 用户跳过）
 
@@ -86,6 +87,14 @@ allowed-tools:
 │  │   ├── ANNOTATE: 标注来源变更和归档时间                     │
 │  │   ├── CONFLICT: 检测冲突，默认替换更新，结构性冲突人工裁决  │
 │  │   └── CHANGELOG: 更新 docs/designs/changelog.md           │
+│  5.4 REGISTER→ 登记原型改动到产品级 manifest.md               │
+│  │   ├── 原型设计阶段为 ⏭️ 跳过 → 跳过本步（不修改 manifest.md）│
+│  │   ├── 读取变更级 prototype-changes.md 的改动清单            │
+│  │   ├── 更新 docs/designs/prototypes/manifest.md：            │
+│  │   │   ├── 受影响产物的「来源变更」列                        │
+│  │   │   ├── 清单版本号与「修订记录」追加一条                  │
+│  │   │   └── 最后更新时间                                     │
+│  │   └── SHALL NOT 复制或覆盖 docs/designs/prototypes/ 下文件  │
 │  5.5 ADR     → ADR 索引更新检查（如有新增 ADR）               │
 │  │   ├── 检查 docs/adr/ 目录是否有新创建的 ADR                  │
 │  │   └── 有新增 → 更新 docs/adr/index.md（如有遗漏）            │
@@ -119,7 +128,7 @@ allowed-tools:
 
 引用 `skills/kflow-archive/references/hooks.md` archive 阶段 PRE_HOOK（❌ 不需要服务：CHECK_STATE + RELOAD）。
 
-> RELOAD: 重读全量产物, .status.md。
+> RELOAD：重读全量产物, .status.md。
 
 ---
 
@@ -233,7 +242,7 @@ Options:
    ├── 格式: 模块名 | 核心功能（2-3 项）| FP-ID 范围 | 文档位置
    └── 更新 docs/designs/functional-designs/module-summary.md
 
-注意: 原型设计 (.html 文件) 不合并到产品级，保留在变更级归档目录中。
+注意: 原型产物已在原型设计阶段直写产品级 docs/designs/prototypes/，归档不做文件级原型合并，仅登记改动到 docs/designs/prototypes/manifest.md。变更级 prototype-backup/ 随变更目录进 archive/ 保留。
 ```
 
 ---
@@ -251,7 +260,20 @@ Options:
 - [ ] ADR 索引已更新（如有新增 ADR，docs/adr/index.md 已包含本次变更的 ADR）
 - [ ] 无遗留的阻碍记录
 - [ ] **用户验收确认通过**（.status.md 中「用户验收确认」状态 = ✅ 已确认 或 ⏭️ 用户跳过）
+- [ ] **裁剪阶段合法**（有声明依据的裁剪视为满足，无依据的 `⏭️` 阻塞）
 ```
+
+**裁剪处理**（判定基准为变更级 `.status.md` 的 `变更档位`，裁剪仅适用于 `轻量` 档）：
+
+| 落点 | 处理 |
+|------|------|
+| 接受有声明依据的裁剪 | 某阶段标记 `⏭️ 不适用` 且变更级 `.status.md` 的「阶段适用性声明」区存在对应判定依据时，归档门控 SHALL 视为满足，SHALL NOT 因该阶段无产物而阻塞 |
+| 无声明依据的 `⏭️` | SHALL 阻塞归档，并提示缺失裁剪依据 |
+| 集成测试门控 | 集成测试阶段被合法裁剪时视为满足，SHALL NOT 要求 `test-reports/integration/summary.md` 存在 |
+| 归档前最终覆盖检查 | `traceability.md` 中具有声明依据的 `⏭️ 不适用` 列视为满足，SHALL NOT 参与覆盖率判定、SHALL NOT 产生缺口记录 |
+| 覆盖率分母 | 裁剪列整列填 `⏭️`，覆盖率 = 已填充格数 / (总格数 - 不适用格数) |
+
+> `标准` 与 `完整` 档的归档条件维持既有规则；纯后端项目跳过 E2E测试的既有规则不受影响。
 
 ---
 
@@ -406,7 +428,7 @@ kflow-audit 完成且审计通过
 - 归档后询问是否 git commit（AskUserQuestion：确认提交/修改提交信息/跳过），提交信息含变更名称和归档日期
 - 未完成变更可归档但需记录原因
 - 设计合并按项目类型区分：前后端按菜单 → `functional-designs/{menu}/`；纯后端按设计域 → `functional-designs/{domain}.md`
-- 原型设计（.html）不合并到产品级文档
+- 原型产物已在原型设计阶段直写产品级 `docs/designs/prototypes/`，归档不做文件级原型合并，仅登记改动到 `docs/designs/prototypes/manifest.md`（清单版本号与修订记录同步追加）
 - 首次合并时检测并去除「由 AI 逆向分析生成」草稿标记
 - 结构性冲突需 AskUserQuestion 人工裁决
 - 设计合并后自动更新 `module-summary.md`（模块名+核心功能+FP-ID范围+文档位置），首次全量扫描，后续增量更新

@@ -10,7 +10,7 @@
 
 ```yaml
 name: kflow-bug-triage
-description: 问题分诊 - 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、问题登记（bugs/目录）、路由决策（REVISION模式或kflow-bug-fix）。独立诊断 Skill（非流程阶段），接收用户反馈后精确定位问题源头阶段再路由修复。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD: 全量产物, .status.md, bugs/）。
+description: 问题分诊 - 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、问题登记（bugs/目录）、路由决策（REVISION模式或kflow-bug-fix）。独立诊断 Skill（非流程阶段），接收用户反馈后精确定位问题源头阶段再路由修复。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md, bugs/）。
 license: MIT
 triggers:
   - 反馈
@@ -87,7 +87,7 @@ kflow-bug-triage (分诊台)               kflow-bug-fix (手术室)
 | 产物 | 文件 | 模板 | 图例 | 内容要求 |
 |------|------|------|------|---------|
 | 问题索引 | docs/changes/{change}/bugs/index.md | [bugs-index.md](../../templates/changes/{change}/bugs/bugs-index.md) | ✅ 必须 | 统计+问题列表+分页表 |
-| 问题详情 | docs/changes/{change}/bugs/bug-NNN-NNN.md | [bugs-detail.md](../../templates/changes/{change}/bugs/bugs-detail.md) | ✅ 必须 | 四层溯源诊断、影响范围评估（含分数）、解决方案（含 EXECUTION_MODE 声明）、处理状态、修复记录占位节（由 bug-fix 回写） |
+| 问题详情 | docs/changes/{change}/bugs/bug-NNN-NNN.md | [bugs-detail.md](../../templates/changes/{change}/bugs/bugs-detail.md) | ✅ 必须 | 四层溯源诊断、影响范围评估（含分数）、推荐轮次（影响映射分量，引用统一映射）、解决方案（含 EXECUTION_MODE 声明）、处理状态、修复记录占位节（由 bug-fix 回写） |
 
 ---
 
@@ -164,8 +164,9 @@ kflow-bug-triage (分诊台)               kflow-bug-fix (手术室)
 ### L2 原型设计
 
 **证据来源**：
-- `prototype/index.html`（或 prototype/index.md）
-- `element-coverage-tree.md`
+- `docs/designs/prototypes/index.html`（产品级原型入口）
+- 变更级 `prototype-changes.md`（本变更的原型改动记录）
+- `element-coverage-tree.md`（变更根目录）
 - `functional-designs/`（用于比对一致性）
 
 **检查项**：
@@ -174,7 +175,7 @@ kflow-bug-triage (分诊台)               kflow-bug-fix (手术室)
 - 视觉呈现是否传达了正确的功能语义？
 - element-coverage-tree.md 中对应节点是否标记为已覆盖？
 
-**快速排除条件**：纯后端项目（无 prototype/ 目录）或用户反馈不涉及 UI/交互 → ✅ 通过（跳过）
+**快速排除条件**：纯后端项目（无 `docs/designs/prototypes/` 目录）或用户反馈不涉及 UI/交互 → ✅ 通过（跳过）
 
 ### L3 详细设计
 
@@ -220,7 +221,7 @@ kflow-bug-triage (分诊台)               kflow-bug-fix (手术室)
 
 ## 影响范围评估
 
-四层诊断完成后，SHALL 一并执行影响范围评估，为回退后的弹性重复制轮次决策提供依据。
+四层诊断完成后，SHALL 一并执行影响范围评估，为回退后的档位驱动弹性重复制轮次决策提供依据（推荐轮次引用统一映射，见「推荐轮次」节）。
 
 ### 评估步骤
 
@@ -236,6 +237,22 @@ kflow-bug-triage (分诊台)               kflow-bug-fix (手术室)
 ```
 影响范围分数 = 功能点数 × 1 + 接口数 × 1.5 + 数据模型变更 × 2
 ```
+
+### 推荐轮次
+
+影响范围评估输出的推荐轮次 SHALL 取自统一映射，该映射**唯一定义于 `tier-driven-repetition` 能力**，本 Skill 仅引用，SHALL NOT 自行定义分数区间或轮次数值。以下数值为引用内容：
+
+| 影响范围分数（引用） | 影响映射分量（引用） |
+|--------------------|--------------------|
+| <= 3 | 1 轮 |
+| 4 ~ 15 | 3 轮 |
+| > 15 | 10 轮 |
+
+推荐轮次 SHALL 表述为 `max(档位基线, 影响范围分数映射)` 的**影响映射分量**，SHALL NOT 表述为绝对轮次数值：
+
+- **档位基线**：由变更级 `.status.md` 的「变更档位」字段确定（轻量 1 / 标准 3 / 完整 10），字段缺失时按 `完整` 档处理。
+- **影响映射分量**：由上述统一映射按影响范围分数取值。
+- **最终目标轮次**：由目标 Skill 在阶段启动时按 `max(档位基线, 影响范围分数映射)` 计算；`.status.md` 中无影响范围分数时取档位基线。
 
 ### 执行模式声明
 

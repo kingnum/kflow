@@ -59,14 +59,14 @@
 | 阶段 | 需要服务 | RELOAD 清单 |
 |------|:------:|------------|
 | explore | ❌ | CONTEXT.md, functional-designs/index.md, module-summary.md(条件), .status.md |
-| prototype-design | 🔶 浏览器 | CONTEXT.md, toolchain.md, functional-designs/, prototype/index.md, .status.md |
-| design | ❌ | CONTEXT.md, functional-designs/, functional-designs/index.md, module-summary.md(条件), prototype/index.md(条件), .status.md |
-| plan | ❌ | detailed-design.md, functional-designs/index.md, module-summary.md(条件), prototype/index.md(条件), .status.md |
-| code | 🔶 编译验证 | service-guide.md, CONTEXT.md, detailed-design.md, functional-designs/index.md, prototype/index.md(条件), .status.md |
-| code-review | ❌ | service-guide.md, CONTEXT.md, detailed-design.md, functional-designs/index.md, prototype/index.md(条件), .status.md |
-| api-test | ✅ 后端 | service-guide.md, api-tests/, detailed-design.md, functional-designs/index.md, prototype/index.md(条件), .status.md |
-| e2e-test | ✅ 前后端 | service-guide.md, e2e-tests/, detailed-design.md, functional-designs/index.md, prototype/index.md(条件), prototype/(条件), .status.md |
-| integration-test | ✅ 前后端 | service-guide.md, integration-tests/, detailed-design.md, functional-designs/index.md, prototype/index.md(条件), .status.md |
+| prototype-design | 🔶 浏览器 | CONTEXT.md, toolchain.md, functional-designs/, docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md |
+| design | ❌ | CONTEXT.md, functional-designs/, functional-designs/index.md, module-summary.md(条件), docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md |
+| plan | ❌ | detailed-design.md, functional-designs/index.md, module-summary.md(条件), docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md |
+| code | 🔶 编译验证 | service-guide.md, CONTEXT.md, detailed-design.md, functional-designs/index.md, docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md |
+| code-review | ❌ | service-guide.md, CONTEXT.md, detailed-design.md, functional-designs/index.md, docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md |
+| api-test | ✅ 后端 | service-guide.md, api-tests/, detailed-design.md, functional-designs/index.md, docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md |
+| e2e-test | ✅ 前后端 | service-guide.md, e2e-tests/, detailed-design.md, functional-designs/index.md, docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md |
+| integration-test | ✅ 前后端 | service-guide.md, integration-tests/, detailed-design.md, functional-designs/index.md, docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md |
 | audit | ❌ | 全量产物, cross-reviews/, test-reports/, .status.md |
 | bug-fix | 同触发阶段 | service-guide.md, 相关文档, .status.md |
 | archive | ❌ | 全量产物, .status.md |
@@ -223,14 +223,14 @@ RELOAD 步骤确保阶段执行基于最新的文件内容，不使用对话上�
 | 阶段 | RELOAD 重点 |
 |------|-----------|
 | explore | 重读 CONTEXT.md 进行术语对齐，重读 functional-designs/ 了解功能上下文，条件加载 module-summary.md 获取模块概况 |
-| prototype-design | 重读 CONTEXT.md 和 toolchain.md，确认工具链锁定方案，重读 prototype/index.md 获取原型索引 |
-| design | 重读 CONTEXT.md 确保术语一致性，重读 functional-designs/index.md 获取最新修订记录，条件加载 module-summary.md 获取模块概况，条件读取 prototype/index.md 作为设计参考 |
-| plan | 重读 detailed-design.md（仅提取当前子变更相关的设计域章节），重读 functional-designs/index.md 和 module-summary.md（条件）获取最新修订和模块概况，重读 prototype/index.md（条件）获取最新修订 |
-| code | 重读 service-guide.md 获取编译命令，重读 detailed-design.md 确认接口和数据模型，重读 functional-designs/index.md 和 prototype/index.md（条件）检查设计修订 |
-| code-review | 重读 service-guide.md 检查配置安全性，重读 detailed-design.md 对照检查，重读 functional-designs/index.md 和 prototype/index.md（条件）获取最新设计 |
-| api-test | 重读 service-guide.md 获取端口和启动命令，重读 api-tests/ 和 detailed-design.md，重读 functional-designs/index.md 和 prototype/index.md（条件） |
-| e2e-test | 重读 service-guide.md 获取前后端端口，重读 e2e-tests/，重读 functional-designs/index.md 和 prototype/index.md（条件），条件读取 prototype/ |
-| integration-test | 重读 service-guide.md 确认服务配置，重读 integration-tests/ 和 detailed-design.md，重读 functional-designs/index.md 和 prototype/index.md（条件） |
+| prototype-design | 重读 CONTEXT.md 和 toolchain.md，确认工具链锁定方案，条件读取 docs/designs/prototypes/manifest.md 获取全产品原型清单，条件读取 prototype-changes.md 获取本变更已有改动与改动前哈希 |
+| design | 重读 CONTEXT.md 确保术语一致性，重读 functional-designs/index.md 获取最新修订记录，条件加载 module-summary.md 获取模块概况，条件读取 docs/designs/prototypes/manifest.md 与 prototype-changes.md 作为设计参考 |
+| plan | 重读 detailed-design.md（仅提取当前子变更相关的设计域章节），重读 functional-designs/index.md 和 module-summary.md（条件）获取最新修订和模块概况，重读 docs/designs/prototypes/manifest.md 与 prototype-changes.md（条件）获取原型页面清单与本变更改动 |
+| code | 重读 service-guide.md 获取编译命令，重读 detailed-design.md 确认接口和数据模型，重读 functional-designs/index.md 和 docs/designs/prototypes/manifest.md 与 prototype-changes.md（条件）检查设计修订 |
+| code-review | 重读 service-guide.md 检查配置安全性，重读 detailed-design.md 对照检查，重读 functional-designs/index.md 和 docs/designs/prototypes/manifest.md 与 prototype-changes.md（条件）获取最新设计 |
+| api-test | 重读 service-guide.md 获取端口和启动命令，重读 api-tests/ 和 detailed-design.md，重读 functional-designs/index.md 和 docs/designs/prototypes/manifest.md 与 prototype-changes.md（条件） |
+| e2e-test | 重读 service-guide.md 获取前后端端口，重读 e2e-tests/，重读 functional-designs/index.md 和 docs/designs/prototypes/manifest.md 与 prototype-changes.md（条件） |
+| integration-test | 重读 service-guide.md 确认服务配置，重读 integration-tests/ 和 detailed-design.md，重读 functional-designs/index.md 和 docs/designs/prototypes/manifest.md 与 prototype-changes.md（条件） |
 | audit | 重读全量产物进行完整性审计，重读 cross-reviews/ 和 test-reports/ |
 | bug-fix | 重读 service-guide.md 获取当前环境配置，重读失败测试报告和相关设计文档 |
 | archive | 重读全量产物确认所有门控已通过，重读 .status.md 确认阶段状态 |

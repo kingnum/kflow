@@ -2,25 +2,40 @@
 
 ## Purpose
 
-定义原型设计阶段 VERIFY 步骤中升级后的 Playwright 5 轮全覆盖验证（6.4 节），替代原有"最小点击测试"，每轮子代理完整执行全部 5 项检查。
+定义原型设计阶段 VERIFY 步骤中的 Playwright 5 轮全覆盖验证（9.2 节），替代原有"最小点击测试"，每轮子代理完整执行全部 5 项检查；该验证仅在审查方式为「子代理自动审查验证」时执行。
+
 ## Requirements
+
 ### Requirement: 5 轮子代理串行 Playwright 验证
 
-系统 SHALL 在导航合理性验证（6.3 节）完成后，执行 5 轮 Playwright 全覆盖验证，每轮启动一个独立子代理执行全部 5 项检查。系统 SHALL 确保 playwright 运行时环境隔离到 `.kflow-runtime/playwright/`，工作目录固定为项目根目录。
+系统 SHALL 在审查方式为"子代理自动审查验证"且导航合理性验证（9.1 节）完成后，执行 5 轮 Playwright 全覆盖验证，每轮启动一个独立子代理执行全部 5 项检查。审查方式为"人工审查"时，系统 SHALL NOT 执行 Playwright 验证。系统 SHALL 确保 playwright 运行时环境隔离到 `.kflow-runtime/playwright/`，工作目录固定为项目根目录。
+
+#### Scenario: 前置条件满足时进入 Playwright 验证
+
+- **WHEN** 审查方式为"子代理自动审查验证"且导航合理性验证 5 轮全部完成
+- **THEN** 系统 SHALL 进入 Playwright 验证（9.2 节）
+- **AND** 系统 SHALL 启动 5 轮子代理串行验证
+
+#### Scenario: 人工审查路径跳过 Playwright 验证
+
+- **WHEN** 用户选择的审查方式为"人工审查"
+- **THEN** 系统 SHALL NOT 执行 Playwright 验证
+- **AND** SHALL NOT 启动 Playwright 验证子代理
+- **AND** 系统 SHALL 直接进入用户评审（REVIEW）
 
 #### Scenario: 每轮子代理启动
 
-- **WHEN** 进入 Playwright 验证（6.4 节）
+- **WHEN** 进入 Playwright 验证（9.2 节）
 - **THEN** 系统 SHALL 串行启动 5 个子代理，每轮子代理类型为 `Agent(subagent_type="claude")`
 - **AND** 每个子代理 SHALL 使用 `/playwright-cli` 执行全部 5 项 Playwright 检查
 - **AND** 子代理工作目录 SHALL 固定为项目根目录
-- **AND** 原型 HTML 文件 SHALL 通过 `docs/changes/{change}/prototype/index.html` 相对路径引用
+- **AND** 原型 HTML 文件 SHALL 通过 `docs/designs/prototypes/index.html` 相对路径引用
 - **AND** 每轮子代理完成后，主 Agent SHALL 读取其报告并修复发现问题
 - **AND** 修复完成后 SHALL 启动下一轮子代理
 
 #### Scenario: 5 轮强制执行
 
-- **WHEN** Playwright 验证执行中
+- **WHEN** Playwright 验证执行中（审查方式为"子代理自动审查验证"）
 - **THEN** 系统 SHALL 完成全部 5 轮子代理验证
 - **AND** SHALL NOT 因中间某轮无新问题而提前终止
 - **AND** 即使连续多轮无新问题也必须完成全部 5 轮
@@ -32,7 +47,7 @@
 #### Scenario: 页面可达性扫描
 
 - **WHEN** 子代理执行 Playwright 验证
-- **THEN** 子代理 SHALL 从 `prototype/index.html` 出发 BFS 遍历所有 `<a>` 链接
+- **THEN** 子代理 SHALL 从 `docs/designs/prototypes/index.html` 出发 BFS 遍历所有 `<a>` 链接
 - **AND** 对每个页面验证加载成功（HTTP 200 或无 pageerror）
 - **AND** 验证每个页面 `pageerror` 数量 = 0
 - **AND** 输出页面可达性矩阵
@@ -64,7 +79,7 @@
 #### Scenario: 端到端业务流程
 
 - **WHEN** 子代理执行 Playwright 验证
-- **THEN** 子代理 SHALL 按 `prototype/design-prompt.md` 中定义的业务流程脚本逐条走通
+- **THEN** 子代理 SHALL 按变更级 `prototype-plan/design-prompt.md` 中定义的业务流程脚本逐条走通
 - **AND** 验证每个流程无 JS 错误、无交互断点、无死胡同
 - **AND** 输出流程通过清单
 
@@ -73,6 +88,7 @@
 每轮子代理 SHALL 输出验证报告到指定路径。
 
 #### Scenario: 报告输出
+
 - **WHEN** 子代理完成一轮 Playwright 验证
 - **THEN** 子代理 SHALL 保存报告到 `self-reviews/prototype/playwright-check/round-{N}.md`（N 为轮次 1-5）
 - **AND** 报告 SHALL 包含 5 项检查各自的结果、pageerror 统计、发现问题和建议修复
@@ -96,12 +112,12 @@
 
 ### Requirement: playwright 运行时隔离
 
-系统 SHALL 确保 prototype-design VERIFY §6.4 的 Playwright 验证中，playwright npm 包和浏览器二进制使用 `.kflow-runtime/playwright/` 下的安装，不在 `prototype/` 目录下产生任何运行时文件。
+系统 SHALL 确保 prototype-design VERIFY §9.2 的 Playwright 验证中，playwright npm 包和浏览器二进制使用 `.kflow-runtime/playwright/` 下的安装，不在产品级原型目录 `docs/designs/prototypes/` 下产生任何运行时文件。
 
-#### Scenario: 验证完成后 prototype/ 目录保持纯净
+#### Scenario: 验证完成后 docs/designs/prototypes/ 目录保持纯净
 
 - **WHEN** 全部 5 轮 Playwright 验证完成
-- **THEN** `prototype/` 目录 SHALL NOT 包含以下文件/目录：
+- **THEN** `docs/designs/prototypes/` 目录 SHALL NOT 包含以下文件/目录：
   - `node_modules/`
   - `package.json`
   - `package-lock.json`
@@ -111,5 +127,4 @@
 
 - **WHEN** Playwright 验证子代理需要使用 playwright
 - **THEN** 系统 SHALL 使用 `.kflow-runtime/playwright/node_modules/.bin/playwright` 或 `.kflow-runtime/playwright/node_modules/playwright`
-- **AND** SHALL NOT 在 `prototype/` 目录下执行 `npm install playwright`
-
+- **AND** SHALL NOT 在 `docs/designs/prototypes/` 目录下执行 `npm install playwright`

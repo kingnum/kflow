@@ -1,7 +1,7 @@
 # kflow-e2e-test（E2E 浏览器自动化测试阶段）
 
 > **版本**: 参见仓库根目录 `VERSION` 文件
-> **阶段**: 浏览器自动化测试（前后端项目必须阶段，子变更级）
+> **阶段**: 浏览器自动化测试（前后端项目必须阶段，轻量档下条件适用，子变更级）
 
 ---
 
@@ -44,11 +44,33 @@ allowed-tools:
 
 ---
 
+## 阶段适用性入口门控
+
+> **机制说明**：四态判定矩阵定义在共享规则 `skills/kflow-e2e-test/references/gates.md` §1.2；声明字段定义见 `skills/kflow-e2e-test/references/state-values.md` §5。
+
+> **适用范围**：本机制 SHALL 仅适用于 `变更档位 = 轻量` 的变更。`标准` 与 `完整` 档 SHALL NOT 应用本机制，阶段集合维持既有规则；纯后端项目跳过本阶段的既有规则与档位无关，按项目类型优先判定。
+
+本门控 SHALL 在阶段入口（PRE_HOOK 之前）读取变更级 `.status.md` 的「阶段适用性声明」区中的「E2E测试」条目，并按「声明 × `e2e-tests/` 产物存在性」四态判定：
+
+| 声明 | `e2e-tests/` 产物 | 判定 | 输出 |
+|------|------------------|------|------|
+| `⏭️ 不适用` | 不存在 | 合法跳过，门控放行 | — |
+| `⏭️ 不适用` | 存在 | ❌ 阻塞 | 提示声明与产物矛盾，要求清理产物或恢复声明 |
+| `✅ 适用` | 不存在 | ❌ 阻塞 | 输出缺失产物清单 |
+| `✅ 适用`（或声明区缺失） | 存在 | 通过，继续本阶段执行 | — |
+
+- **无依据阻塞**：声明为 `⏭️` 但声明区无对应判定依据时 SHALL 阻塞，提示缺失裁剪依据；`⏭️` SHALL NOT 由产物存在性或缺省值推断得出。
+- **缺省处理**：声明区缺失（历史变更、非轻量档）时，本阶段 SHALL 按 `✅ 适用` 处理，行为等价于本机制引入前。
+
+**裁准时**（声明 = `⏭️ 不适用` 且 `e2e-tests/` 不存在）：本阶段 SHALL NOT 执行——SHALL NOT 启动测试子代理、SHALL NOT 执行 PRE_HOOK/POST_HOOK（不启动服务、不做服务刷新、不清理浏览器）、SHALL NOT 产出阶段产物，直接放行至下一阶段 `kflow-integration-test`。阶段状态由 `kflow-design` 在写入声明时一次性标记为 `⏭️ 不适用`，`traceability.md`「E2E测试」列整列填 `⏭️`、不计入覆盖率分母。裁剪阶段的钩子豁免见共享规则 `skills/kflow-e2e-test/references/hooks.md` §1。
+
+---
+
 ## 项目类型判断
 
 | 项目类型 | 阶段处理 |
 |---------|---------|
-| 前后端项目 | 必须执行浏览器自动化测试阶段 |
+| 前后端项目 | 必须执行浏览器自动化测试阶段；轻量档下按阶段适用性声明条件适用 |
 | 纯后端项目 | ⏭️ 跳过此阶段（接口单元测试由 `kflow-api-test` 覆盖） |
 
 ---
@@ -57,11 +79,11 @@ allowed-tools:
 
 | 产物 | 图例 | 说明 |
 |------|------|------|
-| 变更级 e2e-tests/ | ✅ 必须 | E2E 测试用例文档 |
+| 变更级 e2e-tests/ | ✅ 必须（轻量档裁剪时豁免） | E2E 测试用例文档；`变更档位 = 轻量` 且适用性声明判定本阶段 `⏭️ 不适用` 时 SHALL NOT 产出，该产物不存在属合法跳过 |
 | 变更级 detailed-design.md | ✅ 必须 | 统一详细设计（NFR 章节用于性能评分参考） |
 | docs/service-guide.md | ✅ 必须 | 服务启动配置（多环境） |
-| prototype/index.md | 🔶 条件 | 原型清单入口，用于视觉一致性对比（从清单获取页面文件路径） |
-| element-coverage-tree.md | 🔶 条件 | 元素覆盖树（前后端项目 + 文件存在时），用于元素触达率统计和回归检测。有原型时位于 prototype/ 目录，无原型时位于 e2e-tests/ 目录 |
+| docs/designs/prototypes/manifest.md | 🔶 条件 | 产品级原型清单，用于视觉一致性对比（从清单获取 entry 角色文件路径） |
+| element-coverage-tree.md | 🔶 条件 | 元素覆盖树（前后端项目 + 文件存在时），用于元素触达率统计和回归检测。有原型时位于变更根目录 `docs/changes/{change}/`，无原型时位于 e2e-tests/ 目录 |
 
 ---
 
@@ -75,6 +97,8 @@ allowed-tools:
 | 状态文件更新 | subchanges/*/.status.md | [子变更状态文件](../../templates/subchanges/{subchange}/subchange-status.md) | ✅ 必须 | 标记子变更测试阶段状态 |
 | 变更状态更新 | .status.md | [变更级状态文件](../../templates/changes/{change}/change-status.md) | ✅ 必须 | 更新子变更进度矩阵 |
 
+> **轻量档裁剪**：`变更档位 = 轻量` 且阶段适用性声明判定本阶段为 `⏭️ 不适用` 时，`e2e-tests/` 与本阶段全部产物（round-{n}.md、summary.md、generated-test.spec.ts）SHALL NOT 产出，阶段状态标记为 `⏭️ 不适用`。`标准` 与 `完整` 档不受本机制影响。
+
 ---
 
 ## 执行流程
@@ -87,7 +111,7 @@ E2E 测试阶段流程 (playwright-cli 驱动):
 ├─────────────────────────────────────────────────────────────┤
 │  1. PRE_HOOK  → 引用 `skills/kflow-e2e-test/references/hooks.md` e2e-test 阶段 PRE_HOOK │
 │  │   ├── CHECK_STATE → 验证前置阶段状态                       │
-│  │   ├── RELOAD → 重读 service-guide.md, e2e-tests/, detailed-design.md, element-coverage-tree.md(条件), prototype/(条件), .status.md │
+│  │   ├── RELOAD → 重读 service-guide.md, e2e-tests/, detailed-design.md, element-coverage-tree.md(条件), docs/designs/prototypes/manifest.md(条件), prototype-changes.md(条件), .status.md │
 │  │   ├── CHECK_PORTS → 检测前后端端口占用                     │
 │  │   ├── STOP_STALE → 停止残留服务                            │
 │  │   ├── COMPILE → 前后端编译                                 │
@@ -228,7 +252,7 @@ playwright-cli 的 snapshot 命令自动为页面中每个可交互元素分配�
 | 功能完整性 | 测试用例执行结果 | 统计 ✅/❌ 用例数 | 通过数/总数 × 100 |
 | 控制台错误 | 浏览器控制台 | `playwright-cli console` | 每条 [error] 扣 10 分，每条 [warning] 扣 5 分 |
 | 性能响应 | performance.timing | `playwright-cli --raw eval "JSON.stringify(performance.timing)"` | `loadEventEnd - navigationStart` < 2s 满分，每超 1s 扣 20 分 |
-| 视觉一致性 | 页面截图 + prototype/index.md | `playwright-cli screenshot` | 与原型清单中声明的页面文件对比；原型缺失时为 N/A |
+| 视觉一致性 | 页面截图 + docs/designs/prototypes/manifest.md | `playwright-cli screenshot` | 与原型清单中声明的页面文件对比；原型缺失时为 N/A |
 | 可访问性 | ARIA 属性检测 | `playwright-cli --raw eval "JSON.stringify(Array.from(document.querySelectorAll('[role],[aria-*]')).map(e => ({tag: e.tagName, role: e.getAttribute('role'), aria: Array.from(e.attributes).filter(a=>a.name.startsWith('aria-')).map(a=>a.name)})))"` | 统计 [role] 和 [aria-*] 属性数量，覆盖率评分 |
 | 元素覆盖率 | element-coverage-tree.md 触达节点数/总节点数 | 对照树中 TC-ID 映射统计触达状态 | 触达率 × 100；树不存在时为 N/A（可选维度，树存在时启用） |
 
@@ -236,8 +260,8 @@ playwright-cli 的 snapshot 命令自动为页面中每个可交互元素分配�
 
 | 条件 | 处理方式 |
 |------|---------|
-| prototype/index.md 存在 | ✅ 以原型清单为基准对比视觉一致性 |
-| prototype/index.md 不存在（原型设计 ⏭️ 跳过） | 视觉一致性评分标记为 N/A，总分权重重新分配 |
+| docs/designs/prototypes/manifest.md 存在 | ✅ 以原型清单为基准对比视觉一致性 |
+| docs/designs/prototypes/manifest.md 不存在（原型设计 ⏭️ 跳过） | 视觉一致性评分标记为 N/A，总分权重重新分配 |
 
 ---
 
@@ -403,7 +427,7 @@ playwright-cli 每次交互命令会自动输出对应的 Playwright TypeScript 
 | 可访问性 | {score}/100 | ARIA 标签、键盘导航 |
 | 元素覆盖率 | {score}/100 | element-coverage-tree 触达率 {或 N/A} |
 
-> 如 prototype/index.md 不存在（原型设计 ⏭️ 跳过），视觉一致性标记为 N/A。
+> 如 docs/designs/prototypes/manifest.md 不存在（原型设计 ⏭️ 跳过），视觉一致性标记为 N/A。
 > 如 element-coverage-tree.md 不存在（纯后端项目或旧变更），元素覆盖率标记为 N/A。
 ```
 
@@ -414,7 +438,7 @@ playwright-cli 每次交互命令会自动输出对应的 Playwright TypeScript 
 
 ## 基本信息
 - **测试完成时间**: {YYYY-MM-DD HH:MM}
-- **总轮次**: N（N 由弹性轮次决策确定）
+- **总轮次**: N（N 为目标轮次，由变更档位基线确定：轻量 1 / 标准 3 / 完整 10；回退重执行取 max(档位基线, 影响范围分数映射)）
 - **项目类型**: 前后端项目
 - **测试用例总数**: {N}
 - **最终通过率**: {百分比}%
@@ -452,7 +476,7 @@ playwright-cli 每次交互命令会自动输出对应的 Playwright TypeScript 
 | 元素覆盖率 | {score} | {score} | {score} | {趋势} |
 
 ## 结论
-- [ ] 所有轮次完成（N/N，N 由弹性轮次决策确定）
+- [ ] 所有轮次完成（N/N，N 为变更档位基线：轻量 1 / 标准 3 / 完整 10，回退重执行取 max(档位基线, 影响范围分数映射)）
 - [ ] 最终用例通过率 ≥ 100%
 - [ ] 元素触达率 = 100%（树存在时）
 - [ ] 健康评分各维度达标
@@ -471,7 +495,7 @@ playwright-cli 每次交互命令会自动输出对应的 Playwright TypeScript 
 
 ```
 1. 本轮全部测试用例执行完成后:
-   a. 读取 element-coverage-tree.md（来源：有原型时 prototype/ 目录，无原型时 e2e-tests/ 目录）
+   a. 读取 element-coverage-tree.md（来源：有原型时变更根目录 docs/changes/{change}/，无原型时 e2e-tests/ 目录）
    b. 解析树中所有 TC-ID 映射，生成「TC-ID → 元素树路径」索引表
 2. 对照本轮已执行的测试用例:
    ├── TC-ID 已执行且通过 → 对应树节点标记为 ✅
@@ -515,9 +539,22 @@ Round N:  触达 156/156 → 100% ✅ 稳定
 
 > ⚠ **子代理强制规则**（参见 skills/kflow-e2e-test/references/repetition.md §12）：本阶段（E2E测试）主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收，SHALL NOT 直接执行E2E测试主工作（playwright操作/健康评分/测试代码收集等），无例外。子代理崩溃时轮次级重试（≤3 次），全部失败标记 ⚠️ 阻塞。
 
-E2E 测试阶段属于执行类阶段，采用弹性重复制模式。目标轮次由弹性轮次决策确定（首次执行 10 轮，回退重执行按影响范围分数缩减）。子代理每轮遍历 e2e-tests/ 全部场景，逐条 Playwright 执行。
+E2E 测试阶段属于执行类阶段，采用档位驱动的弹性重复制模式，目标轮次按**档位基线**确定：
 
-> 通用规范（复杂度公式、轮次执行细节、prompt 规范、弹性轮次决策、验证门控）参见 `skills/kflow-e2e-test/references/repetition.md`
+| 变更档位 | 执行类阶段目标轮次 |
+|---------|------------------|
+| 轻量 | 1 |
+| 标准 | 3 |
+| 完整 | 10 |
+
+- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段。
+- **缺省回退**：`.status.md` 不含「变更档位」字段时按 `完整` 档处理（等价历史行为）。
+- **回退重执行**：目标轮次取 `max(档位基线, 影响范围分数映射)`；`.status.md` 中无影响范围分数时取档位基线。
+- **执行方式**：子代理每轮遍历 e2e-tests/ 全部场景，逐条 Playwright 执行。
+
+> **统一映射**：影响范围分数 → 轮次的映射唯一定义于 `tier-driven-repetition` 能力，本 Skill 仅引用，SHALL NOT 自行定义分数区间或轮次数值。
+
+> 通用规范（复杂度公式、轮次执行细节、prompt 规范、档位轮次决策、验证门控）参见 `skills/kflow-e2e-test/references/repetition.md`
 
 ### 阶段特定参数
 
@@ -536,7 +573,7 @@ E2E 测试阶段属于执行类阶段，采用弹性重复制模式。目标轮�
 - **后续阶段**：缺陷修复（失败时）或集成测试（通过时）
 - **服务管理**：服务生命周期由变更级 agent 独占管理，子变更 agent 为纯消费者
 - **项目类型**：仅前后端项目执行，纯后端项目跳过
-- **执行模式**：弹性重复制，目标轮次由弹性轮次决策确定（参见 skills/kflow-e2e-test/references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
+- **执行模式**：档位驱动的弹性重复制，目标轮次按变更级 `.status.md` 的「变更档位」字段取档位基线（轻量 1 / 标准 3 / 完整 10），回退重执行取 `max(档位基线, 影响范围分数映射)`（映射见 `tier-driven-repetition` 能力，参见 skills/kflow-e2e-test/references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
 
 ---
 

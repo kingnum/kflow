@@ -1,3 +1,9 @@
+# service-guide-generation Specification
+
+## Purpose
+
+定义 docs/service-guide.md 服务指引的检测、项目结构自动分析、用户交互确认、生成、更新、外部服务依赖识别与配置状态标记写入等能力，为各阶段提供统一的服务启动与配置信息来源。
+
 ## Requirements
 
 ### Requirement: 服务指引检测

@@ -1,3 +1,9 @@
+# change-level-bug-fix Specification
+
+## Purpose
+
+定义变更级缺陷修复能力，与子变更级修复共享统一入口，覆盖集成测试失败后的根因四分法分类、修复报告输出，以及修复与重跑集成测试的多轮循环控制。
+
 ## Requirements
 
 ### Requirement: 两级缺陷修复共享入口

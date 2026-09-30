@@ -1,6 +1,6 @@
 ---
 name: kflow-plan
-version: 0.17.0
+version: 0.18.0
 description: Use when user needs task planning/任务计划、任务清单、实现计划, or detailed-design.md is ready for subchange breakdown. 子变更级checkbox任务清单（含DoD四维验收标准），功能点级全展开TDD循环，区分后端SC/前端SC输入源。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务）。
 license: MIT
 triggers:
@@ -43,13 +43,16 @@ allowed-tools:
 | 变更级 `detailed-design.md` 或 `detailed-design/index.md` | 文件/目录索引存在（不再检查子变更级） | [全部] |
 | `CONTEXT.md` | 存在 | [全部] |
 | `functional-designs/index.md` | 存在 | [全部] |
-| `api-tests/index.md` | 存在 | [全部] |
+| `api-tests/index.md` | 存在 或 已裁剪（轻量档适用性声明判 `接口单元测试` 为 `⏭️ 不适用` 且有判定依据） | [全部] |
 | `e2e-tests/index.md` | 存在（条件：前端SC + 前后端项目） | [前端子变更] |
-| 设计审查产物 | 按变更类型分支：简化模式（功能缺陷级）→ `cross-reviews/{timestamp}/synthesis.md` 存在且标记审查通过；完整模式（功能需求级/产品需求级）→ 四视角审查状态均 = ✅ 完成 + `cross-reviews/` 四份视角报告存在 + 最新批次 `synthesis.md` 标记审查通过 | [全部] |
+| 设计审查产物 | 按变更档位分支：轻量档 → `cross-reviews/{timestamp}/synthesis.md` 存在且标记审查通过；标准档 → 两份视角报告（business-technical-review.md、security-quality-review.md）+ `synthesis.md` 存在且标记审查通过；完整档 → 四视角审查状态均 = ✅ 完成 + `cross-reviews/` 四份视角报告存在 + 最新批次 `synthesis.md` 标记审查通过 | [全部] |
 | NFR 章节完整性 | 含 ≥ 1 项性能需求和 ≥ 1 项安全需求 | [全部] |
 | 子变更 HITL 标记 | 所有子变更 SHALL NOT 含 HITL 标记（HITL = 设计不完整，禁止进入 plan） | [全部] |
+| 阶段适用性声明 | 轻量档读取变更级 `.status.md` 的「阶段适用性声明」区，据此判定 `接口单元测试` 阶段是否已裁剪；非轻量档或声明区缺失时按全部阶段适用处理 | [轻量档] |
 
 不满足则 ❌ 阻塞，提示先完成前置条件。
+
+> 轻量档的单子变更：变更恒为 1 个子变更，`api-tests/` 在 `接口单元测试` 判为 `⏭️ 不适用` 时 SHALL NOT 产出，其缺失属合法跳过，SHALL NOT 判为缺项或阻塞（判定见共享 `references/gates.md` §1.2、字段定义见 `references/state-values.md` §5）。
 
 # 输入要求
 
@@ -59,16 +62,16 @@ allowed-tools:
 | 领域词汇表 | `CONTEXT.md` | ✅ 必须 | 后端SC | 项目级领域术语，用于任务描述对齐 |
 | 覆盖追溯矩阵 | `traceability.md` | ✅ 必须 | 后端SC | FP 清单（设计列已完成），plan 阶段填写计划列 |
 | 变更级详细设计 | `detailed-design.md`（或 `detailed-design/index.md`） | ✅ 必须 | 全部 | 统一详细设计（读取属于当前子变更的章节，适配单文件或目录两种形态） |
-| 接口测试用例 | `api-tests/` | ✅ 必须 | 全部 | 统一接口测试用例 |
+| 接口测试用例 | `api-tests/` | ✅ 必须（轻量档：🔶 条件适用） | 全部 | 统一接口测试用例；轻量档 `接口单元测试` 判为 `⏭️ 不适用` 时该产物不存在属合法跳过（无接口用例可映射） |
 | E2E测试用例 | `e2e-tests/` | 🔶 条件 | 前端SC（前后端项目） | 前后端项目需要，纯后端项目不适用 |
-| 原型产物清单 | `prototype/index.md` | ✅ 必须 | 前端SC | 原型产物清单（Prototype Manifest），前端子变更任务编排的核心输入 |
+| 原型产物清单 | `docs/designs/prototypes/manifest.md` | ✅ 必须 | 前端SC | 原型产物清单（Prototype Manifest），前端子变更任务编排的核心输入 |
 
 # 输出产物
 
 | 产物 | 文件 | 图例 | 内容要求 |
 |------|------|------|---------|
 | 子变更任务清单 | `docs/changes/{change}/subchanges/{subchange}/tasks.md` | ✅ 必须 | Checkbox 格式任务列表，含 4 维 DoD 验收标准 |
-| 自审报告 | `docs/changes/{change}/self-reviews/plan/` | ✅ 必须 | 10 轮自审报告，文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
+| 自审报告 | `docs/changes/{change}/self-reviews/plan/` | 🔶 条件 | 按变更档位轮次的计划自审报告（轻量 0 份 / 标准 2 份 / 完整 10 份），文件名格式：`{YYYYMMDD}-{HHMMSS}.md`；轻量档不创建该目录，改以产物完整性门控替代 |
 | 状态文件更新 | `.status.md` | ✅ 必须 | 标记计划阶段完成 |
 
 # 执行流程
@@ -92,12 +95,14 @@ allowed-tools:
 │  7. ANNOTATE  → 标注子变更类型（后端子变更/前端子变更）              │
 │  8. OUTPUT    → 为每个子变更输出 tasks.md（含DoD + HITL标注）          │
 │  9. VERIFY    → 验证任务覆盖所有功能点和验收标准                       │
-│  9.5 SELFREV  → 10 轮自审（子代理串行 + 重复制）                      │
+│  9.5 SELFREV  → 按变更档位轮次自审（子代理串行 + 重复制）              │
+│  │   轻量档: 0 轮（跳过 SELFREV → 产物完整性门控）                     │
+│  │   标准档: 2 轮 / 完整档: 10 轮（轮次读 .status.md「变更档位」）     │
 │  │   每轮: 启动独立 Agent(subagent) 子代理                             │
 │  │   子代理全四维度独立检查（任务覆盖/DoD正确性/HITL标注/任务粒度）     │
 │  │   子代理发现问题 → 直接修复 + 生成自审报告                          │
 │  │   报告路径: self-reviews/plan/{YYYYMMDD}-{HHMMSS}.md                │
-│  │   串行执行 10 轮，不可提前终止                                       │
+│  │   串行执行目标轮次，不可提前终止                                    │
 │ 10. COMPLETE  → 更新状态文件                                           │
 │ 11. POST_HOOK → 引用 skills/kflow-plan/references/hooks.md plan 阶段 POST_HOOK  │
 └───────────────────────────────────────────────────────────────────────┘
@@ -131,7 +136,7 @@ allowed-tools:
 - 数据模型设计（涉及当前子变更的部分）
 - 接口设计（涉及当前子变更的接口）
 - 功能点设计表（当前子变更的功能点列表）
-- API 测试用例（`api-tests/`）和 E2E 测试用例（`e2e-tests/`，仅前后端项目）
+- API 测试用例（`api-tests/`）和 E2E 测试用例（`e2e-tests/`，仅前后端项目）；轻量档下两者按阶段适用性声明条件适用，判为 `⏭️ 不适用` 时对应目录不存在，跳过该输入的读取，SHALL NOT 因此判为缺项
 
 ### FP 类型校验（步骤 3 完成后执行）
 
@@ -193,13 +198,13 @@ allowed-tools:
 前端功能点结构:
 
 前端功能点 N: {页面/组件描述}
-  ├── 输入源: 从 prototype/index.md 获取页面文件路径、设计令牌路径、元素覆盖树路径
+  ├── 输入源: 从 docs/designs/prototypes/manifest.md 获取页面文件路径、设计令牌路径、元素覆盖树路径
   ├── API 契约: detailed-design.md §{api-section}
   ├── Step 1: 实现组件骨架（结构+样式，对齐原型）
   ├── Step 2: 注入设计令牌（替换硬编码为 var(--xxx)）
   ├── Step 3: 实现交互状态（hover/active/focus/disabled/loading/empty/error）
   ├── Step 4: 对接 API（mock 数据 → 真实接口）
-  └── Step 5: 按原型验证一致性（手动对照 prototype/{page}.html）
+  └── Step 5: 按原型验证一致性（手动对照 docs/designs/prototypes/screens/{page}.html）
 ```
 
 ## 步骤 5：DOD — 编写 DoD 验收标准
@@ -332,15 +337,36 @@ allowed-tools:
 | DoD 覆盖 | 每功能点包含 Happy Path(≥1) + Error Path(≥2) + Edge Case(≥1) + Quality(≥1) |
 | 无占位符 | 无 TODO/TBD/{待填写} 等占位符 |
 
-## 步骤 9.5：SELFREV — 10 轮自审（子代理串行 + 重复制）
+## 步骤 9.5：SELFREV — 按变更档位轮次自审（子代理串行 + 重复制）
 
 > **子代理隔离规则**：自审子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管自审执行。最多重试 3 次，全部失败后标记 ⚠️ 阻塞并提示用户。
 
-在 VERIFY 步骤完成后、阶段完成之前，强制执行 10 轮自循环审查。自审由子代理（Agent subagent）串行执行，与 explore/design/prototype 的 SELFREV 模式对齐。
+在 VERIFY 步骤完成后、阶段完成之前，执行自循环审查。轮次按变更档位确定（见下表），自审由子代理（Agent subagent）串行执行，与 explore/design/prototype 的 SELFREV 模式对齐。
+
+### 变更档位轮次
+
+轮次来源：变更级 `.status.md` 基本信息的「变更档位」字段（`轻量` / `标准` / `完整`）；字段缺失时按 `完整` 档处理。
+
+| 变更档位 | 计划阶段自审轮次 | 评分底线（各维度评分均 > 8） |
+|---------|----------------|--------------------------|
+| `轻量` | 0 轮（完全跳过 SELFREV） | 不适用 |
+| `标准` | 2 轮 | 不适用 |
+| `完整` | 10 轮 | 适用（各维度评分均 > 8 方通过，未达标补审至 10 轮上限） |
+
+**轻量档跳过分支：产物完整性门控**
+
+变更档位为 `轻量` 时 SHALL 完全跳过 SELFREV 步骤：SHALL NOT 启动任何自审子代理、不计算目标轮次、不保留兜底轮次，改以产物完整性门控替代：
+
+- 阶段产物 SHALL 对照「输出产物」章节清单逐项存在（全部子变更 tasks.md + traceability.md 计划列更新）
+- 产物 SHALL NOT 含 `TODO` / `TBD` / `{待填写}` 等未填充占位符
+- 门控不通过 → ❌ 阻塞，修复后重跑；门控通过 → 直接进入步骤 10（COMPLETE）
+- SHALL NOT 创建 `self-reviews/plan/` 目录及任何自审报告
+
+> **口径说明（唯一轮次来源）**：计划阶段的迭代与自审是**同一个循环**——子代理每轮遍历全部子变更 tasks.md，对每个子变更执行上述 4 个维度检查并修复。本节（步骤 9.5 + 后文「重复制执行模型」）定义该循环的全部规则，轮次取设计自审口径（轻量 0 / 标准 2 / 完整 10），SHALL NOT 在别处另行定义第二套轮次表。
 
 ### 自审模式：子代理串行 + 重复制
 
-每轮独立执行全部四个维度，10 轮形成自然收敛。
+每轮独立执行全部四个维度，目标轮次形成自然收敛。
 
 | 对比 | 分工制 | 重复制（当前） |
 |------|--------|--------------|
@@ -373,8 +399,8 @@ allowed-tools:
 | 检查项 | 规则 |
 |--------|------|
 | 类型标注完整性 | 每个子变更是否明确标注了类型（后端子变更/前端子变更） |
-| 前端SC输入源 | 前端子变更的输入源是否限定为 prototype/index.md 声明的产物文件 |
-| 输入源排除 | 前端子变更 SHALL NOT 引用 prototype/design-prompt.md 或 design-system/MASTER.md |
+| 前端SC输入源 | 前端子变更的输入源是否限定为 docs/designs/prototypes/manifest.md 中角色为 entry/page/tokens/shared 的文件、变更级 prototype-changes.md 声明的本变更改动，以及变更级 element-coverage-tree.md |
+| 输入源排除 | 前端子变更 SHALL NOT 引用 prototype-plan/design-prompt.md 或 design-system/MASTER.md |
 
 #### 任务粒度合理性
 
@@ -386,20 +412,24 @@ allowed-tools:
 ### 自审执行流程
 
 ```
-10 轮自审执行流程（子代理串行，每轮全维度）:
+自审执行流程（子代理串行，每轮全维度，按变更档位轮次）:
+
+0. 读取变更档位：读取变更级 .status.md 基本信息的「变更档位」字段（缺失按完整档处理）
+   ├── 轻量 → 跳过 SELFREV，改执行产物完整性门控（见「变更档位轮次」节），完成后进入步骤 10（COMPLETE）
+   └── 标准 / 完整 → 继续以下步骤
 
 1. 主 Agent 启动第一轮子代理:
    Agent(
      subagent_type="claude",
      description="Plan 自审 Round 1",
-     prompt="读取所有子变更的 tasks.md 文件，按任务覆盖完整性、DoD 验收标准正确性、HITL 标注准确性、任务粒度合理性全部四个维度独立检查。发现问题直接修复 tasks.md，生成审查报告到 self-reviews/plan/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。"
+     prompt="读取所有子变更的 tasks.md 文件，按任务覆盖完整性、DoD 验收标准正确性、子变更类型标注准确性、任务粒度合理性全部四个维度独立检查。发现问题直接修复 tasks.md，生成审查报告到 self-reviews/plan/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。"
    )
 2. 子代理返回审查报告路径
 3. 主 Agent 读取报告，确认修复内容
 4. 修复不合理 → 主 Agent 补充修复
 5. 启动下一轮子代理（Round N+1），步骤同 Round 1
 6. SHALL NOT 并行启动多个子代理（串行执行）
-7. 重复直至完成全部 10 轮
+7. 重复直至完成目标轮次（标准 2 轮 / 完整 10 轮）
 8. 全部完成后进入步骤 10（COMPLETE）
 ```
 
@@ -409,8 +439,10 @@ allowed-tools:
 
 ### 强制执行规则
 
-- SHALL 完成全部 10 轮自审，不允许提前终止
-- 即使连续多轮无新问题也必须完成全部 10 轮
+- 轮次 SHALL 以变更级 `.status.md` 的「变更档位」字段为准（缺失按 `完整` 档处理），SHALL NOT 使用与档位无关的固定轮次或「首次执行」作为轮次依据
+- SHALL 完成全部目标轮次自审（标准 2 轮 / 完整 10 轮），不允许提前终止
+- 即使连续多轮无新问题也必须完成全部目标轮次
+- 轻量档 SHALL NOT 启动自审子代理、不计算目标轮次、不保留兜底轮次，SHALL 改以产物完整性门控替代
 - SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审
 - SHALL NOT 并行启动多个子代理（串行执行，前一轮完成后再启动下一轮）
 - 自审全部完成后标记阶段完成
@@ -483,20 +515,16 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 
 ---
 
-# 重复制（执行类阶段）
+# 重复制执行模型
 
-计划阶段属于执行类阶段，采用重复制模式。目标轮次由弹性轮次决策规则确定（参见 `skills/kflow-plan/references/repetition.md` §14）：首次执行 10 轮，回退重执行按影响范围分数缩减。子代理每轮遍历全部子变更 tasks.md，对每个子变更独立执行全部 4 维度检查，自然收敛。
+> **本节与步骤 9.5 描述同一个循环**——计划阶段的迭代与自审不可分割，其轮次表、4 个审查维度、轻量档产物门控与强制执行规则均定义在「步骤 9.5：SELFREV」一节，本节不另立第二套规则。通用规范（子代理隔离、prompt 规范、轮间摘要注入、验证门控）见 `skills/kflow-plan/references/repetition.md`。
 
 ## 每轮工作内容
 
 **遍历项**：全部子变更 tasks.md
 
 **每轮流程**：
-1. 遍历全部子变更 tasks.md，对每个子变更执行 4 维度全量检查：
-   - 任务覆盖完整性：所有 FP 是否有对应任务（覆盖率 = 100%）
-   - DoD 验收标准正确性：WHEN/THEN 格式和语义（四维覆盖 Happy≥1/Error≥2/Edge≥1/Quality≥1）
-   - 子变更类型标注准确性：类型标注完整性、前端SC 输入源限定为核心原型产物、输入源排除（无 design-prompt.md / design-system/MASTER.md）
-   - 任务粒度合理性：任务是否 2-5 分钟可完成
+1. 遍历全部子变更 tasks.md，对每个子变更执行 4 维度全量检查（维度定义见步骤 9.5「审查维度与检查规则」）
 2. 已通过项执行深化检查（模块深度/边界/重构机会），未通过项继续执行
 3. 发现问题直接修复 tasks.md
 4. 更新 traceability.md 计划阶段对应列
@@ -504,6 +532,8 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 **每轮产物**：traceability.md「计划」列更新
 
 **轮次结束后**：更新 .status.md 执行轮次计数器
+
+**轮次取值**：轻量 0 / 标准 2 / 完整 10（设计自审口径，见步骤 9.5「变更档位轮次」）。计划阶段的循环为产物自审，取设计自审口径而非执行类阶段口径。
 
 ## 复杂度评估
 
@@ -515,17 +545,17 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 低复杂度 (< 20 分) / 中复杂度 (20-50 分) / 高复杂度 (> 50 分)
 ```
 
-分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成全部 10 轮迭代后方可返回。
+分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成目标轮次（按变更档位取值：轻量 0 / 标准 2 / 完整 10）迭代后方可返回（轻量档 0 轮，改以产物完整性门控替代）。
 
 ## 执行流程
 
 ```
 1. 复杂度评估 → 写入 .status.md 备注列（仅信息展示，不驱动执行行为）
 
-1.5 INIT → 主 Agent 按弹性轮次决策确定目标轮次 N，写入 .status.md 执行轮次为 1 / N
+1.5 INIT → 读取变更级 .status.md 的「变更档位」字段（缺失按完整档处理），按设计自审口径确定目标轮次 N（轻量 0 / 标准 2 / 完整 10；回退重执行取 max(档位基线, 影响范围分数映射)），写入 .status.md 执行轮次为 1 / N（轻量档 N=0 时不写轮次，改走产物完整性门控）
 
 2. 构建阶段专属提示词
-   ├── kflow-shared 分层加载（基础层 + 执行层）:
+   ├── 分层加载（基础层 + 执行层）:
    │   ├── skills/kflow-plan/references/state-values.md（摘要）
    │   ├── skills/kflow-plan/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-plan/references/repetition.md
@@ -536,7 +566,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
    │   「每轮遍历全部子变更 tasks.md 独立执行完整流程。
    │     更新 .status.md 中执行轮次计数器为当前轮次号。
    │     禁止按轮次分段分配工作重点——每轮均须对全部工作项执行完整检查。
-   │     必须完成全部 10 轮迭代后才可返回验收报告，禁止在第 10 轮前返回。
+   │     必须完成全部目标轮次（按目标轮次取值，见 .status.md 执行轮次 1/N）迭代后才可返回验收报告，禁止在达到目标轮次前返回。
    │     若当前轮次无新发现且无可执行工作，仍须递增计数器并继续。」
    ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/本轮建议关注），注入下一轮子代理 prompt（参见 repetition-model.md §13）
    └── 完成承诺: COMPLETED
@@ -544,7 +574,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 3. 启动 Agent 迭代子代理 (Agent(description, prompt, run_in_background))
 
 4. 主 Agent 验收
-   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由弹性轮次决策确定）
+   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由变更档位确定）
    ├── 产物: 所有子变更 tasks.md 存在且格式正确
    ├── 覆盖率: 所有功能点都有对应任务（功能点覆盖 = 100%）
    ├── DoD: 每功能点包含 4 维验收标准
@@ -557,7 +587,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 | 情况 | 处理方式 |
 |------|---------|
 | 通过 | 更新 .status.md → 释放编码阶段门控 |
-| 轮次不足（< 10） | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
+| 轮次不足（< 目标轮次 N） | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
 | 轮次达标但产物不合格 | 记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑 |
 
 ---
@@ -570,7 +600,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 | 输出给 | `kflow-code` | 编码阶段（子变更级） |
 | 前置阶段 | 详细设计（变更级） | 门控依赖 |
 | 后续阶段 | 编码（子变更级） | 任务清单作为编码输入 |
-| 执行模式 | 重复制 | 弹性轮次决策（参见 repetition-model.md §14），复杂度评估仅信息展示，主 Agent 验收闭环 |
+| 执行模式 | 重复制 | 档位驱动轮次决策（设计自审口径 轻量 0 / 标准 2 / 完整 10，参见步骤 9.5 与 `skills/kflow-plan/references/repetition.md`；回退重执行叠加规则统一在 `tier-driven-repetition` 能力定义），复杂度评估仅信息展示，主 Agent 验收闭环 |
 
 # 核心提醒
 
@@ -579,7 +609,8 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 - DoD 采用 WHEN/THEN 格式，每功能点 4 维（Happy ≥1 + Error ≥2 + Edge ≥1 + Quality ≥1）
 - HITL = 设计不完整标记，HITL 子变更禁止进入 plan 阶段，需回退到 kflow-design 补全设计
 - 禁止 TODO/TBD/{待填写} 等占位符
-- 目标轮次由弹性轮次决策确定（参见 repetition-model.md §14），首次执行 10 轮，不允许提前收敛终止
+- 目标轮次由变更档位确定（设计自审口径 轻量 0 / 标准 2 / 完整 10，参见步骤 9.5 与 `skills/kflow-plan/references/repetition.md`；缺失档位按完整档），不允许提前收敛终止（轻量档 0 轮，改以产物完整性门控替代）
+- **轻量档单一子变更**：轻量档变更恒为 1 个子变更，「遍历全部子变更」等复数表述在该场景下即为遍历该唯一子变更，不产生额外要求；`api-tests/` 可因 `接口单元测试` 被裁剪而不存在，属合法跳过
 - **N 轮子代理自审强制执行（子代理串行 + 重复制）**：OUTPUT 步骤完成后自动进入 SELFREV，每轮启动独立子代理执行全部定制 4 维度（任务覆盖完整性/DoD 验收标准正确性/HITL 标注准确性/任务粒度合理性），子代理边审边修，串行不可并行，即使无新问题也必须完成全部目标轮次，不可提前终止
 
 # 反馈机制

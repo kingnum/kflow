@@ -1,6 +1,12 @@
-## MODIFIED Requirements
+# playwright-cli-e2e-workflow Specification
 
-### Requirement: 测试代码自动生成（MODIFIED）
+## Purpose
+
+定义基于 playwright-cli 的 E2E 测试工作流规范：规定测试代码的被动收集与归档、子代理工具切换禁令、元素覆盖树的加载与无原型时的探索生成，以及每轮测试后的元素触达率统计与门控判定。
+
+## Requirements
+
+### Requirement: 测试代码自动生成
 
 系统 SHALL 在 E2E 测试交互过程中收集 playwright-cli 自动生成的 Playwright TypeScript 代码，但仅在测试通过率 ≥80% 时收集为回归资产。
 
@@ -70,11 +76,11 @@
 
 ### Requirement: 无原型时使用 playwright-cli 探索生成元素覆盖树
 
-系统 SHALL 在 kflow-design 阶段无原型文件时，通过 playwright-cli 逐页探索实际运行的前端页面，自动生成 element-coverage-tree.md。
+系统 SHALL 在 kflow-design 阶段无产品级原型（`docs/designs/prototypes/manifest.md` 不存在）时，通过 playwright-cli 逐页探索实际运行的前端页面，自动生成 element-coverage-tree.md。
 
 #### Scenario: 探索前获取页面路由
 
-- **WHEN** kflow-design 阶段检测到 prototype/index.html 不存在且为前后端项目
+- **WHEN** kflow-design 阶段检测到 `docs/designs/prototypes/manifest.md` 不存在且为前后端项目
 - **THEN** 系统 SHALL 从路由配置文件或前端源码中提取全部页面路径
 - **AND** 按路径列表编排逐页探索顺序（从入口页开始 BFS）
 

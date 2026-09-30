@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# phase-hooks Specification
+
+## Purpose
+
+本能力定义各阶段 PRE_HOOK 与 POST_HOOK 的归属与加载规则，规定钩子规则按阶段分散存放于各 Skill 自身的 `references/` 目录，服务生命周期与端口冲突规则同样以本地引用为唯一来源。
+
+## Requirements
 
 ### Requirement: Phase hooks service management deduplication
 PRE_HOOK/POST_HOOK step sequences SHALL reside in each skill's `references/hooks.md` file, not in a centralized `kflow-shared/phase-hooks.md`. Each skill's `references/hooks.md` SHALL contain only the hook sections relevant to that skill's phase.
@@ -29,9 +35,3 @@ Each skill's `references/hooks.md` RELOAD rules SHALL document the incremental R
 #### Scenario: Hooks file documents incremental RELOAD
 - **WHEN** a skill's `references/hooks.md` RELOAD section is read
 - **THEN** it SHALL document the incremental RELOAD option alongside the existing full RELOAD
-
-## REMOVED Requirements
-
-### Requirement: Centralized phase-hooks.md
-**Reason**: `kflow-shared/phase-hooks.md` is removed. Each skill now maintains its own phase-specific hooks in `references/hooks.md`.
-**Migration**: Hook content is distributed to each skill's `references/hooks.md`. Consumer projects should delete `kflow-shared/phase-hooks.md`.

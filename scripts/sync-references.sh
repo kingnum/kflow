@@ -4,6 +4,13 @@
 #
 # 检查的 references 文件列表:
 #   repetition.md, hooks.md, gates.md, state-values.md, service-lifecycle.md, self-review.md
+#
+# skill 路径归一化:
+#   各 skill 的副本中会引用 skill 目录路径，且引用的是「本副本对应的 skill」——
+#   例如 repetition.md 引用本 skill 的 permission-model.md，service-lifecycle.md 引用
+#   承载脚本的 kflow-code/scripts/with_server.py。这类路径差异由「副本归属哪个 skill」决定，
+#   不构成实质不一致。比对前将各副本中的 skills/<skill 名>/ 路径段统一归一化为 skills/<SKILL>/，
+#   再行比对；内容、规则、检查项的实质差异不受归一化影响，仍会正确报告。
 
 set -euo pipefail
 
@@ -19,6 +26,12 @@ REF_FILES=(
   "service-lifecycle.md"
   "self-review.md"
 )
+
+# 归一化文件内容中的 skill 目录路径段
+# 参数: $1=文件路径（$2 保留以兼容调用点，归一化不再依赖副本归属的 skill 名）
+normalize_skill_refs() {
+  sed 's#skills/kflow-[a-z0-9-]*/#skills/<SKILL>/#g' "$1"
+}
 
 echo "=== References 一致性校验 ==="
 echo ""
@@ -53,7 +66,7 @@ for ref_file in "${REF_FILES[@]}"; do
       file_a="${skill_dirs[$i]}references/$ref_file"
       file_b="${skill_dirs[$j]}references/$ref_file"
 
-      if ! diff -q "$file_a" "$file_b" > /dev/null 2>&1; then
+      if ! diff -q <(normalize_skill_refs "$file_a") <(normalize_skill_refs "$file_b") > /dev/null 2>&1; then
         mismatches+=("$skill_a ↔ $skill_b")
         HAS_DIFF=1
       fi

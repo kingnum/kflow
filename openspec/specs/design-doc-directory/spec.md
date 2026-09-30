@@ -1,7 +1,7 @@
 # design-doc-directory Specification
 
 ## Purpose
-TBD - created by archiving change enhance-skill-review-and-quality. Update Purpose after archive.
+定义详细设计文档的目录化拆分规则：当变更功能点总数超过阈值时将 detailed-design.md 单文件拆分为 detailed-design/ 目录结构，规定其组成部分、设计域文件命名与 index.md 索引模板，并使阶段门控与下游读取对两种结构保持透明。
 ## Requirements
 ### Requirement: FP 阈值触发目录化拆分
 

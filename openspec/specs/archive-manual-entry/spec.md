@@ -1,7 +1,7 @@
 # archive-manual-entry Specification
 
 ## Purpose
-归档阶段禁止自动流转，MUST 用户显式确认后方可进入。
+归档阶段禁止自动流转，MUST 在用户显式确认后方可进入下一阶段。归档是流程中唯一禁止自动流转的阶段，确认前须向用户展示归档内容摘要与待确认事项。
 
 ## Requirements
 

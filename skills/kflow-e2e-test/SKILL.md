@@ -1,6 +1,6 @@
 ---
 name: kflow-e2e-test
-version: 0.17.0
+version: 0.18.0
 description: Use when user needs E2E testing/E2E 测试、QA 测试、功能测试、浏览器自动化测试, or subchange API tests (kflow-api-test) pass and ready for browser testing. Playwright snapshot+ref模式，决策树路由，健康评分映射。仅前后端项目，纯后端跳过。依赖前置 kflow-api-test。含 PRE_HOOK/POST_HOOK 阶段钩子。/playwright
 license: MIT
 triggers:
@@ -21,7 +21,7 @@ allowed-tools:
 
 # 角色
 
-子变更级 E2E 浏览器自动化测试执行器。使用 playwright-cli 的 snapshot+ref 模式驱动浏览器，执行 E2E 测试用例。前后端项目必须阶段，纯后端项目自动跳过。服务生命周期由变更级 agent 独占管理，本 agent 为纯消费者。
+子变更级 E2E 浏览器自动化测试执行器。使用 playwright-cli 的 snapshot+ref 模式驱动浏览器，执行 E2E 测试用例。前后端项目的必须阶段（轻量档下按阶段适用性声明条件适用），纯后端项目自动跳过。服务生命周期由变更级 agent 独占管理，本 agent 为纯消费者。
 
 > ⚠ **子代理强制规则**（参见 skills/kflow-e2e-test/references/repetition.md §12）:
 > 1. 本阶段主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收
@@ -45,11 +45,31 @@ allowed-tools:
 - 子变更代码审查报告存在 (`test-reports/review/code-review.md`)
 - `docs/service-guide.md` 存在（服务启动配置可用）
 
+# 阶段适用性入口门控
+
+> **机制说明**：四态判定矩阵参见 `skills/kflow-e2e-test/references/gates.md` §1.2，声明字段参见 `skills/kflow-e2e-test/references/state-values.md` §5，钩子豁免参见 `skills/kflow-e2e-test/references/hooks.md` §1。
+
+> **适用范围**：仅 `变更档位 = 轻量` 适用；`标准` 与 `完整` 档 SHALL NOT 应用，阶段集合维持既有规则。纯后端项目跳过本阶段的既有规则与档位无关，按项目类型优先判定。
+
+本门控 SHALL 在执行流程入口（PRE_HOOK 之前）读取变更级 `.status.md` 的「阶段适用性声明」区中的「E2E测试」条目，并按「声明 × `e2e-tests/` 产物存在性」四态判定：
+
+| 声明 | `e2e-tests/` 产物 | 判定 |
+|------|------------------|------|
+| `⏭️ 不适用` | 不存在 | 合法跳过，放行 |
+| `⏭️ 不适用` | 存在 | ❌ 阻塞，提示声明与产物不一致 |
+| `✅ 适用` | 不存在 | ❌ 阻塞，输出缺失产物清单 |
+| `✅ 适用`（或声明区缺失） | 存在 | 通过，继续本阶段 |
+
+- 声明 `⏭️` 但无判定依据 → ❌ 阻塞，提示缺失裁剪依据；`⏭️` SHALL NOT 由产物存在性或缺省值推断
+- 声明区缺失（历史变更、非轻量档）→ 按 `✅ 适用` 处理
+
+**裁准时**（声明 = `⏭️ 不适用` 且 `e2e-tests/` 不存在）：本阶段 SHALL NOT 执行——SHALL NOT 启动测试子代理、SHALL NOT 执行 PRE_HOOK/POST_HOOK（不启动服务、不做服务刷新、不清理浏览器）、SHALL NOT 产出阶段产物；直接放行至下一阶段 `kflow-integration-test`。阶段状态由 `kflow-design` 在写入声明时一次性标记为 `⏭️ 不适用`，`traceability.md`「E2E测试」列整列填 `⏭️`、不计入覆盖率分母。
+
 # 项目类型判断
 
 | 项目类型 | 阶段处理 |
 |---------|---------|
-| 前后端项目 | 必须执行浏览器自动化测试阶段 |
+| 前后端项目 | 必须执行浏览器自动化测试阶段；轻量档下条件适用 |
 | 纯后端项目 | ⏭️ 跳过此阶段（接口单元测试由 `kflow-api-test` 覆盖） |
 
 # 输入要求
@@ -59,7 +79,7 @@ allowed-tools:
 | 变更级 e2e-tests/ | ✅ 必须 | E2E 测试用例文档 |
 | 变更级 detailed-design.md | ✅ 必须 | 统一详细设计（NFR 章节用于性能评分参考） |
 | docs/service-guide.md | ✅ 必须 | 服务启动配置（多环境） |
-| prototype/index.md | 🔶 条件 | 原型产物清单，用于获取入口文件路径进行视觉一致性对比 |
+| docs/designs/prototypes/manifest.md | 🔶 条件 | 原型产物清单，用于获取入口文件路径进行视觉一致性对比 |
 | element-coverage-tree.md | 🔶 条件 | 元素覆盖树（前后端项目 + 文件存在时），用于元素触达率统计和回归检测 |
 
 # 输出产物
@@ -80,6 +100,9 @@ E2E 测试阶段流程 (playwright-cli 驱动):
 ┌─────────────────────────────────────────────────────────────┐
 │                   E2E TEST WORKFLOW                           │
 ├─────────────────────────────────────────────────────────────┤
+│  0. GATE      → 阶段适用性门控（仅轻量档）                    │
+│  │   └── 裁准（声明 ⏭️ 且 e2e-tests/ 不存在）→ 跳过本阶段     │
+│  │       不启动子代理、不执行钩子，直接放行至下一阶段         │
 │  1. PRE_HOOK  → CHECK_STATE → RELOAD → 引用                     │
 │  │              skills/kflow-e2e-test/references/hooks.md e2e-test PRE_HOOK   │
 │  2. CHECK     → 门控检查（前置阶段 + 服务刷新门控）          │
@@ -220,7 +243,7 @@ playwright-cli 的 snapshot 命令自动为页面中每个可交互元素分配�
 | 功能完整性 | 测试用例执行结果 | 统计 ✅/❌ 用例数 | 通过数/总数 × 100 |
 | 控制台错误 | 浏览器控制台 | `playwright-cli console` | 每条 [error] 扣 10 分，每条 [warning] 扣 5 分 |
 | 性能响应 | performance.timing | `playwright-cli --raw eval "JSON.stringify(performance.timing)"` | `loadEventEnd - navigationStart` < 2s 满分，每超 1s 扣 20 分 |
-| 视觉一致性 | 页面截图 + prototype/index.md（entry 角色文件） | `playwright-cli screenshot` | 与 prototype/index.md 中 entry 角色文件对比；原型缺失时为 N/A |
+| 视觉一致性 | 页面截图 + docs/designs/prototypes/manifest.md（entry 角色文件） | `playwright-cli screenshot` | 与 docs/designs/prototypes/manifest.md 中 entry 角色文件对比；原型缺失时为 N/A |
 | 可访问性 | ARIA 属性检测 | `playwright-cli --raw eval "JSON.stringify(Array.from(document.querySelectorAll('[role],[aria-*]')).map(e => ({tag: e.tagName, role: e.getAttribute('role'), aria: Array.from(e.attributes).filter(a=>a.name.startsWith('aria-')).map(a=>a.name)})))"` | 统计 [role] 和 [aria-*] 属性数量，覆盖率评分 |
 | 元素覆盖率 | element-coverage-tree.md 触达节点数/总节点数 | 对照树中 TC-ID 映射统计触达状态 | 触达率 × 100；树不存在时为 N/A |
 
@@ -228,8 +251,8 @@ playwright-cli 的 snapshot 命令自动为页面中每个可交互元素分配�
 
 | 条件 | 处理方式 |
 |------|---------|
-| prototype/index.md 存在 | ✅ 以原型产物清单中 entry 角色文件为基准对比视觉一致性 |
-| prototype/index.md 不存在（原型设计 ⏭️ 跳过） | 视觉一致性评分标记为 N/A，总分权重重新分配 |
+| docs/designs/prototypes/manifest.md 存在 | ✅ 以原型产物清单中 entry 角色文件为基准对比视觉一致性 |
+| docs/designs/prototypes/manifest.md 不存在（原型设计 ⏭️ 跳过） | 视觉一致性评分标记为 N/A，总分权重重新分配 |
 
 ---
 
@@ -404,7 +427,7 @@ playwright-cli 每次交互命令会自动输出对应的 Playwright TypeScript 
 | 可访问性 | {score}/100 | ARIA 标签、键盘导航 |
 | 元素覆盖率 | {score}/100 | element-coverage-tree 触达率 {或 N/A} |
 
-> 如 prototype/index.md 不存在（原型设计 ⏭️ 跳过），视觉一致性标记为 N/A。
+> 如 docs/designs/prototypes/manifest.md 不存在（原型设计 ⏭️ 跳过），视觉一致性标记为 N/A。
 > 如 element-coverage-tree.md 不存在，元素覆盖率标记为 N/A。
 ```
 
@@ -446,7 +469,19 @@ playwright-cli 每次交互命令会自动输出对应的 Playwright TypeScript 
 
 # 重复制（执行类阶段）
 
-E2E 测试阶段属于执行类阶段，采用重复制模式。目标轮次由弹性轮次决策规则确定（参见 `skills/kflow-e2e-test/references/repetition.md` §14）：首次执行 10 轮，回退重执行按影响范围分数缩减。
+E2E 测试阶段属于执行类阶段，采用档位驱动的弹性重复制模式，目标轮次按**档位基线**确定（参见 `skills/kflow-e2e-test/references/repetition.md` §14）：
+
+| 变更档位 | 目标轮次 |
+|---------|---------|
+| 轻量 | 1 |
+| 标准 | 3 |
+| 完整 | 10 |
+
+- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段。
+- **缺省回退**：`.status.md` 不含「变更档位」字段时按 `完整` 档处理。
+- **回退重执行**：目标轮次取 `max(档位基线, 影响范围分数映射)`；`.status.md` 中无影响范围分数时取档位基线。
+
+> **统一映射**：影响范围分数 → 轮次的映射唯一定义于 `tier-driven-repetition` 能力，本 Skill 仅引用，SHALL NOT 自行定义分数区间或轮次数值。
 
 ## 每轮工作内容
 
@@ -476,17 +511,18 @@ E2E 测试阶段属于执行类阶段，采用重复制模式。目标轮次由�
 低复杂度 (< 20 分) / 中复杂度 (20-50 分) / 高复杂度 (> 50 分)
 ```
 
-分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成全部 10 轮迭代后方可返回。
+分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成目标轮次（由变更档位基线确定：轻量 1 / 标准 3 / 完整 10）迭代后方可返回。
 
 ## 执行流程
 
 ```
 1. 复杂度评估 → 写入 .status.md 备注列（仅信息展示，不驱动执行行为）
 
-1.5 INIT → 主 Agent 按弹性轮次决策确定目标轮次 N，写入 .status.md 执行轮次为 1 / N
+1.5 INIT → 主 Agent 按档位轮次决策（参见 references/repetition.md §14）确定目标轮次 N，写入 .status.md 执行轮次为 1 / N
+    └── 判定流程: 读取变更级 .status.md「变更档位」字段取档位基线（轻量 1 / 标准 3 / 完整 10，字段缺失时按完整档处理）；阶段回退重执行时取 max(档位基线, 影响范围分数映射)，无影响范围分数时取档位基线
 
 2. 构建阶段专属提示词
-   ├── kflow-shared 分层加载（基础层 + 执行层 + 服务层）:
+   ├── 分层加载（基础层 + 执行层 + 服务层）:
    │   ├── skills/kflow-e2e-test/references/state-values.md（摘要）
    │   ├── skills/kflow-e2e-test/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-e2e-test/references/repetition.md
@@ -496,7 +532,7 @@ E2E 测试阶段属于执行类阶段，采用重复制模式。目标轮次由�
    ├── 测试执行要求 (playwright-cli snapshot+ref 模式)
    ├── traceability.md 待填充列: E2E测试(ID)
    ├── 覆盖率目标: 100%
-   ├── 重复制遍历指令: 「每轮遍历全部测试场景逐条独立执行。更新 .status.md 中执行轮次计数器为当前轮次号。禁止按轮次分段分配工作重点——每轮均须运行全部测试场景。必须完成全部 10 轮迭代后才可返回验收报告，禁止在第 10 轮前返回。若当前轮次无新发现且无可执行工作，仍须递增计数器并继续。」
+   ├── 重复制遍历指令: 「每轮遍历全部测试场景逐条独立执行。更新 .status.md 中执行轮次计数器为当前轮次号。禁止按轮次分段分配工作重点——每轮均须运行全部测试场景。必须完成全部目标轮次迭代后才可返回验收报告，禁止在目标轮次前返回（目标轮次数值由变更档位确定，SHALL NOT 硬编码为 10）。若当前轮次无新发现且无可执行工作，仍须递增计数器并继续。」
    ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/本轮建议关注），注入下一轮子代理 prompt（参见 repetition-model.md §13）
    └── 完成承诺: COMPLETED
 
@@ -504,7 +540,7 @@ E2E 测试阶段属于执行类阶段，采用重复制模式。目标轮次由�
    └── 子代理内维持现有 playwright-cli 驱动测试流程
 
 4. 主 Agent 验收
-   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由弹性轮次决策确定）
+   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由变更档位基线确定）
    ├── 产物: round-{n}.md + summary.md + generated-test.spec.ts（条件产物，通过率≥80%时收集）
    ├── 覆盖率: traceability.md「E2E测试」列覆盖率 = 100%
    ├── 健康评分: 各维度评分已采集
@@ -527,7 +563,7 @@ E2E 测试阶段属于执行类阶段，采用重复制模式。目标轮次由�
 - **后续阶段**：缺陷修复（失败时）或集成测试（通过时）
 - **服务管理**：服务生命周期由变更级 agent 独占管理，子变更 agent 为纯消费者
 - **项目类型**：仅前后端项目执行，纯后端项目跳过
-- **执行模式**：重复制，弹性轮次决策（参见 repetition-model.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
+- **执行模式**：档位驱动的弹性重复制，目标轮次按变更档位基线（轻量 1 / 标准 3 / 完整 10）确定，回退重执行取 `max(档位基线, 影响范围分数映射)`（参见 references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
 
 ---
 
@@ -538,7 +574,7 @@ E2E 测试阶段属于执行类阶段，采用重复制模式。目标轮次由�
 - 使用 playwright-cli 的 snapshot + ref 模式定位元素（不使用 CSS selector）
 - 优先 snapshot 轻量获取，仅在视觉对比时使用 screenshot
 - 每轮测试后必须 `close` 浏览器会话
-- 强制完成全部 10 轮迭代后才可返回验收报告，禁止在第 10 轮前返回
+- 强制完成全部目标轮次（由变更档位基线确定：轻量 1 / 标准 3 / 完整 10）迭代后才可返回验收报告，禁止在目标轮次前返回
 - 轮次不足时拒收并直接重新启动 Agent 子代理，不进入 AskUserQuestion
 
 # 反馈机制

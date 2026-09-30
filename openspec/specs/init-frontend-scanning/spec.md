@@ -1,3 +1,9 @@
+# init-frontend-scanning Specification
+
+## Purpose
+
+定义 kflow-init LEGACY 模式在 L2.5 阶段的前端工程扫描能力，从路由配置、菜单配置和页面组件中提取前端结构信息，并将前端模块按菜单层级划分，为前后端项目补齐前端侧的逆向分析。
+
 ## Requirements
 
 ### Requirement: L2.5 前端工程扫描层

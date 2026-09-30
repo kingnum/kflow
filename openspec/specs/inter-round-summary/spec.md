@@ -1,3 +1,9 @@
+# inter-round-summary Specification
+
+## Purpose
+
+定义重复执行模式（repetition mode）的轮次间摘要格式与使用方式，使主 Agent 在每轮结束后归纳已修复问题、未解决问题、覆盖率变化与下轮重点建议，并将其注入下一轮子代理提示，从而优化后续轮次的注意力分配。
+
 ## Requirements
 
 ### Requirement: Inter-round summary format

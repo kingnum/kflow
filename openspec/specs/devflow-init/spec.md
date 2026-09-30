@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# devflow-init Specification
+
+## Purpose
+
+定义 kflow-init 初始化阶段的注入与检测规范：以幂等方式向 CLAUDE.md 注入扩展的「变更流程强制规则」与「Skill 改进建议自动捕获」规则，并在工具推荐矩阵与 GAP 能力缺口检测中对原型设计阶段给出多方案支持。
+
+## Requirements
 
 ### Requirement: 变更流程强制规则 section 扩展
 

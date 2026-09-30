@@ -1,6 +1,6 @@
 ---
 name: kflow-init
-version: 0.17.0
+version: 0.18.0
 description: Use when user needs environment initialization/初始化、环境配置、工具推荐、设置, project kickoff/项目启动, or legacy project reverse analysis/老项目逆向分析.
 license: MIT
 triggers:
@@ -339,7 +339,7 @@ CONTEXT 检测:
 4. **禁止直接调用** `kflow-code`、`kflow-plan`、`kflow-explore`、`kflow-design` 等阶段 Skill 跳过 guide 指引
 5. **流程阶段**: 设计探索 -> 原型设计(可选) -> 详细设计 -> 计划 -> 编码 -> 代码审查 -> 接口单元测试 -> E2E测试(前后端) -> 集成测试 -> 审计 -> 归档
 6. **查看状态**: 使用「状态」「进度」关键词触发 `kflow-status` 查看变更状态
-7. **归档完成后询问是否执行 git commit**，提交信息包含变更名称和归档日期；若确认提交，则先执行版本自增和打包（读取 VERSION → 版本自增判定（Major 手动/Minor 新功能/Patch 修复）→ 更新 VERSION → 打包为 targets/kflow-devflow-skills-x.x.x.zip）再将 VERSION、targets/ 和归档产物一并提交
+7. **归档完成后询问是否执行 git commit**，提交信息包含变更名称和归档日期；若确认提交，则先执行版本自增、SKILL.md 版本同步与打包（读取 VERSION → 版本自增判定（Major 手动/Minor 新功能/Patch 修复）→ 更新 VERSION → 运行 sync-version.sh 同步各 SKILL.md 的 version 字段 → 更新 README 版本条目 → 运行 package-skills.sh 生成本地 zip 产物）再提交 VERSION、SKILL.md 版本变更与 README 版本条目（zip 产物受 .gitignore 排除，不提交）
 8. **首次 init 时若目录非 git 仓库，询问是否执行 git init**
 ```
 

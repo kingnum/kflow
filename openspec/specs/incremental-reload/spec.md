@@ -1,6 +1,10 @@
 # incremental-reload Specification
 
-## ADDED by token-opt-incremental-reload
+## Purpose
+
+定义增量 RELOAD 机制：当文件 mtime 未变化且在当前会话中已被读取时，主 Agent 生成「已验证文件标记」与摘要，子代理据此跳过全文读取以减少 token 开销，同时保留按需自主读取的权利。
+
+## Requirements
 
 ### Requirement: Incremental RELOAD with verified-file markers
 The system SHALL support incremental RELOAD — when files have not changed (mtime unchanged) and were already read in the current session, the main Agent SHALL generate "verified file markers" with summaries. Subagents receiving these markers SHALL skip full file reads for verified files.

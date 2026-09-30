@@ -1,4 +1,10 @@
-## ADDED Requirements
+# resume-product-gate Specification
+
+## Purpose
+
+定义中断恢复时对已完成阶段产物的完整性验证规则，包括产物与阶段的验证项映射表，以及验证结果不阻塞未验证阶段继续执行的约束。
+
+## Requirements
 
 ### Requirement: 中断恢复阶段产物完整性验证
 
@@ -71,11 +77,11 @@
 | E2E 测试 | e2e/summary.md 存在 |
 | 集成测试 | integration/summary.md 存在 |
 | 详细设计 | detailed-design.md + self-reviews/design ≥10 文件 + cross-reviews ≥1 批次 + traceability 设计列=100% |
-| 原型设计 | prototype/index.html 存在 + 用户评审=✅已确认 或 ⏭️跳过 |
+| 原型设计 | `docs/designs/prototypes/manifest.md` 与变更级 `prototype-changes.md` 存在 + BUILD 报告存在（`self-reviews/prototype/cdn-crossref-check/report.md`）+ 用户评审=✅已确认 或 ⏭️跳过 |
 
 ### Requirement: 产物验证不影响未验证阶段
 
-产物验证仅针对 .status.md 中标记为「✅ 完成」的阶段，不检查「⏳ 待开始」或「🔄 进行中」的阶段。
+产物验证 SHALL 仅针对 .status.md 中标记为「✅ 完成」的阶段，SHALL NOT 检查「⏳ 待开始」或「🔄 进行中」的阶段。
 
 #### Scenario: 跳过未验证阶段
 

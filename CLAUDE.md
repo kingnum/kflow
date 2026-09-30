@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [skills/](skills/) — 基于设计文档实现的可运行 KFlow Skills（各阶段 Skill 定义）
 - [.claude/skills/](.claude/skills/) — Claude Code 运行时注册的 Skill（openspec-* 工具链、skill-creator 等）
 - [VERSION](VERSION) — 版本号文件
-- [scripts/](scripts/) — 构建与打包脚本（含 `sync-version.sh` 版本同步、`sync-references.sh` 一致性校验）
+- [scripts/](scripts/) — 构建与打包脚本（含 `sync-version.sh` 版本同步、`sync-references.sh` 一致性校验、`validate-frontmatter.py` front matter 校验）
 
 ### 工作流程
 
@@ -92,8 +92,21 @@ docs/designs/skills/（设计规格）→ skill-creator（开发迭代）→ 发
 
 版本统一由 `VERSION` 文件管理（纯文本，首行为版本号）。手动编辑该文件更新版本：
 
-- 补丁更新: `0.17.0` → `0.17.1`
-- 次要更新: `0.17.0` → `0.18.0`
-- 主要更新: `0.17.0` → `1.0.0`
+- 补丁更新: patch 位 +1
+- 次要更新: minor 位 +1，patch 位归零
+- 主要更新: major 位 +1，其余位归零
+
+## 归档后规则
+
+`/opsx:archive` 完成变更归档后，版本相关处理按以下顺序执行：
+
+1. 判定版本自增级别（新增 Skill、新增阶段、核心运行机制变更 → minor 位 +1 且 patch 归零；Bug 修复、文档更新、重构、`references/` 变更 → patch 位 +1；无法判定时默认 patch 并提示用户复核；major 位仅由用户手动决定）
+2. 更新仓库根 `VERSION` 文件
+3. 运行 `scripts/sync-version.sh`，把版本值同步到全部 `skills/kflow-*/SKILL.md` 的 `version` 字段
+4. 更新 `README.md` 的版本行与版本更新说明条目
+5. 运行 `scripts/package-skills.sh` 打包
+6. 执行 git commit，提交步骤 2~4 产生的版本变更（`VERSION`、SKILL.md 的 `version` 字段、README 版本条目）
+
+zip 产物位于 `targets/`，受 `.gitignore` 排除，不纳入 git commit。任一步骤失败不阻塞归档本身，须提示失败原因与手工补救方式。
 
 

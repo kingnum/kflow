@@ -1,5 +1,9 @@
 # e2e-data-tracing Specification
 
+## Purpose
+
+定义 E2E 测试中页面数据来源的标注规则，要求测试用例区分后端 API 数据、前端静态数据与配置控制数据，并通过配置项变更影响矩阵及元素覆盖树节点的数据来源标注，使页面数据链路可追溯。
+
 ## Requirements
 
 ### Requirement: E2E 测试用例标注页面数据来源

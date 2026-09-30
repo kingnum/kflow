@@ -1,7 +1,7 @@
 # integration-test-skill Specification
 
 ## Purpose
-TBD - created by archiving change design-review-fixes. Update Purpose after archive.
+定义 kflow-integration-test 变更级集成测试能力：在前置门控检查通过后执行 integration-tests.md 中的全部集成测试用例，失败时内聚完成四分法根因分类与多轮修复重测直至收敛，连续失败时触发架构评估流程。
 ## Requirements
 ### Requirement: 集成测试独立 Skill
 

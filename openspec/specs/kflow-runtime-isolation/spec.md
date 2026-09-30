@@ -2,9 +2,9 @@
 
 ## Purpose
 
-定义项目根目录 `.kflow-runtime/` 运行时隔离区的创建、管理和使用规范。该目录用于统一存放运行时依赖工具（如 playwright），确保运行时环境文件不污染设计文档目录（如 `prototype/`）和其他项目目录。
+定义项目根目录 `.kflow-runtime/` 运行时隔离区的创建、管理和使用规范。该目录用于统一存放运行时依赖工具（如 playwright），确保运行时环境文件不污染设计文档目录（如产品级 `docs/designs/prototypes/`）和其他项目目录。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: .kflow-runtime/ 目录结构
 
@@ -31,7 +31,7 @@
 
 ### Requirement: playwright 运行时隔离
 
-系统 SHALL 将 playwright npm 包和浏览器二进制安装到 `.kflow-runtime/playwright/`，确保 `/playwright-cli` 调用不发生在 `prototype/` 或其他设计文档目录下。
+系统 SHALL 将 playwright npm 包和浏览器二进制安装到 `.kflow-runtime/playwright/`，确保 `/playwright-cli` 调用不发生在 `docs/designs/prototypes/` 或其他设计文档目录下。
 
 #### Scenario: playwright 安装检测
 
@@ -53,8 +53,8 @@
 
 - **WHEN** prototype-design VERIFY §6.4 步骤的子代理启动
 - **THEN** 系统 SHALL 在子代理 prompt 中明确指示：工作目录固定为项目根目录
-- **AND** 原型 HTML 文件通过 `docs/changes/{change}/prototype/index.html` 相对路径引用
-- **AND** SHALL NOT 在 `prototype/` 目录下执行 `npm install` 或 `npx playwright`
+- **AND** 原型 HTML 文件通过 `docs/designs/prototypes/index.html` 相对路径引用
+- **AND** SHALL NOT 在 `docs/designs/prototypes/` 目录下执行 `npm install` 或 `npx playwright`
 
 #### Scenario: e2e-test 调用 playwright-cli
 
@@ -66,23 +66,23 @@
 
 - **WHEN** 用户在原型设计或前端编码过程中使用 `/playwright-cli` 进行问题分析
 - **THEN** 系统 SHALL 确保 playwright 使用 `.kflow-runtime/playwright/` 下的安装
-- **AND** SHALL NOT 在 `prototype/` 等设计文档目录下触发 npm install
+- **AND** SHALL NOT 在 `docs/designs/prototypes/` 等设计文档目录下触发 npm install
 
-### Requirement: prototype/ 目录纯净性保证
+### Requirement: docs/designs/prototypes/ 目录纯净性保证
 
-系统 SHALL 确保 `docs/changes/{change}/prototype/` 目录仅包含设计文档和原型 HTML 文件，不包含任何运行时环境文件。
+系统 SHALL 确保产品级原型目录 `docs/designs/prototypes/` 仅包含设计文档和原型 HTML 文件，不包含任何运行时环境文件。
 
-#### Scenario: prototype/ 目录不包含运行时文件
+#### Scenario: 产品级原型目录不包含运行时文件
 
 - **WHEN** prototype-design 阶段 VERIFY 步骤完成
-- **THEN** `prototype/` 目录 SHALL NOT 包含以下文件/目录：
+- **THEN** `docs/designs/prototypes/` 目录 SHALL NOT 包含以下文件/目录：
   - `node_modules/`
   - `package.json`
   - `package-lock.json`
 - **AND** 若发现上述文件，SHALL 视为违规并清理
 
-#### Scenario: BROWSER_CLEANUP 不依赖 prototype/ 目录
+#### Scenario: BROWSER_CLEANUP 不依赖产品级原型目录
 
 - **WHEN** POST_HOOK 执行 BROWSER_CLEANUP 步骤
 - **THEN** `playwright-cli kill-all` SHALL 从项目根目录执行
-- **AND** SHALL NOT 在 `prototype/` 目录下产生任何残留文件
+- **AND** SHALL NOT 在 `docs/designs/prototypes/` 目录下产生任何残留文件

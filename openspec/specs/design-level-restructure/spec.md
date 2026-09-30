@@ -120,7 +120,7 @@
 #### Scenario: design 域外约束
 - **WHEN** kflow-design 执行技术设计
 - **THEN** 禁止修改 functional-designs/ 中的功能定义
-- **AND** 禁止修改 prototype/ 中的 UI 设计
+- **AND** 禁止直接修改产品级 `docs/designs/prototypes/` 中的 UI 设计，UI 布局问题须经 kflow-prototype-design 的 REVISION 模式回退处理
 - **AND** 如发现上游设计问题，记录 skill-suggestion 并提示回退
 
 ### Requirement: 三阶段数据流向约束

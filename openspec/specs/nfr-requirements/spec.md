@@ -1,3 +1,9 @@
+# nfr-requirements Specification
+
+## Purpose
+
+定义非功能需求（NFR）在详细设计文档中的章节结构、最小要求与简化规则，并将 NFR 级联到测试用例与代码审查，确保性能、安全、可用性、可维护性需求可度量、可验证。
+
 ## Requirements
 
 ### Requirement: 详细设计包含 NFR 章节

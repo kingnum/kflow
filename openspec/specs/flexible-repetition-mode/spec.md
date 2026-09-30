@@ -1,37 +1,50 @@
-## ADDED Requirements
+# flexible-repetition-mode Specification
 
-### Requirement: Flexible repetition round decision
+## Purpose
 
-The system SHALL dynamically determine repetition rounds based on phase execution history and impact scope score, replacing the fixed 10-round minimum for all scenarios.
+定义灵活重复制模式的轮次决策与验证门控规则，包括阶段执行历史记录以及在状态文件中呈现近期修订信息的要求。
 
-#### Scenario: First execution uses full 10 rounds
+## Requirements
 
-- **WHEN** an execution phase (plan/code/code-review/api-test/e2e-test/integration-test/bug-fix) is executed for the first time in a change
-- **THEN** the system SHALL use 10 rounds (standard repetition mode)
+### Requirement: Change-tier repetition round decision
+
+The system SHALL determine repetition target rounds from the change tier, and for re-execution SHALL use the higher of the tier baseline and the impact scope score mapping. The fixed 10-round minimum for first execution SHALL NOT exist.
+
+#### Scenario: First execution uses the tier baseline
+
+- **WHEN** an execution phase (code/code-review/api-test/e2e-test/integration-test/bug-fix, and plan) is executed for the first time in a change
+- **THEN** the target rounds SHALL be the tier baseline: 轻量 = 1 round, 标准 = 3 rounds, 完整 = 10 rounds
+- **AND** for the plan phase, whose iteration loop is a product self-review, the target rounds SHALL be the design self-review basis instead: 轻量 = 0 rounds, 标准 = 2 rounds, 完整 = 10 rounds
 - **AND** all standard repetition rules apply (full sweep each round, natural convergence)
+- **AND** the target rounds SHALL NOT be fixed at 10 regardless of tier
 
-#### Scenario: Re-execution after rollback uses impact-based rounds
+#### Scenario: Re-execution uses the higher of tier baseline and impact mapping
 
 - **WHEN** an execution phase is re-executed after a phase rollback (REVISION or rollback re-execution)
 - **THEN** the system SHALL read the impact scope score from .status.md "Recent Revision Info"
-- **AND** determine rounds based on the score:
-  - Score 1-5: rounds = max(3, ceil(score))
-  - Score 6-15: rounds = max(5, ceil(score/2))
-  - Score >15: rounds = 10
+- **AND** the target rounds SHALL be `max(tier baseline, impact mapping)` where the impact mapping is:
+  - Score <= 3: 1 round
+  - Score 4-15: 3 rounds
+  - Score > 15: 10 rounds
 - **AND** the determined rounds SHALL be written to .status.md as the target round count
 
-#### Scenario: No impact score defaults to full rounds
+#### Scenario: No impact score falls back to the tier baseline
 
 - **WHEN** a phase is re-executed but no impact scope score is available in .status.md
-- **THEN** the system SHALL default to 10 rounds (conservative strategy)
+- **THEN** the target rounds SHALL be the tier baseline for the change tier
+
+#### Scenario: Change tier is not determined by project design basis
+
+- **WHEN** determining the target rounds for any execution phase
+- **THEN** the system SHALL NOT use whether the project has design basis (docs/CONTEXT.md existence, docs/designs/detailed-designs/ emptiness) as an input
 
 ### Requirement: Flexible repetition verification gate
 
-When repetition rounds are fewer than 10, the system SHALL enforce a verification gate to ensure quality.
+When target rounds are fewer than 10, the system SHALL enforce a verification gate to ensure quality.
 
 #### Scenario: Verification gate for reduced rounds
 
-- **WHEN** repetition rounds < 10 (flexible mode)
+- **WHEN** target rounds < 10 (flexible mode)
 - **THEN** the system SHALL enforce the following verification criteria:
   - Affected items: 100% coverage verification (every affected functional point/interface fully checked)
   - Full sweep: at least 1 round of complete full-sweep traversal (all work items)

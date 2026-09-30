@@ -2,13 +2,13 @@
 
 ## Purpose
 
-定义设计变更记录核心机制——三个设计目录 index.md 中的统一修订记录表格式、.status.md 中的设计修订同步追踪表、以及 kflow-guide 的 DESIGN_REVISION 集中检测与分流路由。
+定义设计变更记录核心机制——设计产物载体（变更级 `functional-designs/index.md`、变更级 `detailed-design.md` 或 `detailed-design/index.md`、产品级 `docs/designs/prototypes/manifest.md`）中的统一修订记录表格式、.status.md 中的设计修订同步追踪表、以及 kflow-guide 的 DESIGN_REVISION 集中检测与分流路由。
 
-## ADDED Requirements
+## Requirements
 
-### Requirement: 三个设计目录均含 index.md
+### Requirement: 设计产物记录载体均含修订记录表
 
-系统 SHALL 确保每个变更的三个设计产物目录均包含 index.md 文件：`functional-designs/index.md`（已有，增强）、`prototype/index.md`（新增）、`detailed-design/index.md` 或 `detailed-design.md`（增强，含修订记录节）。
+系统 SHALL 确保每个变更的设计产物载体均包含统一格式的修订记录表：变更级 `functional-designs/index.md`（已有，增强）、变更级 `detailed-design/index.md` 或 `detailed-design.md`（增强，含修订记录节）、产品级 `docs/designs/prototypes/manifest.md`（新增，含同格式修订记录表）。
 
 #### Scenario: functional-designs/index.md 存在且含修订记录
 
@@ -16,10 +16,10 @@
 - **THEN** functional-designs/index.md SHALL 包含统一格式的"修订记录"表
 - **AND** 修订记录表包含列：版本、日期、修订类型、修订内容、影响功能点、触发阶段
 
-#### Scenario: prototype/index.md 由原型设计阶段创建
+#### Scenario: 产品级原型清单由原型设计阶段创建
 
 - **WHEN** kflow-prototype-design 生成原型产物
-- **THEN** prototype/index.md SHALL 被创建
+- **THEN** 产品级 `docs/designs/prototypes/manifest.md` SHALL 被创建或更新
 - **AND** 包含原型文件清单、页面清单、设计系统引用、修订记录
 
 #### Scenario: detailed-design 含修订记录
@@ -27,15 +27,15 @@
 - **WHEN** kflow-design 生成详细设计产物
 - **THEN** detailed-design.md（单文件）SHALL 包含"修订记录"节
 - **AND** 或 detailed-design/index.md（目录化）SHALL 包含"修订记录"节
-- **AND** 修订记录表格式与其他两个设计目录一致
+- **AND** 修订记录表格式与其他两个载体一致
 
 ### Requirement: 统一修订记录表格式
 
-三个设计目录的 index.md 中的修订记录表 SHALL 使用同一格式。
+变更级 `functional-designs/index.md`、变更级 `detailed-design/index.md`（或 `detailed-design.md`）、产品级 `docs/designs/prototypes/manifest.md` 中的修订记录表 SHALL 使用同一格式。
 
 #### Scenario: 修订记录表结构
 
-- **WHEN** 任意设计目录的 index.md 包含修订记录表
+- **WHEN** 上述任一载体包含修订记录表
 - **THEN** 表 SHALL 包含以下列：版本（语义版本号）、日期（YYYY-MM-DD 或 YYYY-MM-DD HH:MM）、修订类型（枚举：初始版本/需求变更/业务规则/接口签名/数据模型/UI布局/交互行为/架构设计/配置项/其他）、修订内容（一句话描述）、影响功能点（FP-ID 列表，多个以逗号分隔）、触发阶段（触发此次修订的阶段 Skill 名称）
 
 #### Scenario: 版本号递增规则
@@ -67,8 +67,9 @@ functional-designs/index.md 中原有的"八、需求变更记录"与"九、修�
 #### Scenario: 同步追踪表结构
 
 - **WHEN** .status.md 包含设计修订同步追踪节
-- **THEN** 表 SHALL 包含以下列：序号、修订时间、修订目标（functional-designs/prototype/detailed-design）、变更简述、影响范围、以及每受影响阶段的独立确认列（plan/code/review/api-test/e2e-test/integ-test）
+- **THEN** 表 SHALL 包含以下列：序号、修订时间、修订目标（functional-designs / 产品级 `docs/designs/prototypes/` / detailed-design）、变更简述、影响范围、以及每受影响阶段的独立确认列（plan/code/review/api-test/e2e-test/integ-test）
 - **AND** 每个阶段列的值 SHALL 为 ⏳（待同步）/✅（已同步）/—（不适用）
+- **AND** 修订目标为产品级 `docs/designs/prototypes/` 时，修订 SHALL 经 `kflow-prototype-design` 的 REVISION 模式执行
 
 #### Scenario: 设计修订后追加追踪行
 
@@ -99,26 +100,26 @@ functional-designs/index.md 中原有的"八、需求变更记录"与"九、修�
 
 ### Requirement: kflow-guide 集中检测设计修订意图
 
-kflow-guide SHALL 在其 description 中包含设计修订意图的触发词，并在 PARSE 阶段统一解析目标设计目录并分流到对应设计 Skill。
+kflow-guide SHALL 在其 description 中包含设计修订意图的触发词，并在 PARSE 阶段统一解析目标设计产物载体并分流到对应设计 Skill。
 
 #### Scenario: 解析设计修订目标
 
 - **WHEN** 用户输入匹配设计修订触发词（如"功能设计需调整"、"原型需调整"、"详细设计需调整"、"接口设计要改"、"修改设计文档"）
 - **THEN** kflow-guide SHALL 解析为 DESIGN_REVISION 模式
-- **AND** SHALL 根据关键词定位目标设计目录：含"功能"/"需求" → functional-designs，含"原型"/"UI"/"交互" → prototype，含"详细"/"接口"/"架构" → detailed-design
+- **AND** SHALL 根据关键词定位目标设计产物载体：含"功能"/"需求" → 变更级 functional-designs，含"原型"/"UI"/"交互" → 产品级 `docs/designs/prototypes/`，含"详细"/"接口"/"架构" → 变更级 detailed-design
 
 #### Scenario: 分流到设计 Skill
 
-- **WHEN** 目标设计目录确定为 functional-designs
+- **WHEN** 目标设计产物载体确定为 functional-designs
 - **THEN** kflow-guide SHALL 唤醒 kflow-explore（REVISION 模式）
-- **AND** 当目标为 prototype 时 SHALL 唤醒 kflow-prototype-design（REVISION 模式）
+- **AND** 当目标为产品级 `docs/designs/prototypes/` 时 SHALL 唤醒 kflow-prototype-design（REVISION 模式）
 - **AND** 当目标为 detailed-design 时 SHALL 唤醒 kflow-design（REVISION 模式）
 
 #### Scenario: 设计修订完成后返回
 
 - **WHEN** 目标设计 Skill 的 REVISION 模式完成
 - **THEN** kflow-guide SHALL 更新 .status.md 的"设计修订同步追踪"节
-- **AND** SHALL 更新目标设计目录的 index.md 修订记录
+- **AND** SHALL 更新目标设计产物载体的修订记录：变更级 `functional-designs/index.md`、变更级 `detailed-design.md` 或 `detailed-design/index.md`、产品级 `docs/designs/prototypes/manifest.md`
 - **AND** SHALL 询问用户是否立即回退并重执行受影响阶段
 
 ### Requirement: 各阶段 Skill 不添加其他阶段触发词

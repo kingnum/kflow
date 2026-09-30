@@ -1,7 +1,7 @@
 ---
 name: kflow-explore
-version: 0.17.0
-description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - detects project type (frontend+backend vs pure backend), splits features to atomic level, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tiered self-review (first-time creation 10 rounds / subsequent elastic rounds + score floor > 8) and two-action save rule for external info gathering.
+version: 0.18.0
+description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - detects project type (frontend+backend vs pure backend), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tier-driven self-review (轻量 0 / 标准 2 / 完整 10 rounds, score floor > 8 for 完整 tier only) and two-action save rule for external info gathering.
 license: MIT
 triggers:
   - 开始新需求
@@ -31,9 +31,10 @@ allowed-tools:
   → 检测项目类型 + 用户确认
   → 判断变更粒度（产品级/功能需求级/功能缺陷级）
   → 需求澄清 + CONTEXT.md 管理（首次构建或增补 + 对齐检查）
-  → 功能点原子级拆分 + 关联关系分析
+  → 功能点原子级拆分 + 变更档位初判 + 用户覆盖确认 + 阶段集合提示
+  → 关联关系分析
   → 输出 functional-designs/（index.md + part-NN.md 目录化结构）
-  → 自循环审查（首次 10 轮 / 非首次弹性轮次 + 评分底线，完整性/闭环性/必要性/清晰性）
+  → 自循环审查（按变更档位轮次，完整性/闭环性/必要性/清晰性）
   → 原型设计决策门控（AskUserQuestion，仅前后端项目，prototype_decision 标记幂等）
   → 标记阶段完成
 ```
@@ -46,8 +47,9 @@ allowed-tools:
 - `functional-designs/index.md` 必须存在，含版本号（格式：`主版本.次版本.修订号`）和统一修订记录表（合并原需求变更记录与修订记录，含修订类型枚举列）、项目类型字段
 - `functional-designs/index.md` **不再包含**子变更划分方案（子变更划分后置到 design 阶段）
 - `functional-designs/` 至少包含一个 `part-NN.md` 分册文件
-- `.status.md` 必须存在并标记设计探索阶段为 ✅ 完成
-- `self-reviews/explore/` 目录下自审报告文件份数与执行模式匹配（首次创建 10 份；非首次创建按弹性目标轮次）
+- `.status.md` 必须存在并标记设计探索阶段为 ✅ 完成，且基本信息含「变更档位」字段（`{轻量|标准|完整}`）
+- `self-reviews/explore/` 目录下自审报告文件份数与变更档位匹配（标准档 2 份；完整档 10 份；轻量档 0 份，不创建该目录）
+- 轻量档下改以产物完整性门控替代自审：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符
 
 # 输入要求
 
@@ -64,8 +66,8 @@ allowed-tools:
 |------|------|------|---------|
 | 功能设计文档 | `docs/changes/{change}/functional-designs/` | ✅ 必须 | 需求描述、项目类型、功能点清单（每功能点含：用户故事、所属页面与菜单、可执行操作、表单项定义、业务规则、业务流程上下文）、功能点关联关系、功能结构树（模块→功能点树状图，含FP-ID/优先级/简述）、核心业务流程图、变更类型判断、版本号+统一修订记录表（合并原需求变更记录与修订记录，格式：版本/日期/修订类型/修订内容/影响功能点/触发阶段） |
 | 领域词汇表 | `CONTEXT.md`（项目根目录） | ✅ 必须 | 项目级领域术语定义，首次构建或增补。每术语含：定义、别名、边界 |
-| 状态文件 | `docs/changes/{change}/.status.md` | ✅ 必须 | 标记设计探索阶段完成，含项目类型字段、执行备注 |
-| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | ✅ 必须 | 自审报告（首次 10 份 / 非首次弹性份数），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
+| 状态文件 | `docs/changes/{change}/.status.md` | ✅ 必须 | 标记设计探索阶段完成，含项目类型字段、**变更档位**字段、执行备注 |
+| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | 🔶 条件 | 自审报告（标准档 2 份 / 完整档 10 份；轻量档 0 份不产出），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
 
 # 执行流程
 
@@ -92,23 +94,31 @@ allowed-tools:
 │  │   ├── 已存在 → 增补检查（新术语/模糊术语对齐）                │
 │  │   └── 对齐检查（功能点术语 vs CONTEXT.md 定义）               │
 │  7. SPLIT     → 拆分功能点到原子级                                │
-│  8. RELATE    → 分析功能点关联关系                                │
-│  9. OUTPUT    → 输出功能设计文档（含版本号+修订记录区+功能结构树）│
-│  10. SELFREV  → 首次/非首次分级自审（子代理串行 + 重复制）       │
+│  8. TIER      → 变更档位初判 + 用户覆盖确认                       │
+│  │   ├── 按「变更类型 + 功能点数」映射初判档位                    │
+│  │   ├── AskUserQuestion 展示初判结果，用户可上调/下调            │
+│  │   ├── 写入变更级 .status.md「变更档位」字段                    │
+│  │   └── 输出该档位对应的阶段集合提示（信息性输出，不阻塞）        │
+│  9. RELATE    → 分析功能点关联关系                                │
+│  10. OUTPUT   → 输出功能设计文档（含版本号+修订记录区+功能结构树）│
+│  │   轻量档: 产出压缩为单页（功能点清单+影响分析+修复/实现范围）  │
+│  11. SELFREV  → 按变更档位自审（子代理串行 + 重复制）           │
 │  │   每轮: 启动独立 Agent(subagent) 子代理                       │
 │  │   子代理全四维度独立检查（完整性/闭环性/必要性/清晰性）         │
 │  │   子代理发现问题 → 直接修复 + 生成自审报告                     │
 │  │   主 Agent 读报告 + 确认修复 → 启动下一轮子代理                │
 │  │   报告路径: self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md       │
-│  │   首次创建串行 10 轮；非首次创建弹性轮次 + 评分底线 > 8        │
-│  11. PROTO_GATE → 原型设计决策门控（仅前后端项目）             │
+│  │   轻量 0 轮（跳过，改以产物完整性门控）/ 标准 2 轮 / 完整 10 轮 │
+│  │   评分底线 > 8 仅完整档适用                                   │
+│  12. PROTO_GATE → 原型设计决策门控（仅前后端项目）             │
+│  │   ├── 轻量档 → 不主动询问，跳过本门控（用户显式要求时仍可执行）│
 │  │   ├── 检查 .status.md 中是否存在 prototype_decision 标记     │
 │  │   ├── 不存在 → AskUserQuestion: "检测到 {n} 个 UI 功能点，   │
 │  │   │   是否进入原型设计阶段？"                                │
 │  │   │   ├── 确认创建原型 → prototype_decision=已选择原型设计    │
 │  │   │   └── 跳过原型设计 → prototype_decision=已跳过           │
 │  │   └── 已存在 → 跳过询问，直接进入下一阶段                    │
-│  12. COMPLETE → 更新状态文件，标记阶段完成                        │
+│  13. COMPLETE → 更新状态文件，标记阶段完成                        │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -120,11 +130,11 @@ allowed-tools:
    ├── 功能缺陷: fix-{issue-name}
    └── 产品需求: {platform-name}
 2. 创建目录 docs/changes/{change}/:
-   ├── functional-designs/ 目录
-   └── self-reviews/explore/ 目录
+   └── functional-designs/ 目录
+   ⚠️ 不在此创建 self-reviews/explore/ —— 该目录仅在自审目标轮次 > 0（标准档/完整档）时由 SELFREV 步骤创建
 3. 创建 docs/changes/{change}/.status.md（变更级状态文件）:
-   └── 填写基本信息: 创建时间、变更类型（初始标记）、项目类型（待检测）、
-       变更描述、当前阶段=设计探索
+   └── 填写基本信息: 创建时间、变更类型（初始标记）、变更档位（待 TIER 判定）、
+       项目类型（待检测）、变更描述、当前阶段=设计探索
 ```
 
 ## 步骤 2：CONTEXT — 探索项目上下文
@@ -134,7 +144,7 @@ allowed-tools:
 ```
 1. 项目结构和关键目录
 2. package.json 中的框架依赖
-3. 已有文档（docs/prototype/、CONTEXT.md 的存在性）
+3. 已有文档（docs/designs/prototypes/、CONTEXT.md 的存在性）
 4. 活跃变更情况（docs/changes/ 下的现有变更）
 ```
 
@@ -252,7 +262,67 @@ allowed-tools:
 | 功能点 > 10 且 ≤ 20 | 详细设计阶段完成后拆分为多个子变更 |
 | 功能点总数 > 20 | 提示用户拆分为多个变更 |
 
-## 步骤 8：RELATE — 分析功能点关联关系
+## 步骤 8：TIER — 变更档位初判 + 用户覆盖确认
+
+SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的「变更档位」字段。档位是贯穿全流程的单一分级依据，驱动后续阶段的执行轮次、审查形态与产出深度。
+
+**初判仅使用本阶段可得的信息**（变更类型 + 功能点数）。接口数与数据模型变更数属于本阶段域外内容（见「阶段边界约束」），SHALL NOT 为凑齐完整影响范围分数公式而在 explore 阶段定义接口或数据模型；完整公式复核由 kflow-design 在 DIVIDE 之后执行。
+
+### 8a. 初判映射规则
+
+| 变更类型 | 功能点数 | 初判档位 |
+|---------|---------|---------|
+| 产品需求 | 任意 | 完整 |
+| 功能缺陷 | FP ≤ 3 | 轻量 |
+| 功能缺陷 | FP > 3 | 标准 |
+| 功能需求 | FP ≤ 2 | 轻量 |
+| 功能需求 | 3 ≤ FP ≤ 10 | 标准 |
+| 功能需求 | FP > 10 | 完整 |
+
+> 阈值保守取值：功能需求需 FP ≤ 2 才判轻量，避免初判偏低导致 design 阶段频繁升档。
+
+### 8b. 用户覆盖确认
+
+通过 AskUserQuestion 向用户展示初判档位及判定依据（变更类型 + 功能点数），用户可上调或下调。用户覆盖结果优先于初判结果用于后续阶段。
+
+### 8c. 写入状态文件
+
+将最终档位（初判结果或用户覆盖结果）写入变更级 `.status.md` 基本信息：
+
+```
+- **变更档位**: {轻量|标准|完整}
+```
+
+### 8d. 按档位的阶段集合提示
+
+档位确定（含用户覆盖）后 SHALL 向用户输出该档位对应的阶段集合提示。提示为**信息性输出**，SHALL NOT 作为新的用户确认点或阻塞点；用户在 8b 覆盖档位时，SHALL 按覆盖后的档位重新输出提示，不保留初判档位的提示内容。
+
+| 档位 | 阶段集合提示内容 |
+|------|----------------|
+| 轻量 | 计划 → 编码 → 代码审查 为**恒执行**；接口单元测试、E2E测试、集成测试为**条件适用**，将在详细设计后由「阶段适用性声明」判定；审计走轻量自检 |
+| 标准 | 全阶段执行，无裁剪 |
+| 完整 | 全阶段执行，无裁剪 |
+
+提示文案要求：
+
+- SHALL 显式区分「恒执行阶段」与「条件适用阶段」，SHALL NOT 将条件适用阶段表述为已跳过
+- SHALL 说明条件适用阶段的判定责任在 `kflow-design`（DIVIDE 之后生成阶段适用性声明），本步骤 SHALL NOT 给出适用性结论
+- SHALL 说明 `标准` 与 `完整` 档全阶段执行、无裁剪
+- SHALL 说明不适用阶段在 `traceability.md` 中整列标记 `⏭️` 且不计入覆盖率分母
+
+> **轻量档不改动探索流程**：轻量档 SHALL NOT 改变本阶段的流程——不新增或跳过任何步骤（本提示为唯一新增输出）、不改变产出物路径与结构、SHALL NOT 在功能点上预判「是否涉及接口」或「是否涉及 UI」（该判定依据详细设计的客观信号，属 `kflow-design` 职责）。
+
+### 8e. 档位对 explore 自身的影响
+
+| 档位 | explore 自身影响 |
+|------|----------------|
+| 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 跳过；PROTO_GATE 不主动询问 |
+| 标准 | 标准产出；SELFREV 2 轮 |
+| 完整 | 完整产出；SELFREV 10 轮（含评分底线） |
+
+> 档位判定公式、单向升档安全阀与缺省回退规则详见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.1.1 与 `docs/designs/skills/kflow-explore.md`。
+
+## 步骤 9：RELATE — 分析功能点关联关系
 
 | 关系类型 | 定义 | 标注格式 |
 |----------|------|---------|
@@ -261,7 +331,7 @@ allowed-tools:
 | 并行关系 | A 和 B 可同时实现 | `A \|\| B` |
 | 包含关系 | A 是 B 的子功能 | `B ⊃ A` |
 
-## 步骤 9：OUTPUT — 输出功能设计文档
+## 步骤 10：OUTPUT — 输出功能设计文档
 
 ### FP 清单表格格式
 
@@ -334,11 +404,11 @@ allowed-tools:
 
 > 配置项影响矩阵用于在功能设计阶段识别配置变更的波及范围，为后续详细设计、测试用例设计提供输入。每行记录一个配置项及其影响的全部功能点。
 
-## 步骤 10：SELFREV — 首次/非首次分级自审（子代理串行 + 重复制）
+## 步骤 11：SELFREV — 按变更档位自审（子代理串行 + 重复制）
 
 ### 子代理上下文文件加载（基础层 + 创意层）
 
-自审子代理 prompt 中 SHALL 包含以下 kflow-shared 文件：
+自审子代理 prompt 中 SHALL 包含以下分层加载文件（基础层 + 创意层）：
 
 - skills/kflow-explore/references/state-values.md（摘要）
 - skills/kflow-explore/references/gates.md（当前阶段相关门控）
@@ -358,12 +428,14 @@ allowed-tools:
 | 发现节奏 | 后期才暴露其他维度问题 | 早期就暴露各类问题 |
 | 收敛趋势 | 不明显 | 自然收敛（后期问题越来越少） |
 
-### 首次/非首次分级
+### 变更档位自审轮次
 
-判定信号、弹性轮次公式与评分底线规则详见 [references/self-review.md](references/self-review.md) §4。要点：
+轮次取值、评分底线与轻量档产物门控详见 [references/self-review.md](references/self-review.md) §4。要点：
 
-- **首次创建（无设计基础）**：`docs/CONTEXT.md` 不存在 或 `docs/designs/detailed-designs/` 为空 → 固定执行 10 轮。
-- **非首次创建（已有设计基础）**：`docs/CONTEXT.md` 存在 且 `docs/designs/detailed-designs/` 非空 → 弹性轮次（explore 影响范围分数 = 功能点数 × 1；映射：1→1 轮、2–5→ceil(分数)、6–15→max(5, ceil(分数/2))、>15→10 轮）+ 评分底线（各维度评分均 > 8 方通过，未达标补审至 10 轮上限）。
+- **档位读取**：读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档处理。
+- **轮次取值**：轻量 0 轮 / 标准 2 轮 / 完整 10 轮。
+- **评分底线**：仅完整档适用——各维度评分均 > 8 方通过，未达标补审至 10 轮上限。
+- **轻量档**：完全跳过 SELFREV，不启动自审子代理、不创建 `self-reviews/explore/` 目录、不产出自审报告；改以产物完整性门控替代（产物全部存在且无 TODO/TBD/未填充占位符，否则阻塞）。
 
 ### 审查维度与检查规则
 
@@ -372,36 +444,39 @@ allowed-tools:
 ### 自审执行流程（子代理串行 + 重复制）
 
 ```
-自审执行流程（子代理串行，每轮全维度，首次/非首次分级）:
+自审执行流程（子代理串行，每轮全维度，按变更档位分级）:
 
-1. 判定首次/非首次：读取 docs/CONTEXT.md 与 docs/designs/detailed-designs/ 判定执行模式
-2. 主 Agent 启动第一轮子代理:
+1. 读取变更级 .status.md「变更档位」字段（缺失按 完整 档处理）
+2. 轻量档（0 轮）→ 跳过自审：不创建 self-reviews/explore/ 目录、不启动子代理，
+   改以产物完整性门控（functional-designs/ 产物全部存在且无占位符）后直接进入步骤 12
+3. 创建 self-reviews/explore/ 目录，启动第一轮子代理:
    Agent(
      subagent_type="claude",
      description="Explore 自审 Round 1",
      prompt="读取 functional-designs/ 下的所有产物文件，按完整性、闭环性、必要性、清晰性全部四个维度独立检查。发现问题直接修复产物文件，生成审查报告到 self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。"
    )
-3. 子代理返回审查报告路径
-4. 主 Agent 读取报告，确认修复内容
-5. 修复不合理 → 主 Agent 补充修复
-6. 启动下一轮子代理（Round N+1），步骤同 Round 1
-7. SHALL NOT 并行启动多个子代理（串行执行）
-8. 轮次控制：
-   ├── 首次创建 → 完成全部 10 轮
-   └── 非首次创建 → 按弹性轮次执行，各维度评分均 > 8 即通过；未达标补审至 10 轮上限
-9. 全部完成后标记阶段完成
+4. 子代理返回审查报告路径
+5. 主 Agent 读取报告，确认修复内容
+6. 修复不合理 → 主 Agent 补充修复
+7. 启动下一轮子代理（Round N+1），步骤同 Round 3
+8. SHALL NOT 并行启动多个子代理（串行执行）
+9. 轮次控制：
+   ├── 标准档 → 完成全部 2 轮
+   └── 完整档 → 完成全部 10 轮，各维度评分均 > 8 即通过；未达标补审至 10 轮上限
+10. 全部完成后标记阶段完成
 ```
 
 ### 强制执行规则
 
-- 首次创建 SHALL 完成全部 10 轮自审，不允许提前终止
-- 非首次创建 SHALL 完成弹性目标轮次，且各维度评分均 > 8 方通过；未达标补审至 10 轮上限
-- 即使连续多轮无新问题，首次创建也须完成全部 10 轮
+- 轻量档 SHALL NOT 执行 SELFREV、SHALL NOT 启动自审子代理、SHALL NOT 创建 `self-reviews/explore/` 目录或产出自审报告；以产物完整性门控替代
+- 标准档 SHALL 完成全部 2 轮自审，不允许提前终止
+- 完整档 SHALL 完成全部 10 轮自审，且各维度评分均 > 8 方通过；未达标补审至 10 轮上限
+- 即使连续多轮无新问题，也须完成全部目标轮次（标准 2 轮 / 完整 10 轮）
 - SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审
 - SHALL NOT 并行启动多个子代理（串行执行，前一轮完成后再启动下一轮）
 - 自审全部完成后标记阶段完成，释放 prototype 或 design 阶段门控
 
-## 步骤 11：PROTO_GATE — 原型设计决策门控（仅前后端项目）
+## 步骤 12：PROTO_GATE — 原型设计决策门控（仅前后端项目）
 
 > **来源**: refine-skill-execution-rules 变更。探索完成后必须询问是否需要原型设计，避免原型设计被无意跳过。使用 `.status.md` 中的 `prototype_decision` 标记控制幂等，避免重复询问。
 
@@ -410,8 +485,11 @@ allowed-tools:
 | 条件 | 处理 |
 |------|------|
 | 项目类型 = 纯后端 | ⏭️ 跳过此步骤 |
+| 变更档位 = 轻量 | ⏭️ 不主动询问，跳过本门控（用户显式要求原型设计时仍可执行） |
 | `.status.md` 中已有 `prototype_decision` 标记 | ⏭️ 跳过询问（幂等） |
 | 前后端项目且无 `prototype_decision` 标记 | 执行 AskUserQuestion |
+
+> **轻量档不主动询问的语义**：仅取消主动提示，不是禁止原型设计。用户显式要求时仍可执行本阶段的 AskUserQuestion 流程并进入 kflow-prototype-design。
 
 ### AskUserQuestion 流程
 
@@ -431,7 +509,7 @@ prototype_decision: 已选择原型设计 | 已跳过
 
 此标记在整个变更生命周期内有效，后续阶段（如 kflow-guide、kflow-design）读取此标记决定流程走向。
 
-## 步骤 12：COMPLETE — 更新状态文件
+## 步骤 13：COMPLETE — 更新状态文件
 
 更新 `docs/changes/{change}/.status.md`：
 1. 标记设计探索阶段为 `✅ 完成`
@@ -505,12 +583,13 @@ CONTEXT.md 消费链:
 
 - **FP 类型标记**：每个功能点 SHALL 标记为「后端」或「前端」，无法归类的 FP 必须继续拆分，类型作为后续子变更划分类型校验的依据
 - **子变更划分不在此阶段执行**：后置到详细设计阶段完成后基于完整设计认知划分
-- **自审分级强制执行（子代理串行 + 重复制）**：首次创建完成全部 10 轮；非首次创建按弹性轮次执行，各维度评分均 > 8 方通过（未达标补审至 10 轮上限）。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），子代理边审边修，串行不可并行，不可提前终止
+- **档位自审强制执行（子代理串行 + 重复制）**：轮次按变更档位取值（轻量 0 轮跳过 / 标准 2 轮 / 完整 10 轮）；完整档各维度评分均 > 8 方通过（未达标补审至 10 轮上限）。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），子代理边审边修，串行不可并行，不可提前终止
 - **两动作规则**：每 2 次外部信息收集操作后立即保存关键发现到 functional-designs/
 - **CONTEXT.md**：项目级领域词汇表，首次构建后持续增补，后续阶段只引用不修改
 - **functional-designs/ 结构**：index.md（含版本号、需求变更记录表、配置项影响矩阵）+ part-NN.md 目录化结构
 - **functional-designs/index.md 版本号**：格式为 `主版本.次版本.修订号`，初始版本为 `1.0.0`
 - **变更粒度**：产品级 → 完整流程；功能需求级 → 标准流程；功能缺陷级 → 简化流程
+- **档位阶段集合提示**：档位初判（含用户覆盖）后 SHALL 向用户输出该档位的阶段集合——轻量档为「计划→编码→代码审查」恒执行，接口单元测试/E2E测试/集成测试为条件适用（由 `kflow-design` 的阶段适用性声明判定）；标准档与完整档全阶段执行、无裁剪。提示为信息性输出，不作为新的确认点；轻量档不改动探索流程本身
 - **禁止越界**：不得输出技术方案、接口定义、数据模型、子变更划分方案
 - **变更名称**：使用 kebab-case 格式
 - **原型设计决策门控**：探索完成后 SHALL 询问是否进入原型设计（前后端项目），写入 `prototype_decision` 标记控制幂等，避免重复询问

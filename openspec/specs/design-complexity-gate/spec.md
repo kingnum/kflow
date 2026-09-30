@@ -1,7 +1,7 @@
 # design-complexity-gate Specification
 
 ## Purpose
-TBD - created by archiving change enhance-skill-review-and-quality. Update Purpose after archive.
+定义详细设计阶段的功能点复杂度评估门控：按统一标准将功能点划分为低、中、高三级并记录复杂度分布表，高复杂度功能点须逐项与用户确认设计细节，中复杂度功能点标注关键决策点供 APPROVAL 步骤统一确认。
 ## Requirements
 ### Requirement: 功能点复杂度评估
 

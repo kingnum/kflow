@@ -1,5 +1,9 @@
 # archive-product-summary Specification
 
+## Purpose
+
+定义归档阶段生成与维护产品模块摘要（module-summary.md）的规则，使后续变更的 RELOAD 能以模块摘要作为入口、按需选择性加载完整功能设计文档，从而降低上下文开销。
+
 ## Requirements
 
 ### Requirement: Archive generates module summary after merge
@@ -27,11 +31,13 @@ Subsequent changes' RELOAD SHALL prioritize loading `module-summary.md` over ful
 - **WHEN** `kflow-archive` SKILL.md execution flow is read
 - **THEN** it SHALL contain a step for generating/updating `module-summary.md` after design merge
 
-## MODIFIED by token-opt-archive-summarization
-
 ### Requirement: RELOAD清单 adds module-summary.md for relevant phases
-explore/design/plan phase RELOAD清单 SHALL include `module-summary.md` as an optional load item.
+
+explore/design/plan phase RELOAD清单 SHALL include `module-summary.md` as an optional load item. The RELOAD清单 SHALL be defined in each skill's own `references/hooks.md`.
 
 #### Scenario: RELOAD清单 updated
-- **WHEN** `kflow-shared/phase-hooks.md` RELOAD清单 is read
-- **THEN** explore/design/plan phases SHALL list `module-summary.md` as an optional load
+
+- **WHEN** the RELOAD清单 is read for the explore, design, or plan phase
+- **THEN** it SHALL be read from that phase's own `references/hooks.md` (for example `skills/kflow-explore/references/hooks.md`)
+- **AND** explore/design/plan phases SHALL list `module-summary.md` as an optional load
+- **AND** the read SHALL NOT depend on a `kflow-shared/phase-hooks.md` file

@@ -137,7 +137,7 @@ allowed-tools:
 
 ## GATE 步骤：快速门控验证 + 产物完整性验证
 
-> 完整规范参见 `skills/kflow-resume/references/gates.md` §2 规则 9
+> 完整规范参见 `skills/kflow-resume/SKILL.md` 步骤 4
 
 对 .status.md 标记为「✅ 完成」的每个阶段执行产物验证（编码轮次+覆盖率、代码审查报告、测试 summary、设计自审+交叉审查等）。验证不通过的阶段标记为「⚠️ 需修订」并调度回退重新执行。
 
@@ -145,7 +145,7 @@ allowed-tools:
 
 ## 产物验证映射表
 
-> 完整规范参见 `skills/kflow-resume/references/gates.md` §2 规则 9
+> 完整规范参见 `skills/kflow-resume/SKILL.md` 步骤 4
 
 | 阶段 | 验证项 |
 |------|--------|
@@ -154,8 +154,8 @@ allowed-tools:
 | 接口测试 | api/summary.md 存在 + 健康评分达标 |
 | E2E 测试 | e2e/summary.md 存在 |
 | 集成测试 | integration/summary.md 存在 |
-| 详细设计 | detailed-design.md + self-reviews/design ≥10 文件 + cross-reviews ≥1 批次 + traceability 设计列=100% |
-| 原型设计 | prototype/index.md 存在 + 清单含 entry 角色文件 + 用户评审=✅已确认 或 ⏭️跳过 |
+| 详细设计 | detailed-design.md + self-reviews/design 份数 = 自审目标轮次（首次 10 / 非首次弹性）+ cross-reviews ≥1 批次 + traceability 设计列=100% |
+| 原型设计 | docs/designs/prototypes/manifest.md 与变更级 prototype-changes.md 存在 + BUILD 报告存在 + 用户评审=✅已确认 或 ⏭️跳过 |
 
 验证不通过时输出失败项清单，将对应阶段状态回退为「⚠️ 需修订」，调度回退到该阶段重新执行。仅验证「✅ 完成」阶段，不检查「⏳ 待开始」或「🔄 进行中」阶段。
 
@@ -214,7 +214,7 @@ allowed-tools:
 | 当前阶段 | 设计依据指向 |
 |---------|-------------|
 | 设计探索 | `functional-designs/index.md` |
-| 原型设计 | `functional-designs/index.md` + `prototype/index.md` |
+| 原型设计 | `functional-designs/index.md` + `docs/designs/prototypes/manifest.md` + `prototype-changes.md` |
 | 详细设计 | `functional-designs/index.md` |
 | 计划 | `detailed-design.md` 子变更划分章节 |
 | 编码 | `detailed-design.md` 对应功能点的技术设计章节 |

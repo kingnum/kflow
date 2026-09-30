@@ -1,3 +1,9 @@
+# backend-domain-template Specification
+
+## Purpose
+
+定义纯后端项目专用的功能设计简化模板 `backend-domain.md`，按设计域组织章节并去除 UX 密集型内容，同时提供原有章节的替换规则，使无前端界面的项目获得适配的设计文档结构。
+
 ## Requirements
 
 ### Requirement: 纯后端项目功能设计简化模板

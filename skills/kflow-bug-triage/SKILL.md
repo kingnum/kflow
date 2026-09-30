@@ -1,7 +1,7 @@
 ---
 name: kflow-bug-triage
-version: 0.17.0
-description: Use when user needs bug triage/问题分诊、反馈、报告问题、报bug、提bug、问题诊断, or user reports an issue through kflow-guide. Independent diagnostic Skill (not a workflow phase). 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、问题登记（bugs/目录）、路由决策（REVISION模式或kflow-bug-fix）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD: 全量产物, .status.md, bugs/）。
+version: 0.18.0
+description: Use when user needs bug triage/问题分诊、反馈、报告问题、报bug、提bug、问题诊断, or user reports an issue through kflow-guide. Independent diagnostic Skill (not a workflow phase). 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、问题登记（bugs/目录）、路由决策（REVISION模式或kflow-bug-fix）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md, bugs/）。
 license: MIT
 triggers:
   - 反馈
@@ -69,7 +69,7 @@ allowed-tools:
 │  │   └── 创建/更新 bugs/bug-NNN-NNN.md 基本信息节             │
 │  3. DIAGNOSE  → 四层溯源诊断                                  │
 │  │   ├── L1 需求定义 → 检查 functional-designs/              │
-│  │   ├── L2 原型设计 → 检查 prototype/                       │
+│  │   ├── L2 原型设计 → 检查 docs/designs/prototypes/         │
 │  │   ├── L3 详细设计 → 检查 detailed-design.md               │
 │  │   └── L4 实现执行 → 检查代码实现                           │
 │  │   └── 某层判定 ❌ → 停止向下排查，确定为源头               │
@@ -101,7 +101,7 @@ allowed-tools:
 
 ## 步骤 1：PRE_HOOK — 阶段前置钩子
 
-引用 `skills/kflow-bug-triage/references/hooks.md` bug-triage 阶段 PRE_HOOK（不需要服务，RELOAD: 全量产物, .status.md, bugs/）。
+引用 `skills/kflow-bug-triage/references/hooks.md` bug-triage 阶段 PRE_HOOK（不需要服务，RELOAD：全量产物, .status.md, bugs/）。
 
 ---
 
@@ -145,13 +145,13 @@ REGISTER 步骤 SHALL 按以下规则执行：
 
 ## L2 原型设计
 
-**证据来源**：`prototype/index.html` + `element-coverage-tree.md` + `functional-designs/`
+**证据来源**：`docs/designs/prototypes/index.html` + 变更级 `prototype-changes.md` + 变更级 `element-coverage-tree.md` + `functional-designs/`
 
 **检查项**：
-- 原型是否正确实现了 L1 确认的功能点？
+- 原型是否正确实现了 L1 确认的功能点？（检查范围以变更级 `prototype-changes.md` 界定的本变更涉及页面为准）
 - 交互流程是否与用户预期一致？
 
-**快速排除**：纯后端项目（无 prototype/）或用户反馈不涉及 UI/交互 → ✅ 通过（跳过）
+**快速排除**：纯后端项目（无 `docs/designs/prototypes/`）或用户反馈不涉及 UI/交互 → ✅ 通过（跳过）
 
 ## L3 详细设计
 
@@ -190,7 +190,7 @@ REGISTER 步骤 SHALL 按以下规则执行：
 
 # 影响范围评估
 
-四层诊断完成后，SHALL 一并执行影响范围评估，为回退后的弹性重复制轮次决策提供依据。
+四层诊断完成后，SHALL 一并执行影响范围评估，为回退后的档位驱动弹性重复制轮次决策提供依据（推荐轮次引用统一映射，见「推荐轮次」节）。
 
 ## 评估步骤
 
@@ -211,13 +211,21 @@ REGISTER 步骤 SHALL 按以下规则执行：
 - 接口数：受影响的 API 端点数量
 - 数据模型变更：存在数据模型修改时为 1，否则为 0
 
-## 分数-轮次映射参考
+## 推荐轮次
 
-| 影响范围分数 | 推荐轮次 | 验证策略 |
-|-------------|---------|---------|
-| 1-5 | max(3, ceil(分数)) | 受影响项 100% + 全量 1 轮兜底 |
-| 6-15 | max(5, ceil(分数/2)) | 受影响项 100% + 全量 1 轮兜底 |
-| >15 | 10 | 标准重复制 |
+影响范围评估输出的推荐轮次 SHALL 取自统一映射，该映射**唯一定义于 `tier-driven-repetition` 能力**，本 Skill 仅引用，SHALL NOT 自行定义分数区间或轮次数值。以下数值为引用内容：
+
+| 影响范围分数（引用） | 影响映射分量（引用） |
+|--------------------|--------------------|
+| <= 3 | 1 轮 |
+| 4 ~ 15 | 3 轮 |
+| > 15 | 10 轮 |
+
+推荐轮次 SHALL 表述为 `max(档位基线, 影响范围分数映射)` 的**影响映射分量**，SHALL NOT 表述为绝对轮次数值：
+
+- **档位基线**：由变更级 `.status.md` 的「变更档位」字段确定（轻量 1 / 标准 3 / 完整 10），字段缺失时按 `完整` 档处理。
+- **影响映射分量**：由上述统一映射按影响范围分数取值。
+- **最终目标轮次**：由目标 Skill 在阶段启动时按 `max(档位基线, 影响范围分数映射)` 计算；`.status.md` 中无影响范围分数时取档位基线。
 
 > 详细轮次决策逻辑参见 `skills/kflow-bug-triage/references/repetition.md` §14。
 

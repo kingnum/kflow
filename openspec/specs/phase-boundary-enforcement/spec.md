@@ -1,7 +1,9 @@
 # phase-boundary-enforcement Specification
 
 ## Purpose
-TBD - created by archiving change phase-review-mechanism-upgrade. Update Purpose after archive.
+
+定义阶段边界强制规则——各阶段的文档创建白名单、标准产物强制生成、内容越界禁止与阶段回退提醒，以及各阶段入口门控增强规则和子变更类型适用性标注。确保每个阶段仅输出其职责范围内的产物，越界行为被显式约束。
+
 ## Requirements
 ### Requirement: 文档创建白名单模式
 
@@ -60,7 +62,7 @@ TBD - created by archiving change phase-review-mechanism-upgrade. Update Purpose
 - **AND** 不包含技术架构选型、数据模型设计、接口定义
 
 #### Scenario: prototype 禁止输出业务规则变更
-- **WHEN** kflow-prototype-design 生成 prototype.pen
+- **WHEN** kflow-prototype-design 生成 HTML 原型产物（直写产品级 `docs/designs/prototypes/`）
 - **THEN** 原型基于 functional-designs/ 的业务规则设计交互
 - **AND** 不可以在原型设计过程中修改业务规则
 
@@ -110,8 +112,6 @@ TBD - created by archiving change phase-review-mechanism-upgrade. Update Purpose
 - **AND** RELOAD 专注于读取最新内容（非检查存在性）
 - **AND** 若文件在检查后被删除（极端情况），RELOAD 失败 SHALL 触发阻塞
 
-## ADDED by phase-artifact-verification-and-input-alignment
-
 ### Requirement: Plan 阶段入口门控增强
 
 系统 SHALL 在 plan 阶段入口门控中增加以下检查项。
@@ -146,12 +146,11 @@ TBD - created by archiving change phase-review-mechanism-upgrade. Update Purpose
 - **THEN** 系统 SHALL 读取 detailed-design.md 中子变更划分章节确定当前子变更类型
 - **AND** SHALL 根据子变更类型选择对应的门控检查项
 
-#### Scenario: 前端子变更 prototype/* 强制检查
+#### Scenario: 前端子变更原型核心产物强制检查
 - **WHEN** 进入 code 阶段 [前端SC]
-- **THEN** 门控 SHALL 检查 prototype/index.html 存在
-- **AND** SHALL 检查 prototype/design-tokens.css 存在
-- **AND** SHALL 检查 prototype/element-coverage-tree.md 存在
-- **AND** 任一文件缺失 SHALL 阻塞编码，提示「前端子变更缺少原型核心产物」
+- **THEN** 门控 SHALL 检查 docs/designs/prototypes/manifest.md 存在且清单中包含 entry 角色文件
+- **AND** SHALL 检查变更级 prototype-changes.md 存在
+- **AND** 任一缺失 SHALL 阻塞编码，提示「前端子变更缺少原型核心产物」
 
 #### Scenario: CONTEXT.md 存在性检查
 - **WHEN** 进入 code 阶段 [全部]
@@ -164,7 +163,7 @@ TBD - created by archiving change phase-review-mechanism-upgrade. Update Purpose
 
 #### Scenario: element-coverage-tree.md 存在性检查
 - **WHEN** 进入 e2e-test 阶段 [前端项目]
-- **THEN** 门控 SHALL 检查 element-coverage-tree.md 存在（prototype/ 或 e2e-tests/ 目录下）
+- **THEN** 门控 SHALL 检查 element-coverage-tree.md 存在（有原型时在变更根目录，无原型时在 e2e-tests/ 目录下）
 - **AND** 不存在时 SHALL 提示「缺少元素覆盖树，请重新执行详细设计阶段生成」
 - **AND** [纯后端项目] SHALL 跳过此检查
 
@@ -175,7 +174,7 @@ TBD - created by archiving change phase-review-mechanism-upgrade. Update Purpose
 #### Scenario: 设计产物回溯验证
 - **WHEN** 进入 integration-test 阶段 [全部]
 - **THEN** 门控 SHALL 快速检查 functional-designs/index.md 和 detailed-design.md 存在且非空
-- **AND** [前后端项目 + 原型未跳过] SHALL 检查 prototype/index.html 存在
+- **AND** [前后端项目 + 原型未跳过] SHALL 检查 docs/designs/prototypes/manifest.md 与变更级 prototype-changes.md 存在
 - **AND** 缺失时 SHALL 提示「设计阶段产物不完整，请先执行 kflow-verify 诊断」
 
 ### Requirement: 门控规则显式标注 SC 类型适用性
@@ -186,8 +185,6 @@ TBD - created by archiving change phase-review-mechanism-upgrade. Update Purpose
 - **WHEN** 门控规则被定义或修改
 - **THEN** 每条规则 SHALL 标注适用性：`[全部]` / `[后端子变更]` / `[前端子变更]` / `[前端项目]` / `[纯后端项目]`
 - **AND** 标注 SHALL 用于门控执行时判断是否应用该规则
-
-## ADDED by frontend-implementation-and-phase-guards
 
 ### Requirement: 归档阶段禁止自动流转
 

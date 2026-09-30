@@ -1,7 +1,7 @@
 ---
 name: kflow-code-review
-version: 0.17.0
-description: Use when user needs code review/代码审查、审查代码、code review, or subchange coding is complete and ready for review. 两视角并行审查（安全+规范/质量+性能），分级重审闭环验证。独立于编码阶段，子变更级必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，纯静态分析）。
+version: 0.18.0
+description: Use when user needs code review/代码审查、审查代码、code review, or subchange coding is complete and ready for review. 按变更档位分级审查（轻量档单 Agent 单轮覆盖两视角全部检查项 / 标准档与完整档两视角并行），修复后验证按档位分支（轻量单轮复检 / 标准与完整分级重审闭环）。独立于编码阶段，子变更级必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，纯静态分析）。
 license: MIT
 triggers:
   - 代码审查
@@ -19,7 +19,7 @@ allowed-tools:
 
 # 角色
 
-代码审查执行器（子变更级）。独立于编码阶段，对已完成 TDD 的子变更代码执行两视角并行审查（Agent 1: 安全+规范 / Agent 2: 质量+性能），含分级重审闭环验证机制。采用重复制模式。
+代码审查执行器（子变更级）。独立于编码阶段，对已完成 TDD 的子变更代码执行**按变更档位分级**的审查：轻量档为单 Agent 单轮（串行覆盖两视角全部检查项）；标准档与完整档为两视角并行审查（Agent 1: 安全+规范 / Agent 2: 质量+性能）。含按档位的修复后验证机制（轻量档单轮复检；标准档与完整档分级重审闭环）。采用重复制模式。
 
 > ⚠ **子代理强制规则**（参见 skills/kflow-code-review/references/repetition.md §12）:
 > 1. 本阶段主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收
@@ -30,7 +30,7 @@ allowed-tools:
 
 # 任务
 
-门控检查（编码完成状态）→ 收集审查材料 → 两视角并行审查 → 门控判定 → 输出审查报告（含问题追踪矩阵）→ 分级重审闭环（高/中/低严重度差异化验证）→ 更新状态。
+门控检查（编码完成状态）→ 收集审查材料 → 按变更档位执行审查（轻量单 Agent 单轮 / 标准与完整两视角并行）→ 门控判定 → 输出审查报告（含问题追踪矩阵）→ 修复后验证（轻量单轮复检 / 标准与完整分级重审闭环）→ 更新状态。
 
 # 门控检查
 
@@ -53,15 +53,14 @@ allowed-tools:
 | 变更级 `detailed-design.md` | ✅ 必须 | 统一详细设计（用于对照检查） |
 | `CONTEXT.md` | ✅ 必须 | 项目级领域词汇表，用于检查代码命名对齐 |
 | `docs/service-guide.md` | ✅ 必须 | 服务配置（检查配置安全性） |
-| `prototype/index.md` | 🔶 条件 | 原型产物清单，存在时从清单获取 tokens/coverage/spec/nav-tree 文件路径纳入对账 |
-| `prototype/element-spec.md` | 🔶 条件 | 原型元素清单，存在时纳入对账 |
-| `prototype/nav-tree.md` | 🔶 条件 | 原型导航树，存在时纳入对账 |
+| `docs/designs/prototypes/manifest.md` | 🔶 条件 | 全产品原型清单，存在时从清单获取 tokens 角色文件路径，并以变更级 prototype-changes.md + element-coverage-tree.md 纳入对账 |
+| 变更级 `element-coverage-tree.md` | 🔶 条件 | 元素覆盖树（含页面导航与交互元素清单），存在时纳入导航与元素对账 |
 
 # 输出产物
 
 | 产物 | 文件 | 图例 | 验收标准 |
 |------|------|------|---------|
-| 代码审查报告 | `docs/changes/{change}/subchanges/{subchange}/test-reports/review/code-review.md` | ✅ 必须 | 两视角审查通过（门控满足），含问题追踪矩阵 |
+| 代码审查报告 | `docs/changes/{change}/subchanges/{subchange}/test-reports/review/code-review.md` | ✅ 必须 | 按变更档位的审查形态产出且门控满足（轻量档单 Agent 高=0 且 中<3；标准与完整档两视角门控满足），含问题追踪矩阵 |
 
 # 执行流程
 
@@ -75,10 +74,12 @@ allowed-tools:
 │  2. CHECK     → 门控检查（编码完成状态）                               │
 │  3. COLLECT   → 收集审查材料（代码变更 diff、详细设计、tasks.md 等）   │
 │  3.3 CROSS_TIER → 跨层越界检测                                          │
-│  │   ├── 后端SC: Grep .tsx/.jsx/.vue + 硬编码颜色 + prototype/ 引用  │
+│  │   ├── 后端SC: Grep .tsx/.jsx/.vue + 硬编码颜色 + 原型路径引用 │
 │  │   ├── 前端SC: Grep migrations/ + ORM注解 + 服务端路由注册         │
 │  │   └── 排除 node_modules/ .next/ dist/ .git/ 测试文件等            │
-│  4. PARALLEL  → 两视角并行审查                                         │
+│  4. REVIEW    → 按变更档位执行审查                                     │
+│  │   ├── 轻量档: 单 Agent 单轮，串行覆盖两视角全部检查项               │
+│  │   └── 标准/完整档: 两视角并行审查                                  │
 │  │   ┌───────────────────────┐  ┌───────────────────────┐             │
 │  │   │ Agent 1: 安全+规范     │  │ Agent 2: 质量+性能     │             │
 │  │   │ ├── SQL 注入           │  │ ├── N+1 查询           │             │
@@ -88,15 +89,16 @@ allowed-tools:
 │  │   │ ├── 命名对齐          │  │ └── 性能瓶颈           │             │
 │  │   │ └── 依赖安全漏洞       │  │                        │             │
 │  │   └───────────────────────┘  └───────────────────────┘             │
-│  5. GATE     → 门控判定                                               │
-│  │   ├── Agent 1 高=0 且 Agent 2 高=0 且 Agent 2 中<3                 │
+│  5. GATE     → 门控判定（按变更档位分支）                              │
+│  │   ├── 轻量档: 单 Agent 高=0 且 中<3                               │
+│  │   ├── 标准/完整档: Agent 1 高=0 且 Agent 2 高=0 且 Agent 2 中<3    │
 │  │   │   → ✅ 审查通过 → 输出报告 → 完成                               │
 │  │   └── 任一不满足 → ❌ 阻塞                                          │
 │  │       ├── 输出完整问题清单（含修复建议）                             │
 │  │       ├── 标记子变更编码阶段为 ❌ 阻塞                               │
 │  │       └── 修复完成后重新触发 kflow-code-review                     │
 │  6. REPORT   → 输出 code-review.md（含问题追踪矩阵）                   │
-│  7. RE-REVIEW→ 分级重审闭环（高/中/低严重度差异化验证）                │
+│  7. RE-REVIEW→ 修复后验证（轻量档单轮复检；标准/完整档分级重审闭环）   │
 │  8. COMPLETE → 更新子变更状态（编码+审查完成）                          │
 │  9. POST_HOOK→ 引用 skills/kflow-code-review/references/hooks.md code-review 阶段 POST_HOOK │
 └───────────────────────────────────────────────────────────────────────┘
@@ -108,7 +110,7 @@ allowed-tools:
 
 引用 `skills/kflow-code-review/references/hooks.md` code-review 阶段 PRE_HOOK（❌ 不需要服务：CHECK_STATE + RELOAD）。
 
-> RELOAD: 重读 service-guide.md, CONTEXT.md, detailed-design.md, .status.md。
+> RELOAD：重读 service-guide.md, CONTEXT.md, detailed-design.md, .status.md。
 
 ## 步骤 2：CHECK — 门控检查
 
@@ -122,9 +124,8 @@ allowed-tools:
 - `tasks.md`（确认所有任务已完成）
 - `CONTEXT.md`（检查命名对齐）
 - `service-guide.md`（检查配置安全性）
-- `prototype/index.md`（条件，从清单获取 tokens/coverage/spec/nav-tree 文件路径，原型一致性对账）
-- `prototype/element-spec.md`（条件，原型元素对账）
-- `prototype/nav-tree.md`（条件，原型导航对账）
+- `docs/designs/prototypes/manifest.md`（条件，从清单获取 tokens 角色文件路径 + 变更级 prototype-changes.md 与 element-coverage-tree.md，原型一致性对账）
+- 变更级 `element-coverage-tree.md`（条件，原型导航与元素对账）
 
 ## 步骤 3.3：跨层越界检测
 
@@ -153,8 +154,8 @@ grep -rn '#[0-9a-fA-F]\{3,6\}\|rgb(' --include='*.{ts,tsx,js,jsx,vue}' \
   --exclude-dir=__tests__ --exclude-dir=mocks --exclude-dir=__mocks__ \
   . | wc -l
 
-# 检测 prototype/ 路径引用
-grep -rn 'prototype/' --include='*.{ts,tsx,js,jsx}' \
+# 检测原型目录路径引用（源码中不应硬编码原型文件路径）
+grep -rn 'docs/designs/prototypes/' --include='*.{ts,tsx,js,jsx}' \
   --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=dist --exclude-dir=build \
   .
 ```
@@ -197,25 +198,25 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 | 条件 | 处理 |
 |------|------|
-| `prototype/index.md` 存在且含 tokens 角色文件 | 执行设计令牌对账（从清单获取 tokens 文件路径） |
-| `prototype/index.md` 存在且含 coverage 角色文件 | 执行元素对账（从清单获取 coverage 文件路径） |
-| `prototype/index.md` 存在且含 entry 角色文件 | 执行导航对账（从清单获取 entry 文件路径） |
+| `docs/designs/prototypes/manifest.md` 存在且含 tokens 角色文件 | 执行设计令牌对账（从清单获取 tokens 文件路径） |
+| `docs/designs/prototypes/manifest.md` 存在且变更级 prototype-changes.md 已登记涉及页面 | 执行元素对账（从变更级 element-coverage-tree.md 获取元素清单） |
+| `docs/designs/prototypes/manifest.md` 存在且含 entry 角色文件 | 执行导航对账（从清单获取 entry 文件路径） |
 | 以上均不存在（原型设计被跳过） | 跳过本节 |
 
 ### 对账方式
 
 使用 Grep 执行纯文本对账（非截图对比），轻量且可重复：
 
-1. **设计令牌对账**: 从 prototype/index.md 获取 tokens 角色文件路径 → Grep 源码中的颜色值/字体值与该 tokens 文件对比
+1. **设计令牌对账**: 从 docs/designs/prototypes/manifest.md 获取 tokens 角色文件路径 → Grep 源码中的颜色值/字体值与该 tokens 文件对比
    - 验证代码中使用的颜色是否在 tokens 文件中定义
    - 验证字体大小/字重是否对齐 tokens 文件
 
-2. **元素对账**: 从 prototype/index.md 获取 coverage 角色文件路径 → Grep 源码中的组件名/按钮名/表单名与 coverage 文件对比
+2. **元素对账**: 从变更级 element-coverage-tree.md 获取元素清单 → Grep 源码中的组件名/按钮名/表单名与该文件对比
    - 验证 coverage 文件中的元素是否在源码中实现
    - 允许新增元素（代码可能补充设计），标注「代码新增」
 
-3. **导航对账**: 从 prototype/index.md 获取 entry 角色文件中的导航结构 → Grep 源码中的路由/链接对比
-   - 验证 nav-tree.md 中的导航项是否在代码中实现
+3. **导航对账**: 从 docs/designs/prototypes/manifest.md 获取 entry 角色文件中的导航结构 → Grep 源码中的路由/链接对比
+   - 验证变更级 element-coverage-tree.md 中的导航项是否在代码中实现
    - 标注缺失的导航项
 
 ### 对账结果
@@ -226,11 +227,25 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 - ❌ 缺失：spec 中的元素/导航项未在源码中实现
 - ➕ 新增：源码中新增了 spec 未定义的元素
 
-## 步骤 4：PARALLEL — 两视角并行审查
+## 步骤 4：REVIEW — 按变更档位执行代码审查
+
+审查形态按变更档位分支；档位读取自变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理）。
+
+| 变更档位 | 审查形态 | 目标轮次 |
+|---------|---------|---------|
+| 轻量 | 单 Agent 单轮，串行覆盖「安全+规范」与「质量+性能」两视角的**全部**检查项 | 1 |
+| 标准 | 两视角并行（Agent 1 / Agent 2） | 3 |
+| 完整 | 两视角并行（Agent 1 / Agent 2） | 10 |
+
+### 轻量档：单 Agent 审查（覆盖两视角全部检查项）
+
+启动**单个** Agent，串行执行下列两视角的全部检查项，SHALL NOT 启动并行审查 Agent，SHALL NOT 因合并为单 Agent 而裁剪任一检查项。单轮执行，不启动多轮重复制迭代。
+
+### 标准档与完整档：两视角并行审查
 
 使用 Agent 工具并行启动两个审查 Agent。
 
-### Agent 1: 安全+规范
+#### Agent 1: 安全+规范
 
 | 检查项 | 说明 | 严重度 |
 |--------|------|--------|
@@ -241,7 +256,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 | 命名对齐 | 代码命名（模块/类/函数）是否与 CONTEXT.md 领域词汇表冲突 | 中 |
 | 编码规范 | 命名规范、代码格式、注释规范 | 低 |
 
-### Agent 2: 质量+性能
+#### Agent 2: 质量+性能
 
 | 检查项 | 说明 | 严重度 |
 |--------|------|--------|
@@ -253,12 +268,14 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 ## 步骤 5：GATE — 门控判定
 
-### 门控规则
+### 门控规则（按变更档位分支）
 
-| 条件 | 判定 |
-|------|------|
-| Agent 1 高严重度 = 0 且 Agent 2 高严重度 = 0 且 Agent 2 中严重度 < 3 | ✅ 审查通过 |
-| Agent 1 高严重度 ≥ 1 或 Agent 2 高严重度 ≥ 1 或 Agent 2 中严重度 ≥ 3 | ❌ 阻塞 |
+| 变更档位 | 通过条件 | 否则 |
+|---------|---------|------|
+| 轻量 | 单 Agent 高严重度 = 0 且 中严重度 < 3 | ❌ 阻塞 |
+| 标准 / 完整 | Agent 1 高严重度 = 0 且 Agent 2 高严重度 = 0 且 Agent 2 中严重度 < 3 | ❌ 阻塞 |
+
+> 轻量档 SHALL NOT 要求多份视角报告；审查形态为单 Agent 单轮，其检查项覆盖范围与两视角相同。
 
 ### 阻塞处理
 
@@ -269,7 +286,8 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
   ├── 输出完整问题清单（含修复建议）
   ├── 标记子变更编码阶段为 ❌ 阻塞
   ├── 修复完成后重新触发 kflow-code-review
-  └── 进入分级重审闭环（见 §步骤 7）
+  └── 轻量档 → 单轮复检（见 §步骤 7）
+      标准/完整档 → 分级重审闭环（见 §步骤 7）
 ```
 
 ## 步骤 6：REPORT — 输出审查报告
@@ -284,9 +302,10 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 ## 基本信息
 - **审查时间**: {YYYY-MM-DD HH:MM}
 - **子变更**: {subchange-name}
+- **变更档位**: {轻量|标准|完整}
 - **审查文件数**: {数量}
-- **审查 Agent 数**: 2
-- **执行轮次**: {N} / 10
+- **审查 Agent 数**: {轻量档 1 / 标准档与完整档 2}
+- **执行轮次**: {N} / {目标轮次}（轻量 1 / 标准 3 / 完整 10）
 
 ## 审查结果汇总
 
@@ -294,6 +313,8 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 |--------|---------|---------|---------|------|
 | Agent 1 (安全+规范) | {n} | {m} | {k} | ✅/❌ |
 | Agent 2 (质量+性能) | {n} | {m} | {k} | ✅/❌ |
+
+> 轻量档为单 Agent，本表合并为一行：`| 单 Agent (安全+规范 + 质量+性能) | {n} | {m} | {k} | ✅/❌ |`
 
 ## 问题追踪矩阵
 
@@ -307,13 +328,19 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 - [ ] Agent 1 通过（高严重度 = 0）
 - [ ] Agent 2 通过（高严重度 = 0 且 中严重度 < 3）
 - [ ] 门控结论: ✅ 审查通过 / ❌ 审查阻塞
+
+> 轻量档结论改为：`- [ ] 单 Agent 通过（高严重度 = 0 且 中严重度 < 3）`（不要求多份视角报告）
 ```
 
-## 步骤 7：RE-REVIEW — 分级重审闭环
+## 步骤 7：RE-REVIEW — 修复后验证（按变更档位分支）
 
-审查阻塞修复完成后，按严重度分级执行重审：
+审查阻塞修复完成后执行验证，验证方式按变更档位分支。
 
-### 分级重审规则
+### 轻量档：单轮复检
+
+修复完成后 SHALL 执行**单轮复检**——由单 Agent 复核全部已修复问题，SHALL NOT 执行按高/中/低严重度分级的差异化重审。
+
+### 标准档与完整档：分级重审闭环
 
 | 严重度 | 验证方式 | 说明 |
 |--------|---------|------|
@@ -354,7 +381,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 # 重复制（执行类阶段）
 
-代码审查阶段属于执行类阶段，采用重复制模式。目标轮次由弹性轮次决策规则确定（参见 `skills/kflow-code-review/references/repetition.md` §14）：首次执行 10 轮，回退重执行按影响范围分数缩减。
+代码审查阶段属于执行类阶段，采用重复制模式。目标轮次由变更档位决定：读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理），档位基线为 `轻量` 1 轮 / `标准` 3 轮 / `完整` 10 轮；回退重执行取 `max(档位基线, 影响范围分数映射)`，映射规则统一在 `tier-driven-repetition` 能力定义（参见 `skills/kflow-code-review/references/repetition.md` §14），本 SKILL.md SHALL NOT 另行定义区间。
 
 ## 每轮工作内容
 
@@ -364,12 +391,12 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 **每轮流程**：
 1. **外层遍历**：读取所有子变更的编码+审查状态，筛选出已完成编码但未通过审查的子变更
-2. **内层遍历**：对每个待审查的子变更，遍历其全部代码变更，两视角并行审查全部检查项：
+2. **内层遍历**：对每个待审查的子变更，遍历其全部代码变更，按变更档位执行审查（轻量档单 Agent 串行覆盖两视角全部检查项；标准档与完整档两视角并行）：
    - 安全+规范：SQL 注入、XSS/CSRF、敏感信息泄露、编码规范、命名对齐、依赖安全漏洞
    - 质量+性能：N+1 查询、内存泄漏、错误处理完整性、代码复杂度、性能瓶颈
 3. 已审查通过的文件执行深化检查，未通过的文件继续标记
 4. 发现问题记录到 code-review.md 问题追踪矩阵
-5. 分级重审闭环：高严重度双视角交叉检查、中严重度原视角重审、低严重度 30% 抽样
+5. 修复后验证按档位分支：轻量档单轮复检；标准档与完整档分级重审闭环（高严重度双视角交叉检查、中严重度原视角重审、低严重度 30% 抽样）
 
 **每轮产物**：code-review.md 问题追踪矩阵更新
 
@@ -385,41 +412,41 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 低复杂度 (< 20 分) / 中复杂度 (20-50 分) / 高复杂度 (> 50 分)
 ```
 
-分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成全部 10 轮迭代后方可返回。
+分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成目标轮次（按变更档位取值：轻量 1 / 标准 3 / 完整 10）迭代后方可返回。
 
 ## 执行流程
 
 ```
 1. 复杂度评估 → 写入 .status.md 备注列（仅信息展示，不驱动执行行为）
 
-1.5 INIT → 主 Agent 按弹性轮次决策确定目标轮次 N，写入 .status.md 执行轮次为 1 / N
+1.5 INIT → 读取变更级 .status.md 的「变更档位」字段（缺失按完整档处理），按档位基线确定目标轮次 N（轻量 1 / 标准 3 / 完整 10；回退重执行取 max(档位基线, 影响范围分数映射)），写入 .status.md 执行轮次为 1 / N
 
 2. 构建阶段专属提示词
-   ├── kflow-shared 分层加载（基础层 + 执行层）:
+   ├── 分层加载（基础层 + 执行层）:
    │   ├── skills/kflow-code-review/references/state-values.md（摘要）
    │   ├── skills/kflow-code-review/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-code-review/references/repetition.md
    ├── 输入: 所有子变更代码变更 diff + detailed-design.md + tasks.md + CONTEXT.md + service-guide.md
-   ├── 两视角并行审查 (安全+规范 / 质量+性能)
+   ├── 按变更档位执行审查 (轻量档单 Agent 单轮 / 标准与完整档两视角并行)
    ├── 双层遍历: 外层遍历全部子变更 + 内层遍历全部代码变更
-   ├── 闭环验证 (高/中/低严重度分级重审)
+   ├── 修复后验证 (轻量档单轮复检 / 标准与完整档高/中/低严重度分级重审)
    ├── traceability.md 待填充列: 代码审查通过状态
    ├── 重复制遍历指令:
    │   「每轮遍历全部已完成编码的子变更，每个子变更内遍历全部代码变更独立执行完整审查。
    │     更新 .status.md 中执行轮次计数器为当前轮次号。
    │     禁止按轮次分段分配工作重点——每轮均须对所有子变更的全部代码变更执行完整检查。
-   │     必须完成全部 10 轮迭代后才可返回验收报告，禁止在第 10 轮前返回。
+   │     必须完成全部目标轮次（按目标轮次取值，见 .status.md 执行轮次 1/N）迭代后才可返回验收报告，禁止在达到目标轮次前返回。
    │     若当前轮次无新发现且无可执行工作，仍须递增计数器并继续。」
    ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/本轮建议关注），注入下一轮子代理 prompt（参见 repetition-model.md §13）
    └── 完成承诺: COMPLETED
 
 3. 启动 Agent 迭代子代理 (Agent(description, prompt, run_in_background))
-   └── 子代理内维持现有两视角并行审查 + 闭环验证机制
+   └── 子代理内维持按变更档位的审查形态 + 修复后验证机制
 
 4. 主 Agent 验收
-   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由弹性轮次决策确定）
+   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由变更档位确定）
    ├── 产物: code-review.md 存在且格式正确，含问题追踪矩阵
-   ├── 门控: Agent 1 高 = 0 且 Agent 2 高 = 0 且 Agent 2 中 < 3
+   ├── 门控: 按档位分支——轻量档 单 Agent 高 = 0 且 中 < 3；标准/完整档 Agent 1 高 = 0 且 Agent 2 高 = 0 且 Agent 2 中 < 3
    ├── 闭环: 所有高/中严重度问题已修复并验证
    └── 无占位符: 无 TODO/TBD/{待填写}
 ```
@@ -429,7 +456,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 | 情况 | 处理方式 |
 |------|---------|
 | 通过 | 更新 .status.md → 释放接口单元测试阶段门控 |
-| 轮次不足（< 10） | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
+| 轮次不足（< 目标轮次 N） | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
 | 轮次达标但产物不合格 | 记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑 |
 
 ---
@@ -443,14 +470,14 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 | 前置阶段 | 编码 | 门控依赖 |
 | 后续阶段 | 接口单元测试（子变更级）→ E2E 测试（前后端项目） | 阶段链 |
 | 关系说明 | 从 `kflow-code` 拆分出的独立 Skill | 原 `kflow-code` 不再包含代码审查子阶段 |
-| 执行模式 | 重复制（内嵌两视角并行审查） | 弹性轮次决策（参见 repetition-model.md §14），复杂度评估仅信息展示，主 Agent 验收闭环 |
+| 执行模式 | 重复制（内嵌按档位的审查形态） | 档位驱动轮次决策（轻量 1 / 标准 3 / 完整 10，参见 skills/kflow-code-review/references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环 |
 
 # 核心提醒
 
-- 两视角使用 Agent 工具**并行**审查，非串行执行
+- 审查形态按变更档位：轻量档为单 Agent 单轮（串行覆盖两视角全部检查项，重点检查项不得裁剪）；标准档与完整档使用 Agent 工具**并行**审查两视角，非串行执行
 - 代码命名必须对齐 CONTEXT.md 领域词汇表
 - **双层遍历**：每轮遍历全部已完成编码的子变更，每个子变更内遍历全部代码变更
-- **原型对账**：原型存在时从 prototype/index.md 清单获取 tokens/coverage/entry 文件路径，用 Grep 对账 vs 源码
+- **原型对账**：原型存在时从 docs/designs/prototypes/manifest.md 清单获取 tokens 角色文件路径 + 变更级 element-coverage-tree.md，用 Grep 对账 vs 源码
 - 审查阻塞时路由到 `kflow-bug-fix` 进行修复
 - 高严重度问题必须双视角交叉检查后才可关闭
 - 中严重度问题由原视角重审，低严重度 30% 随机抽样

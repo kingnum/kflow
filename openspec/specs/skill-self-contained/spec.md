@@ -1,4 +1,10 @@
-## ADDED Requirements
+# skill-self-contained Specification
+
+## Purpose
+
+本能力定义 KFlow Skill 的自包含结构，规定每个 Skill 均含 `references/` 子目录以承载原集中于 `kflow-shared/` 的辅助规则，安装后不依赖任何外部目录，并规定共享文件按引用数量分发且内容按阶段裁剪。
+
+## Requirements
 
 ### Requirement: Skill directory structure includes references subdirectory
 Each KFlow Skill SHALL contain a `references/` subdirectory within its skill directory. The `references/` directory SHALL contain all supporting rules that were previously stored in the centralized `kflow-shared/` directory.
@@ -10,8 +16,10 @@ Each KFlow Skill SHALL contain a `references/` subdirectory within its skill dir
 
 #### Scenario: Zero external dependency after installation
 - **WHEN** a KFlow Skill is loaded in a consumer project
-- **THEN** the skill SHALL NOT reference any file outside `.claude/skills/<skill-name>/`
-- **AND** the skill SHALL NOT depend on the existence of a `kflow-shared/` directory at the project root
+- **THEN** the skill SHALL NOT depend on the existence of a `kflow-shared/` directory at the project root
+- **AND** rule files under the skill's own `references/` SHALL be self-contained within that skill
+- **AND** a cross-skill reference SHALL be permitted only for (a) a shared executable script, such as `.claude/skills/kflow-code/scripts/with_server.py`, or (b) a rule file owned by a single skill and referenced by name from other skills, such as `.claude/skills/kflow-init/references/permission-model.md`
+- **AND** every cross-skill reference path SHALL resolve to a file that exists in the installed layout
 
 ### Requirement: Shared file distribution by reference count
 Each shared file from the former `kflow-shared/` directory SHALL be distributed to the `references/` subdirectory of every skill that references it. Files referenced by only one skill SHALL be placed solely in that skill's `references/`.
@@ -38,9 +46,3 @@ The `with_server.py` script from `kflow-shared/scripts/` SHALL be relocated to `
 #### Scenario: with_server.py path update
 - **WHEN** `kflow-e2e-test` needs to start a service
 - **THEN** it SHALL reference `skills/kflow-code/scripts/with_server.py` (dev) or `.claude/skills/kflow-code/scripts/with_server.py` (consumer)
-
-## REMOVED Requirements
-
-### Requirement: Centralized kflow-shared directory
-**Reason**: The centralized shared directory is not installed by `npx skills add`, creating unresolved external dependencies at runtime.
-**Migration**: Each skill's `references/` subdirectory replaces the centralized `kflow-shared/`. Consumer projects should delete the now-unused `kflow-shared/` directory at the project root.

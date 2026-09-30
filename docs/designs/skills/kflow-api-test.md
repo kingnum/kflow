@@ -1,7 +1,7 @@
 # kflow-api-test（接口单元测试阶段）
 
 > **版本**: 参见仓库根目录 `VERSION` 文件
-> **阶段**: 接口单元测试（所有项目必须阶段，子变更级）
+> **阶段**: 接口单元测试（所有项目必须阶段，轻量档下条件适用，子变更级）
 
 ---
 
@@ -9,7 +9,7 @@
 
 ```yaml
 name: kflow-api-test
-description: 接口单元测试阶段 - 使用 curl/HTTP 请求对 api-tests/ 中定义的接口逐条测试。适用于所有项目类型（前后端+纯后端）。弹性重复制执行（首次10轮，回退按影响范围缩减），每轮输出 round-{n}.md，最终输出 summary.md 含健康评分。覆盖 traceability.md「接口测试(ID)」列。阶段钩子引用 `skills/kflow-api-test/references/hooks.md`（每轮前 STOP→编译→迁移→START→健康检查，每轮后 STOP）。/接口测试/API测试/接口单元测试
+description: 接口单元测试阶段 - 使用 curl/HTTP 请求对 api-tests/ 中定义的接口逐条测试。适用于所有项目类型（前后端+纯后端）。档位驱动的弹性重复制执行（目标轮次由变更档位决定：轻量 1 / 标准 3 / 完整 10，回退重执行按影响范围分数叠加），每轮输出 round-{n}.md，最终输出 summary.md 含健康评分。覆盖 traceability.md「接口测试(ID)」列。阶段钩子引用 `skills/kflow-api-test/references/hooks.md`（每轮前 STOP→编译→迁移→START→健康检查，每轮后 STOP）。/接口测试/API测试/接口单元测试
 license: MIT
 triggers:
   - 接口测试
@@ -41,14 +41,36 @@ allowed-tools:
 
 ---
 
+## 阶段适用性入口门控
+
+> **机制说明**：四态判定矩阵定义在共享规则 `skills/kflow-api-test/references/gates.md` §1.2；声明字段定义见 `skills/kflow-api-test/references/state-values.md` §5。
+
+> **适用范围**：本机制 SHALL 仅适用于 `变更档位 = 轻量` 的变更。`标准` 与 `完整` 档 SHALL NOT 应用本机制，阶段集合维持既有规则；纯后端项目跳过 E2E 的既有规则与档位无关，按项目类型优先判定。
+
+本门控 SHALL 在阶段入口（PRE_HOOK 之前）读取变更级 `.status.md` 的「阶段适用性声明」区中的「接口单元测试」条目，并按「声明 × `api-tests/` 产物存在性」四态判定：
+
+| 声明 | `api-tests/` 产物 | 判定 | 输出 |
+|------|------------------|------|------|
+| `⏭️ 不适用` | 不存在 | 合法跳过，门控放行 | — |
+| `⏭️ 不适用` | 存在 | ❌ 阻塞 | 提示声明与产物矛盾，要求清理产物或恢复声明 |
+| `✅ 适用` | 不存在 | ❌ 阻塞 | 输出缺失产物清单 |
+| `✅ 适用`（或声明区缺失） | 存在 | 通过，继续本阶段执行 | — |
+
+- **无依据阻塞**：声明为 `⏭️` 但声明区无对应判定依据时 SHALL 阻塞，提示缺失裁剪依据；`⏭️` SHALL NOT 由产物存在性或缺省值推断得出。
+- **缺省处理**：声明区缺失（历史变更、非轻量档）时，本阶段 SHALL 按 `✅ 适用` 处理，行为等价于本机制引入前。
+
+**裁准时**（声明 = `⏭️ 不适用` 且 `api-tests/` 不存在）：本阶段 SHALL NOT 执行——SHALL NOT 启动测试子代理、SHALL NOT 执行 PRE_HOOK/POST_HOOK（不启动服务、不做服务刷新、不清理浏览器）、SHALL NOT 产出阶段产物，直接放行至下一阶段（前后端项目 → `kflow-e2e-test`；纯后端项目 → `kflow-integration-test`）。阶段状态由 `kflow-design` 在写入声明时一次性标记为 `⏭️ 不适用`，`traceability.md`「接口测试」列整列填 `⏭️`、不计入覆盖率分母。裁剪阶段的钩子豁免见共享规则 `skills/kflow-api-test/references/hooks.md` §1。
+
+---
+
 ## 项目类型判断
 
 | 项目类型 | 阶段处理 |
 |---------|---------|
-| 前后端项目 | 必须执行接口单元测试阶段（作为 E2E 测试前置） |
-| 纯后端项目 | 必须执行接口单元测试阶段（作为最终验收标准） |
+| 前后端项目 | 必须执行接口单元测试阶段（作为 E2E 测试前置）；轻量档下按阶段适用性声明条件适用 |
+| 纯后端项目 | 必须执行接口单元测试阶段（作为最终验收标准）；轻量档下按阶段适用性声明条件适用 |
 
-> **关键变更**：纯后端项目不再跳过接口单元测试。当前 `kflow-e2e-test` 拆分后，`kflow-api-test` 对所有项目类型必须执行。
+> **关键变更**：纯后端项目不再跳过接口单元测试。当前 `kflow-e2e-test` 拆分后，`kflow-api-test` 对所有项目类型必须执行；轻量档下按阶段适用性声明条件执行（判为 `⏭️ 不适用` 时跳过）。
 
 ---
 
@@ -56,7 +78,7 @@ allowed-tools:
 
 | 产物 | 图例 | 说明 |
 |------|------|------|
-| 变更级 api-tests/ | ✅ 必须 | 接口测试用例文档 |
+| 变更级 api-tests/ | ✅ 必须（轻量档裁剪时豁免） | 接口测试用例文档；`变更档位 = 轻量` 且适用性声明判定本阶段 `⏭️ 不适用` 时 SHALL NOT 产出，该产物不存在属合法跳过 |
 | 变更级 detailed-design.md | ✅ 必须 | 统一详细设计（接口设计章节用于契约一致性对比） |
 | docs/service-guide.md | ✅ 必须 | 服务启动配置（多环境） |
 | test-reports/review/code-review.md | ✅ 必须 | 代码审查通过证明 |
@@ -71,6 +93,8 @@ allowed-tools:
 | API测试总结文档 | subchanges/*/test-reports/api/summary.md | [API测试总结](../../templates/subchanges/{subchange}/api-summary.md) | ✅ 必须 | 各轮次统计、健康评分、是否通过 |
 | 状态文件更新 | subchanges/*/.status.md | [子变更状态文件](../../templates/subchanges/{subchange}/subchange-status.md) | ✅ 必须 | 标记子变更测试阶段状态 |
 | 变更状态更新 | .status.md | [变更级状态文件](../../templates/changes/{change}/change-status.md) | ✅ 必须 | 更新子变更进度矩阵 |
+
+> **轻量档裁剪**：`变更档位 = 轻量` 且阶段适用性声明判定本阶段为 `⏭️ 不适用` 时，`api-tests/` 与本阶段全部产物（round-{n}.md、summary.md）SHALL NOT 产出，阶段状态标记为 `⏭️ 不适用`。`标准` 与 `完整` 档不受本机制影响。
 
 ---
 
@@ -216,9 +240,22 @@ API 测试阶段流程 (curl/HTTP 驱动):
 
 > ⚠ **子代理强制规则**（参见 skills/kflow-api-test/references/repetition.md §12）：本阶段（接口单元测试）主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收，SHALL NOT 直接执行接口测试主工作（curl测试/健康评分/报告生成等），无例外。子代理崩溃时轮次级重试（≤3 次），全部失败标记 ⚠️ 阻塞。
 
-接口单元测试阶段属于执行类阶段，采用弹性重复制模式。目标轮次由弹性轮次决策确定（首次执行 10 轮，回退重执行按影响范围分数缩减）。子代理每轮遍历 api-tests/ 全部接口用例，逐条 curl/HTTP 执行。
+接口单元测试阶段属于执行类阶段，采用档位驱动的弹性重复制模式，目标轮次按**档位基线**确定：
 
-> 通用规范（复杂度公式、轮次执行细节、prompt 规范、弹性轮次决策、验证门控）参见 `skills/kflow-api-test/references/repetition.md`
+| 变更档位 | 执行类阶段目标轮次 |
+|---------|------------------|
+| 轻量 | 1 |
+| 标准 | 3 |
+| 完整 | 10 |
+
+- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段。
+- **缺省回退**：`.status.md` 不含「变更档位」字段时按 `完整` 档处理（等价历史行为）。
+- **回退重执行**：目标轮次取 `max(档位基线, 影响范围分数映射)`；`.status.md` 中无影响范围分数时取档位基线。
+- **执行方式**：子代理每轮遍历 api-tests/ 全部接口用例，逐条 curl/HTTP 执行。
+
+> **统一映射**：影响范围分数 → 轮次的映射唯一定义于 `tier-driven-repetition` 能力，本 Skill 仅引用，SHALL NOT 自行定义分数区间或轮次数值。
+
+> 通用规范（复杂度公式、轮次执行细节、prompt 规范、档位轮次决策、验证门控）参见 `skills/kflow-api-test/references/repetition.md`
 
 ### 阶段特定参数
 
@@ -256,8 +293,8 @@ API 测试阶段流程 (curl/HTTP 驱动):
 - **前置阶段**：编码 → 代码审查（`kflow-code-review`）
 - **后续阶段**：E2E 测试（前后端项目）或集成测试（纯后端项目）
 - **服务管理**：服务生命周期由变更级 agent 独占管理，子变更 agent 为纯消费者
-- **项目类型**：所有项目类型必须执行
-- **执行模式**：弹性重复制，目标轮次由弹性轮次决策确定（参见 skills/kflow-api-test/references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
+- **项目类型**：所有项目类型必须执行；轻量档下按阶段适用性声明条件执行
+- **执行模式**：档位驱动的弹性重复制，目标轮次按变更级 `.status.md` 的「变更档位」字段取档位基线（轻量 1 / 标准 3 / 完整 10），回退重执行取 `max(档位基线, 影响范围分数映射)`（映射见 `tier-driven-repetition` 能力，参见 skills/kflow-api-test/references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
 
 ---
 

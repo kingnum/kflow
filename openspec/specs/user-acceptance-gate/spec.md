@@ -1,4 +1,10 @@
-## ADDED Requirements
+# user-acceptance-gate Specification
+
+## Purpose
+
+定义集成测试通过后的用户验收确认门控规则，要求取得用户确认后方可继续，并规定用户验收服务的启动方式。
+
+## Requirements
 
 ### Requirement: 集成测试通过后用户验收确认
 

@@ -1,3 +1,9 @@
+# tdd-philosophy Specification
+
+## Purpose
+
+定义 leadl-code 的 TDD 哲学与执行约束，包括 Vertical Slice 强制、水平切片反模式警告、测试行为而非实现以及 RED/GREEN/REFACTOR 各阶段检查清单，并将该哲学内容文档化以供各阶段遵循。
+
 ## Requirements
 
 ### Requirement: Vertical Slice 强制

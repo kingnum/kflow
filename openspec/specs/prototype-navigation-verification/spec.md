@@ -2,15 +2,30 @@
 
 ## Purpose
 
-定义原型设计阶段 VERIFY 步骤中新增的导航合理性验证（6.3 节），5 轮子代理串行，每轮子代理完整执行全部 5 项检查。
+定义原型设计阶段 VERIFY 步骤中的导航合理性验证（9.1 节），5 轮子代理串行，每轮子代理完整执行全部 5 项检查；该验证仅在审查方式为「子代理自动审查验证」时执行。
+
 ## Requirements
+
 ### Requirement: 5 轮子代理串行导航验证
 
-系统 SHALL 在 CDN 扫描和交叉引用检查通过后，执行 5 轮导航合理性验证，每轮启动一个独立子代理执行全部 5 项检查。
+系统 SHALL 在审查方式为"子代理自动审查验证"且 BUILD 四项静态检查全部通过后，执行 5 轮导航合理性验证，每轮启动一个独立子代理执行全部 5 项检查。审查方式为"人工审查"时，系统 SHALL NOT 执行导航合理性验证。
+
+#### Scenario: 前置条件满足时进入导航验证
+
+- **WHEN** BUILD 四项静态检查全部通过且用户选择的审查方式为"子代理自动审查验证"
+- **THEN** 系统 SHALL 进入导航合理性验证（9.1 节）
+- **AND** 系统 SHALL 启动 5 轮子代理串行验证
+
+#### Scenario: 人工审查路径跳过导航验证
+
+- **WHEN** 用户选择的审查方式为"人工审查"
+- **THEN** 系统 SHALL NOT 执行导航合理性验证
+- **AND** SHALL NOT 启动导航验证子代理
+- **AND** 系统 SHALL 直接进入用户评审（REVIEW）
 
 #### Scenario: 每轮子代理启动
 
-- **WHEN** 进入导航合理性验证（6.3 节）
+- **WHEN** 进入导航合理性验证（9.1 节）
 - **THEN** 系统 SHALL 串行启动 5 个子代理，每轮子代理类型为 `Agent(subagent_type="claude")`
 - **AND** 每个子代理 SHALL 使用 Playwright 或文件分析执行全部 5 项导航合理性检查
 - **AND** 每轮子代理完成后，主 Agent SHALL 读取其报告并修复发现问题
@@ -18,7 +33,7 @@
 
 #### Scenario: 5 轮强制执行
 
-- **WHEN** 导航验证执行中
+- **WHEN** 导航验证执行中（审查方式为"子代理自动审查验证"）
 - **THEN** 系统 SHALL 完成全部 5 轮子代理验证
 - **AND** SHALL NOT 因中间某轮无新问题而提前终止
 - **AND** 即使连续多轮无新问题也必须完成全部 5 轮
@@ -30,7 +45,7 @@
 #### Scenario: 页面可达性检查
 
 - **WHEN** 子代理执行导航验证
-- **THEN** 子代理 SHALL 从 `prototype/index.html` 出发进行 BFS 遍历
+- **THEN** 子代理 SHALL 从 `docs/designs/prototypes/index.html` 出发进行 BFS 遍历
 - **AND** 遍历所有 `<a href>` 和导航组件引用
 - **AND** 生成页面可达性矩阵
 - **AND** 标记孤立页面（无任何入口链接指向）
@@ -75,13 +90,14 @@
 每轮子代理 SHALL 输出验证报告到指定路径。
 
 #### Scenario: 报告输出
+
 - **WHEN** 子代理完成一轮导航验证
 - **THEN** 子代理 SHALL 保存报告到 `self-reviews/prototype/nav-check/round-{N}.md`（N 为轮次 1-5）
 - **AND** 报告 SHALL 包含 5 项检查各自的结果、发现问题和建议修复
 
 #### Scenario: 主 Agent 读取和处理
+
 - **WHEN** 子代理报告写入完成
 - **THEN** 主 Agent SHALL 从 `self-reviews/prototype/nav-check/round-{N}.md` 读取报告
 - **AND** 对发现的问题 SHALL 直接修复原型文件
 - **AND** 修复完成后 SHALL 进入下一轮
-

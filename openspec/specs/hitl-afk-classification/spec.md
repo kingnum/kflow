@@ -1,3 +1,9 @@
+# hitl-afk-classification Specification
+
+## Purpose
+
+定义子变更的 HITL/AFK 执行类型分类规则：AFK 子变更可全自动并行执行，HITL 子变更作为设计不完整标记须在设计阶段关闭全部未决决策点后方可进入 plan 阶段。
+
 ## Requirements
 
 ### Requirement: 子变更 HITL/AFK 分类
@@ -58,8 +64,6 @@ AFK 子变更 SHALL 支持并行执行，HITL 子变更 SHALL 顺序执行以避
 - **THEN** 系统 SHALL 顺序执行 HITL 子变更
 - **AND** 前一个 HITL 子变更的决策点全部解决后，才开始下一个 HITL 子变更
 
-## ADDED by phase-artifact-verification-and-input-alignment
-
 ### Requirement: AFK 判定标准更新
 
 系统 SHALL 使用更新的 AFK 判定标准，移除 UI/UX 方向决策条件。
@@ -69,8 +73,6 @@ AFK 子变更 SHALL 支持并行执行，HITL 子变更 SHALL 顺序执行以避
 - **THEN** 系统 SHALL 检查：无架构选择决策点、无设计方案确认需求、所有实现路径已明确
 - **AND** UI/UX 方向决策 SHALL 视为已在 prototype-design 用户评审阶段解决
 - **AND** 三项条件全部满足时标记为 AFK
-
-## Modified by skill-align-plan-hitl
 
 ### Requirement: Plan phase annotates HITL decision points
 

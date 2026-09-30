@@ -1,5 +1,9 @@
 # feature-config-mapping Specification
 
+## Purpose
+
+定义功能设计文档中功能点与配置项的关联标注能力，规范功能点关联配置项的标注方式与全局配置项影响矩阵，确保配置值变化对功能行为的影响在设计阶段被显式记录并可追溯。
+
 ## Requirements
 
 ### Requirement: 功能点标注关联配置项

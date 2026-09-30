@@ -12,7 +12,7 @@ Define the kflow-bug-triage Skill — an independent diagnostic Skill that perfo
 - **WHEN** 用户通过 kflow-bug-triage 反馈问题
 - **THEN** 系统按以下顺序逐层诊断：
   - L1 需求定义：检查 functional-designs/ 是否覆盖用户期望的行为、是否存在歧义或遗漏
-  - L2 原型设计：检查 prototype/ 是否正确实现了 L1 确认的功能点
+  - L2 原型设计：检查产品级 `docs/designs/prototypes/` 是否正确实现了 L1 确认的功能点（以变更级 `prototype-changes.md` 界定本变更涉及的页面范围）
   - L3 详细设计：检查 detailed-design.md 中的接口/数据模型/状态流转是否与上游一致
   - L4 实现执行：检查代码是否正确实现了 detailed-design.md 的定义
 - **AND** 每层 SHALL 输出判断结论（✅ 通过 / ❌ 有缺陷）和证据
@@ -28,7 +28,7 @@ Define the kflow-bug-triage Skill — an independent diagnostic Skill that perfo
 - **WHEN** 系统执行某层诊断
 - **THEN** SHALL 使用以下证据来源：
   - L1：functional-designs/index.md + functional-designs/part-NN.md + CONTEXT.md
-  - L2：prototype/index.html + element-coverage-tree.md + functional-designs/
+  - L2：`docs/designs/prototypes/index.html` + 变更级 `prototype-changes.md` + 变更级 `element-coverage-tree.md` + functional-designs/
   - L3：detailed-design.md + api-tests/index.md + functional-designs/
   - L4：代码实现 + detailed-design.md
 

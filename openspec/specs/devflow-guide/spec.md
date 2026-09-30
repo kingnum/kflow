@@ -1,6 +1,9 @@
+# devflow-guide Specification
+
 ## Purpose
 
-定义流程指引 Skill 的意图识别、活跃变更检测和跨变更冲突检测功能。
+定义流程指引 Skill 的职责范围：用户意图识别与优先级裁决、活跃变更检测与变更名定位、项目类型判断、流程概览展示、变更创建前指引与命名建议，以及指引错误记录。
+
 ## Requirements
 ### Requirement: 用户意图识别
 
@@ -85,7 +88,7 @@
 
 ### Requirement: 流程概览显示
 
-系统 SHALL 提供全套开发流程概览供用户查看，显示正确的阶段数量。
+系统 SHALL 提供全套开发流程概览供用户查看，显示正确的阶段数量，并在变更档位为 `轻量` 时按阶段适用性声明标注不适用阶段。
 
 #### Scenario: 显示前后端项目流程
 - **WHEN** 用户请求查看流程且项目类型为前后端项目
@@ -96,6 +99,24 @@
 - **WHEN** 用户请求查看流程且项目类型为纯后端项目
 - **THEN** 系统显示 7 阶段流程：设计探索 → 详细设计 → 计划 → 编码 → 代码审查 → 接口单元测试 → 集成测试(含修复) → 归档
 - **AND** 标注跳过原型设计和 E2E 测试
+
+#### Scenario: 轻量档流程概览标注不适用阶段
+- **WHEN** 用户请求查看流程 且 当前活跃变更的档位为 `轻量`
+- **AND** 该变更已生成阶段适用性声明
+- **THEN** 流程概览 SHALL 将声明为不适用的阶段标注为 `⏭️ 不适用`
+- **AND** SHALL 显示实际执行的阶段集合
+- **AND** SHALL NOT 将不适用阶段计入实际阶段数量
+
+#### Scenario: 轻量档未生成适用性声明时的概览
+- **WHEN** 用户请求查看流程 且 当前活跃变更的档位为 `轻量`
+- **AND** 该变更尚未生成阶段适用性声明
+- **THEN** 流程概览 SHALL 显示完整阶段集合
+- **AND** SHALL 标注「接口单元测试与 E2E 测试将在详细设计后按适用性判定」
+
+#### Scenario: 标准档与完整档流程概览
+- **WHEN** 用户请求查看流程 且 当前活跃变更的档位为 `标准` 或 `完整`
+- **THEN** 流程概览 SHALL 按项目类型显示完整阶段集合
+- **AND** SHALL NOT 标注本能力引入的档位裁剪
 
 ### Requirement: 指引错误记录
 
@@ -182,8 +203,6 @@ kflow-guide SHALL 基于用户需求描述自动生成 kebab-case 格式的变�
 - **WHEN** 变更类型为产品需求且用户描述为"搭建电商平台"
 - **THEN** 系统建议变更名称 `ecommerce-platform`
 
-## ADDED by phase-artifact-verification-and-input-alignment
-
 ### Requirement: kflow-verify 路由入口
 
 kflow-guide SHALL 支持 kflow-verify Skill 的路由识别和调用。
@@ -212,8 +231,6 @@ kflow-guide 的流程概览 SHALL 包含 kflow-verify 作为独立诊断工具�
 - **WHEN** 用户请求查看流程概览
 - **THEN** 系统 SHALL 在流程末尾（audit 之前）显示 kflow-verify 作为独立诊断工具
 - **AND** 标注为「独立诊断（非流程阶段），可随时调用诊断产物完整性」
-
-## ADDED by design-change-record
 
 ### Requirement: 设计修订意图集中检测与分流
 

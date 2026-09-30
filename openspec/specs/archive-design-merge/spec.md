@@ -1,31 +1,10 @@
+# archive-design-merge Specification
+
 ## Purpose
 
-归档时自动将变更级的功能设计和详细设计合并到产品级文档，确保产品文档随变更持续累积。
+归档时自动将变更级的功能设计文档与详细设计文档合并到产品级文档，按功能模块组织并去除草稿标记、标注变更溯源，确保产品文档随变更持续累积且可追溯。
 
 ## Requirements
-### Requirement: 归档时合并功能设计和详细设计
-
-系统 SHALL 在归档时将变更级的功能设计、详细设计和原型设计合并到产品级文档。
-
-#### Scenario: 合并功能设计
-- **WHEN** 归档变更
-- **THEN** 系统从 functional-designs/ 提取功能点清单、需求描述、验收标准
-- **AND** 按功能点的"所属页面与菜单"信息定位目标产品级目录 `docs/designs/functional-designs/{一级菜单}/`
-- **AND** 按 FP-ID 匹配：已存在则替换更新对应 part-NN.md 中的功能点章节，不存在则追加
-- **AND** 更新目标目录的 index.md 分册总览
-
-#### Scenario: 合并详细设计
-- **WHEN** 归档变更
-- **THEN** 系统从 detailed-design.md 提取各章节内容
-- **AND** 合并到 docs/designs/detailed-designs/ 下对应 6 个文档（architecture.md、data-model.md、api-catalog.md、nfr-baseline.md、config-items.md、error-handling.md）
-
-#### Scenario: 合并原型设计
-- **WHEN** 归档变更
-- **AND** 变更包含 `prototype/` 目录（原型设计阶段非跳过）
-- **THEN** 系统将变更原型合并到 `docs/prototype/`
-- **AND** 新屏幕复制到 `screens/`，修改屏幕用户确认后覆盖
-- **AND** 新组件复制到 `components/`，新 CSS 变量追加到 `design-tokens.css`
-- **AND** 更新 `index.html` 导航
 
 ### Requirement: 产品级文档按功能模块组织
 
@@ -118,3 +97,36 @@
 - **WHEN** changelog.md 超过 500 行或年末
 - **THEN** 系统将旧记录归档到 changelog-{year}.md
 - **AND** changelog.md 仅保留当前年记录
+
+### Requirement: 归档时合并功能设计和详细设计文档
+
+系统 SHALL 在归档时将变更级的功能设计文档和详细设计文档合并到产品级文档。
+
+#### Scenario: 合并功能设计
+- **WHEN** 归档变更
+- **THEN** 系统从 functional-designs/ 提取功能点清单、需求描述、验收标准
+- **AND** 按功能点的"所属页面与菜单"信息定位目标产品级目录 `docs/designs/functional-designs/{一级菜单}/`
+- **AND** 按 FP-ID 匹配：已存在则替换更新对应 part-NN.md 中的功能点章节，不存在则追加
+- **AND** 更新目标目录的 index.md 分册总览
+
+#### Scenario: 合并详细设计
+- **WHEN** 归档变更
+- **THEN** 系统从 detailed-design.md 提取各章节内容
+- **AND** 合并到 docs/designs/detailed-designs/ 下对应 6 个文档（architecture.md、data-model.md、api-catalog.md、nfr-baseline.md、config-items.md、error-handling.md）
+
+### Requirement: 归档时登记原型改动
+
+系统 SHALL 在归档时将本变更对产品级原型的改动登记到产品级原型清单，SHALL NOT 执行文件级原型合并。
+
+#### Scenario: 登记原型改动
+- **WHEN** 归档变更
+- **AND** 该变更原型设计阶段非跳过
+- **THEN** 系统 SHALL 将变更级 `prototype-changes.md` 中记录的改动登记到 `docs/designs/prototypes/manifest.md`
+- **AND** SHALL NOT 复制或覆盖 `docs/designs/prototypes/` 下的原型文件（原型已在原型设计阶段直写）
+- **AND** SHALL 在 `manifest.md` 中更新受影响产物的来源变更与最后更新时间
+
+#### Scenario: 原型设计跳过的变更
+- **WHEN** 归档变更
+- **AND** 该变更原型设计阶段为 ⏭️ 跳过
+- **THEN** 系统 SHALL NOT 修改 `docs/designs/prototypes/manifest.md`
+- **AND** SHALL NOT 读取该变更的 `prototype-changes.md`

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# subagent-enforcement-notice Specification
+
+## Purpose
+
+规定 SKILL.md 头部必须包含子代理强制执行声明并覆盖所有入口场景，同时明确权限预配置与前台子代理模式推荐要求。
+
+## Requirements
 
 ### Requirement: Subagent enforcement notice in SKILL.md header
 
@@ -20,7 +26,8 @@ All 7 execution-phase SKILL.md files SHALL include a prominent subagent enforcem
   3. Subagent SHOULD run in foreground mode (run_in_background=false recommended); background mode allowed only when permissions are pre-configured
   4. Applicable scenarios: direct trigger + triage route + other Skill invocation
   5. When background subagent fails due to permission issues, main Agent SHALL create a new foreground subagent to re-execute; main Agent SHALL NOT directly take over
-- **AND** it SHALL reference `kflow-shared/repetition-model.md` §12
+- **AND** it SHALL reference that skill's own `references/repetition.md` §12 (for example `skills/kflow-code/references/repetition.md` §12)
+- **AND** it SHALL NOT reference `.claude/skills/kflow-shared/repetition-model.md` or any other path under a `kflow-shared/` directory
 
 ### Requirement: Notice applies to all entry scenarios
 
@@ -44,12 +51,12 @@ The subagent enforcement notice SHALL explicitly state that the rules apply rega
 
 ### Requirement: Permission pre-configuration
 
-kflow-init SHALL 在目标项目中自动配置 kflow Skills 执行所需的权限（参见 `kflow-shared/permission-model.md`），取代之前要求项目手动预配置 `.claude/settings.json` 的方式。后台子代理权限失败时 SHALL 创建新的前台子代理重新执行，主 Agent SHALL NOT 直接接管。
+kflow-init SHALL 在目标项目中自动配置 kflow Skills 执行所需的权限（参见 `skills/kflow-init/references/permission-model.md`），取代之前要求项目手动预配置 `.claude/settings.json` 的方式。后台子代理权限失败时 SHALL 创建新的前台子代理重新执行，主 Agent SHALL NOT 直接接管。
 
 #### Scenario: Settings.json contains kflow permissions
 
 - **WHEN** `.claude/settings.json` is read after kflow-init has configured permissions
-- **THEN** it SHALL include an `allow` list containing the permissions defined in `kflow-shared/permission-model.md`:
+- **THEN** it SHALL include an `allow` list containing the permissions defined in `skills/kflow-init/references/permission-model.md`:
   - Bash commands for package managers (npm, yarn, pnpm, npx)
   - Bash commands for runtime (node)
   - Bash commands for version control (git)
@@ -69,7 +76,7 @@ kflow-init SHALL 在目标项目中自动配置 kflow Skills 执行所需的权�
 #### Scenario: Permission configuration by kflow-init
 
 - **WHEN** kflow-init executes the PERM_CONFIG step
-- **THEN** kflow-init SHALL read `kflow-shared/permission-model.md` for the permission list
+- **THEN** kflow-init SHALL read `skills/kflow-init/references/permission-model.md` for the permission list
 - **AND** SHALL configure `.claude/settings.json` according to the rules defined in `kflow-permission-model` capability
 - **AND** the project SHALL NOT be required to manually pre-configure permissions
 
@@ -79,6 +86,7 @@ kflow-init SHALL 在目标项目中自动配置 kflow Skills 执行所需的权�
 - **THEN** the main Agent SHALL create a new foreground subagent (run_in_background=false) to re-execute the same task
 - **AND** the main Agent SHALL NOT directly take over execution in the main Agent context
 - **AND** the fallback SHALL NOT count toward the 3-retry limit for round-level retries
+- **AND** the round-level retry rule SHALL be read from that skill's own `references/repetition.md` §12
 
 ### Requirement: Foreground mode recommendation
 

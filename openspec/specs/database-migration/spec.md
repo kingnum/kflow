@@ -1,3 +1,9 @@
+# database-migration Specification
+
+## Purpose
+
+定义变更级数据库迁移管理能力，规范迁移脚本的存放目录、迁移执行与回滚记录，并将迁移管理步骤纳入编码阶段的数据层 TDD 循环。
+
 ## Requirements
 
 ### Requirement: 数据库迁移目录
