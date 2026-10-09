@@ -98,13 +98,13 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 - 每个子变更功能点 ≤ 10 个
 - 每个变更最多 20 个子变更
 - 子变更按依赖关系依次完成
-- 执行类阶段采用**档位驱动的重复制模式**：子代理每轮遍历全部工作项独立执行完整流程，目标轮次由变更档位基线决定（轻量 1 / 标准 3 / 完整 10），回退重执行取 `max(档位基线, 影响范围分数映射)`，主 Agent 验收闭环
+- 执行类阶段采用**档位驱动的重复制模式**：子代理每轮遍历全部工作项独立执行完整流程，轮次上限由变更档位决定（轻量 1 / 标准 3 / 完整 5），达成收敛（见证轮）即提前结束，回退重执行取 `max(档位上限, 影响范围分数映射)`，主 Agent 验收闭环
 
 ---
 
 ## 变更档位
 
-**变更档位**是贯穿全流程的单一分级依据，决定各阶段的执行轮次、审查形态与产出深度。它作为必填字段记录在变更级 `.status.md` 基本信息中。
+**变更档位**是贯穿全流程的单一分级依据，决定各阶段的轮次上限、审查形态与产出深度。它作为必填字段记录在变更级 `.status.md` 基本信息中。
 
 | 档位 | 判定（影响范围分数 `FP数×1 + 接口数×1.5 + 数据模型变更数×2`） |
 |------|--------------------------------------------------------|
@@ -122,16 +122,16 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 
 | 行为 | 轻量 | 标准 | 完整 |
 |------|------|------|------|
-| 执行类阶段轮次（code / code-review / api-test / e2e-test / integration-test / bug-fix） | 1 | 3 | 10 |
-| 设计自审轮次（explore / prototype-design / design / plan） | 0（跳过，改以产物完整性门控） | 2 | 10 |
+| 执行类阶段轮次上限（code / code-review / api-test / e2e-test / integration-test / bug-fix） | 1 | 3 | 5 |
+| 设计自审轮次上限（explore / prototype-design / design / plan） | 1 | 2 | 5 |
 | 设计审查形态 | 单 Agent 综合（覆盖四视角全部检查项） | 两视角并行（业务+技术 / 安全+质量） | 四视角并行 |
 | 代码审查形态 | 单 Agent 单轮（覆盖两视角全部检查项） | 两视角并行 | 两视角并行 |
-| 自审评分底线（各维度评分 > 8） | 不适用 | 不适用 | 适用 |
+| 自审评分底线（各维度评分 > 8 且达成收敛） | 不适用 | 不适用 | 适用 |
 | 子变更划分 | 跳过 DIVIDE，恒为单一子变更 | 按依赖关系划分 | 按依赖关系划分 |
 | 测试阶段适用性（接口单元测试 / E2E测试 / 集成测试） | 条件适用，按阶段适用性声明裁剪 | 必须执行（E2E 仅前后端） | 必须执行（E2E 仅前后端） |
 | 审计形态 | 主 Agent 轻量自检（三项检查项） | 七维度加权评分 | 七维度加权评分 |
 
-> 审查形态随档位变化，但**检查项不得缩减**——轻量档与标准档 MUST 覆盖完整档的全部检查项。轻量档零轮自审、缺少自审记录与独立视角报告均为合法状态，审计与归档不因此判缺项。
+> 档位决定的是**轮次上限**与审查形态，而非必须完成的轮次数：全部阶段下限统一为 1 轮，达成**见证轮**（零新发现 + 零修改 + 报告证明全维度全量遍历）即提前结束，达上限仍未收敛则进入非收敛分支（记录 `skill-suggestion.md` 并询问用户）。审查形态随档位变化，但**检查项不得缩减**——轻量档与标准档 MUST 覆盖完整档的全部检查项。轻量档以单 Agent 形态承载审查、不产出多视角并行报告属合法状态，审计与归档不因此判缺项。
 
 ### 轻量档阶段裁剪机制
 
@@ -173,7 +173,7 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 
 | Skill | 说明 | 触发词 |
 |-------|------|--------|
-| `kflow-explore` | 创建变更目录、项目类型检测、功能点原子级拆分、构建领域词汇表、输出功能结构树、原型设计决策门控 | 开始新需求、设计探索、功能设计 |
+| `kflow-explore` | 创建变更目录、项目类型检测、功能点原子级拆分、构建领域词汇表、需求澄清收敛门（未决问题清单归零后方可 SPLIT）、输出功能结构树、原型设计决策门控 | 开始新需求、设计探索、功能设计 |
 | `kflow-prototype-design` | 编排层，默认复用 `docs/toolchain.md` 已锁定工具链 → 委托生成 HTML 原型（**直写产品级 `docs/designs/prototypes/`**）→ BUILD 四项静态门控（CDN 扫描/交叉引用/必检产物/清单一致）→ 审查方式二选一（人工审查 / 子代理自动审查验证）→ 离线自包含 + 生成 element-coverage-tree（Path A 静态解析）（仅前后端，可选） | 原型设计、UI 设计、交互设计 |
 | `kflow-design` | 系统架构、数据模型、接口设计、NFR 定义、按变更档位分级设计审查（轻量单 Agent 综合 / 标准两视角并行 / 完整四视角并行）、变更档位复核（单向升档）、子变更划分（含 HITL/AFK 分类）、ADR 架构决策记录、element-coverage-tree Path B（playwright-cli 动态探索）+ 100% 覆盖率门控、复杂度评估（高复杂度 FP 逐项用户确认） | 详细设计、技术设计、架构设计 |
 
@@ -181,7 +181,7 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 
 | Skill | 说明 | 触发词 |
 |-------|------|--------|
-| `kflow-plan` | 为子变更创建 TDD 任务清单 + DoD 四维验收标准（功能/质量/测试/文档）+ 按变更档位轮次的子代理自审查（轻量 0 / 标准 2 / 完整 10） | 任务计划、任务清单、实现计划 |
+| `kflow-plan` | 为子变更创建 TDD 任务清单 + DoD 四维验收标准（功能/质量/测试/文档）+ 按变更档位轮次上限的子代理自审查（轻量 1 / 标准 2 / 完整 5） | 任务计划、任务清单、实现计划 |
 | `kflow-code` | TDD 编码实现、编译验证（PRE_HOOK）+ 多 Agent 并行编码、跨变更冲突检测、原型到代码一致性约束（从 `docs/designs/prototypes/manifest.md` + 变更级 `prototype-changes.md` 提取 design-tokens/element-coverage-tree 注入）、双层遍历全部子变更 | 编码实现、TDD、功能实现 |
 | `kflow-code-review` | 按变更档位分级审查（轻量档单 Agent 单轮覆盖两视角全部检查项 / 标准与完整档两视角并行）+ 修复后验证按档位分支（轻量单轮复检 / 标准与完整分级重审闭环）+ 原型对账 Grep + 双层遍历全部子变更 | 代码审查、code review |
 | `kflow-api-test` | curl/HTTP 方式对 api-tests/ 逐条测试、健康评分五维度（功能完整性/响应时间/HTTP状态码/错误处理/契约一致性）、所有项目类型必须 | 接口测试、API测试、接口单元测试 |
@@ -392,11 +392,11 @@ openspec/
 
 **子变更可以并行吗？** 无依赖的可并行，AFK 类型可自动并行。
 
-**执行类阶段的重复制模式是什么？** 6 个执行类阶段（code/code-review/api-test/e2e-test/integration-test/bug-fix）统一采用档位驱动的重复制——子代理每轮遍历全部工作项独立执行完整流程，目标轮次由变更档位基线决定（轻量 1 / 标准 3 / 完整 10），回退重执行取 `max(档位基线, 影响范围分数映射)`（分数 ≤3→1 轮、4~15→3 轮、>15→10 轮），验证门控要求受影响项 100% 覆盖 + 全量至少 1 轮兜底 + 产物完整性，主 Agent 负责最终验收。kflow-plan 阶段的迭代循环为产物自审，取其自审口径（轻量 0 / 标准 2 / 完整 10）。
+**执行类阶段的重复制模式是什么？** 6 个执行类阶段（code/code-review/api-test/e2e-test/integration-test/bug-fix）统一采用档位驱动的重复制——子代理每轮遍历全部工作项独立执行完整流程，轮次上限由变更档位决定（轻量 1 / 标准 3 / 完整 5），达成收敛（见证轮）即提前结束；回退重执行取 `max(档位上限, 影响范围分数映射)`（分数 ≤3→1 轮、4~15→3 轮、>15→5 轮）；达上限仍无见证轮时进入非收敛分支（记录 `skill-suggestion.md` + AskUserQuestion，可标记 ⚠️ 阻塞）。验证门控要求受影响项 100% 覆盖 + 全量至少 1 轮兜底 + 产物完整性，主 Agent 负责最终验收。kflow-plan 阶段的迭代循环为产物自审，取其自审口径（轻量 1 / 标准 2 / 完整 5）。
 
 **变更档位怎么判定？** 影响范围分数 = `功能点数×1 + 接口数×1.5 + 数据模型变更数×2`；分数 ≤3 为轻量、4~15 为标准、>15 为完整；变更类型为「产品需求」时下限抬升为完整。分两段判定：explore 的 SPLIT 之后按「变更类型 + 功能点数」初判（用户可覆盖），design 的 DIVIDE 之后按完整公式复核（仅允许升档）。历史变更缺该字段时按完整档处理。详见上文「变更档位」章节。
 
-**轻量档会不会因为没有自审记录而被审计判缺项？** 不会。轻量档自审目标轮次为 0，不创建 `self-reviews/` 目录、不产出自审报告、设计审查仅一份 `synthesis.md`、代码审查为单 Agent——这些都是**合法状态**，审计与归档 SHALL NOT 因此判缺项或阻塞。
+**轻量档会不会因为没有多视角报告而被审计判缺项？** 不会。轻量档自审执行 1 轮并产出自审报告（自审无 0 轮豁免），但设计审查仅一份 `synthesis.md`（单 Agent 综合四视角）、代码审查为单 Agent 单轮——缺少多视角并行报告是**合法状态**，审计与归档 SHALL NOT 因此判缺项或阻塞。
 
 **轻量档可以跳过哪些阶段？** 仅 `接口单元测试`、`E2E测试`、`集成测试` 三个阶段可裁剪，由 kflow-design 在详细设计阶段按客观信号判定并写入变更级 `.status.md` 的「阶段适用性声明」区。判定依据不可读时保守回退为「适用」。**标准档与完整档不允许裁剪**。判定依据是唯一的合法性凭证——人工标记的 `⏭️` 若无声明依据，在阶段门控、轻量自检、归档门控与产物诊断中一律阻塞。
 
@@ -437,7 +437,7 @@ openspec/
 ## 版本更新说明
 
 ### v0.19.0 (2026-10-09)
-**多轮审查机制由预算制反转为收敛制、轮间摘要扩展到设计自审、原型验证轮次去重**
+**多轮审查机制由预算制反转为收敛制、explore 澄清收敛门、轮间摘要扩展到设计自审、原型验证轮次去重**
 - **轮次模型反转为收敛制（BREAKING）**：档位语义由「必须完成的目标轮次」翻转为**轮次上限**，全局下限统一为 1 轮（无例外），完整档上限由 10 降至 5（轻量 1 / 标准 2 设计·3 执行 / 完整 5）。终止判据改为**见证轮**——同时满足「零新发现 + 零修改 + 报告证明全维度全量遍历」的一轮；达上限仍无见证轮时进入**非收敛分支**（记录 `skill-suggestion.md` + AskUserQuestion + 可标记 ⚠️ 阻塞）。`.status.md` 执行轮次字段由 `{N} / 10` 改为 `{N} / {上限}`，并新增**终止原因**字段（`收敛` / `达上限`）供审计判读「为何停在第 4 轮」
 - **完整档评分底线由装饰变为有效**：`>8 且收敛` 即止，`≤8` 续审至上限 5——原规则「第 3 轮 >8 仍须做满 10 轮、第 10 轮 ≤8 已无处补审」的两头够不着被消除
 - **轮间摘要注入扩展到设计自审**：原仅执行类阶段具备的轮间摘要（`repetition.md` §13）解除被分层加载规则排除在设计类之外的限制，覆盖 explore / design / prototype-design / plan 的 SELFREV。移除「完成全部目标轮次」的冗余复扫后，「零发现」的可信度改由轮间因果保障，而非重复扫描次数——故本轮次模型的移除与摘要扩展在设计上不可分割，同变更落地
@@ -445,7 +445,9 @@ openspec/
 - **回退重执行叠加反向**：由 `目标轮次 = max(档位基线, 映射)` 改为 `上限 = max(档位上限, 映射)`，影响范围映射 `>15` 由 10 改为 5，保留「返工验证不因低档而放松」原意
 - **原型验证轮次去重**：`html-prototype-workflow` 的「Playwright 5 轮全覆盖验证」与「导航合理性验证」两条与专门能力重复的 requirement 移除，改为一条「原型验证轮次的统一引用」，轮次规则收敛为单一来源；`prototype-navigation-verification` 与 `prototype-playwright-5round-verification` 由「5 轮强制执行」改为 `[1,5]` 收敛驱动
 - **既有规格漂移修正**：`round-counter` 的 `{N} / 10` 硬编码与「轮次不足 10/10 视为验收不通过」判据、`agent-iteration-execution` 与 `plan-self-review` 的 Purpose 段「强制 10 轮」、`triage-impact-assessment` 的 `Score > 15: 10 rounds` 与 `max(tier baseline, …)` 一并修正为轮次上限口径
-- **同步范围**：13 个能力（`tier-driven-repetition`、`agent-iteration-execution`、`round-counter`、`subagent-self-review`、`plan-self-review`、`flexible-repetition-mode`、`execution-repetition-mode`、`inter-round-summary`、`auto-subchange-traversal`、`defect-strike-limit`、`html-prototype-workflow`、`prototype-navigation-verification`、`prototype-playwright-5round-verification`）的 delta 已合并到主 specs；实现侧同步 18 个 `SKILL.md`、8 份 `references/repetition.md`、3 份 `self-review.md`、10 份 `references/gates.md` 及 `docs/designs/` 设计文档
+- **explore 澄清收敛门（BREAKING）**：新增 `requirement-clarification` 能力——进入 SPLIT 前**未决问题清单 SHALL 为 ∅**（每项须被消解，或显式降级为 `待补充` 并记录理由）；消歧路径限定为澄清提问 / `CONTEXT.md` 术语精确化 / 事实查库，**SHALL NOT 以扩增功能设计内容（功能点、字段、章节、分支）的方式消除歧义**；可查证事实项自动解析，仅决策项提交用户且一次只提交一项。SPLIT 门槛由「流程顺序走完」变为「清单为空或已显式降级」
+- **CONTEXT.md 格式权威内部化**：`domain-glossary` 的「CONTEXT.md 格式」requirement 由引用外部技能 `grill-with-docs` 的格式文件改为引用 KFlow 自有 `skills/kflow-explore/references/context-template.md`，消除安装布局下不可解析的外部依赖（ADR 一侧另立变更处理）
+- **同步范围**：13 个能力（`tier-driven-repetition`、`agent-iteration-execution`、`round-counter`、`subagent-self-review`、`plan-self-review`、`flexible-repetition-mode`、`execution-repetition-mode`、`inter-round-summary`、`auto-subchange-traversal`、`defect-strike-limit`、`html-prototype-workflow`、`prototype-navigation-verification`、`prototype-playwright-5round-verification`）的 delta 已合并到主 specs；实现侧同步 18 个 `SKILL.md`、8 份 `references/repetition.md`、3 份 `self-review.md`、10 份 `references/gates.md` 及 `docs/designs/` 设计文档。`requirement-clarification` 新增能力与 `domain-glossary` 格式权威变更同步落地于 `kflow-explore` SKILL.md 与新增的 `references/clarify-convergence.md`
 
 ### v0.18.0 (2026-09-30)
 **变更档位一等机制、轻量档阶段裁剪、原型阶段直写产品级重设计、旧规格原型口径统一、版本管理规则收敛**
