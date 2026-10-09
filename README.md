@@ -2,7 +2,7 @@
 
 一套**文档驱动的阶段门控开发流程体系**，将软件开发从设计到交付的全流程标准化为一系列 Claude Code Skills，确保每个阶段产物可追溯、可验证。
 
-> **版本**: 0.18.0 | **更新时间**: 2026-09-30 | **适用版本**: KFlow Skills 体系 2.0.0+
+> **版本**: 0.19.0 | **更新时间**: 2026-10-09 | **适用版本**: KFlow Skills 体系 2.0.0+
 
 ---
 
@@ -435,6 +435,17 @@ openspec/
 ---
 
 ## 版本更新说明
+
+### v0.19.0 (2026-10-09)
+**多轮审查机制由预算制反转为收敛制、轮间摘要扩展到设计自审、原型验证轮次去重**
+- **轮次模型反转为收敛制（BREAKING）**：档位语义由「必须完成的目标轮次」翻转为**轮次上限**，全局下限统一为 1 轮（无例外），完整档上限由 10 降至 5（轻量 1 / 标准 2 设计·3 执行 / 完整 5）。终止判据改为**见证轮**——同时满足「零新发现 + 零修改 + 报告证明全维度全量遍历」的一轮；达上限仍无见证轮时进入**非收敛分支**（记录 `skill-suggestion.md` + AskUserQuestion + 可标记 ⚠️ 阻塞）。`.status.md` 执行轮次字段由 `{N} / 10` 改为 `{N} / {上限}`，并新增**终止原因**字段（`收敛` / `达上限`）供审计判读「为何停在第 4 轮」
+- **完整档评分底线由装饰变为有效**：`>8 且收敛` 即止，`≤8` 续审至上限 5——原规则「第 3 轮 >8 仍须做满 10 轮、第 10 轮 ≤8 已无处补审」的两头够不着被消除
+- **轮间摘要注入扩展到设计自审**：原仅执行类阶段具备的轮间摘要（`repetition.md` §13）解除被分层加载规则排除在设计类之外的限制，覆盖 explore / design / prototype-design / plan 的 SELFREV。移除「完成全部目标轮次」的冗余复扫后，「零发现」的可信度改由轮间因果保障，而非重复扫描次数——故本轮次模型的移除与摘要扩展在设计上不可分割，同变更落地
+- **轻量档不再豁免设计自审（BREAKING）**：设计自审由 0 轮改为 1 轮，补上原本完全缺失的语义审查；产物完整性门控保留为**附加硬门**
+- **回退重执行叠加反向**：由 `目标轮次 = max(档位基线, 映射)` 改为 `上限 = max(档位上限, 映射)`，影响范围映射 `>15` 由 10 改为 5，保留「返工验证不因低档而放松」原意
+- **原型验证轮次去重**：`html-prototype-workflow` 的「Playwright 5 轮全覆盖验证」与「导航合理性验证」两条与专门能力重复的 requirement 移除，改为一条「原型验证轮次的统一引用」，轮次规则收敛为单一来源；`prototype-navigation-verification` 与 `prototype-playwright-5round-verification` 由「5 轮强制执行」改为 `[1,5]` 收敛驱动
+- **既有规格漂移修正**：`round-counter` 的 `{N} / 10` 硬编码与「轮次不足 10/10 视为验收不通过」判据、`agent-iteration-execution` 与 `plan-self-review` 的 Purpose 段「强制 10 轮」、`triage-impact-assessment` 的 `Score > 15: 10 rounds` 与 `max(tier baseline, …)` 一并修正为轮次上限口径
+- **同步范围**：13 个能力（`tier-driven-repetition`、`agent-iteration-execution`、`round-counter`、`subagent-self-review`、`plan-self-review`、`flexible-repetition-mode`、`execution-repetition-mode`、`inter-round-summary`、`auto-subchange-traversal`、`defect-strike-limit`、`html-prototype-workflow`、`prototype-navigation-verification`、`prototype-playwright-5round-verification`）的 delta 已合并到主 specs；实现侧同步 18 个 `SKILL.md`、8 份 `references/repetition.md`、3 份 `self-review.md`、10 份 `references/gates.md` 及 `docs/designs/` 设计文档
 
 ### v0.18.0 (2026-09-30)
 **变更档位一等机制、轻量档阶段裁剪、原型阶段直写产品级重设计、旧规格原型口径统一、版本管理规则收敛**

@@ -72,14 +72,14 @@
 系统 SHALL 将自循环审查与交叉审查的记录存储在不同根目录。
 
 #### Scenario: self-reviews 目录
-- **WHEN** explore/prototype/design 阶段执行自审 且 目标轮次大于 0
+- **WHEN** explore/prototype/design 阶段执行自审
 - **THEN** 自审记录保存到 `self-reviews/{phase}/` 目录
 - **AND** 文件以时间戳命名 `{YYYYMMDD}-{HHMMSS}.md`
 
-#### Scenario: 轻量档不产生自审记录
-- **WHEN** 变更档位为 `轻量`（自审目标轮次为 0）
-- **THEN** `self-reviews/{phase}/` 目录 SHALL NOT 创建
-- **AND** 审计 SHALL NOT 因缺少自审记录判定为缺项
+#### Scenario: 轻量档自审记录
+- **WHEN** 变更档位为 `轻量`
+- **THEN** 自审 SHALL 执行 1 轮（全局下限）并产出 `self-reviews/{phase}/` 记录
+- **AND** 审计 SHALL NOT 因自审轮次少于档位轮次上限（收敛提前终止）判定为缺项
 
 #### Scenario: cross-reviews 目录
 - **WHEN** kflow-design 执行交叉审查

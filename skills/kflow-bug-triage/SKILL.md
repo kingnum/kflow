@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-triage
-version: 0.18.0
+version: 0.19.0
 description: Use when user needs bug triage/问题分诊、反馈、报告问题、报bug、提bug、问题诊断, or user reports an issue through kflow-guide. Independent diagnostic Skill (not a workflow phase). 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、问题登记（bugs/目录）、路由决策（REVISION模式或kflow-bug-fix）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md, bugs/）。
 license: MIT
 triggers:
@@ -219,13 +219,13 @@ REGISTER 步骤 SHALL 按以下规则执行：
 |--------------------|--------------------|
 | <= 3 | 1 轮 |
 | 4 ~ 15 | 3 轮 |
-| > 15 | 10 轮 |
+| > 15 | 5 轮 |
 
-推荐轮次 SHALL 表述为 `max(档位基线, 影响范围分数映射)` 的**影响映射分量**，SHALL NOT 表述为绝对轮次数值：
+推荐轮次 SHALL 表述为 `max(档位上限, 影响范围分数映射)` 的**影响映射分量**，SHALL NOT 表述为绝对轮次数值：
 
-- **档位基线**：由变更级 `.status.md` 的「变更档位」字段确定（轻量 1 / 标准 3 / 完整 10），字段缺失时按 `完整` 档处理。
+- **档位上限**：由变更级 `.status.md` 的「变更档位」字段确定（轻量 1 / 标准 3 / 完整 5），字段缺失时按 `完整` 档处理。
 - **影响映射分量**：由上述统一映射按影响范围分数取值。
-- **最终目标轮次**：由目标 Skill 在阶段启动时按 `max(档位基线, 影响范围分数映射)` 计算；`.status.md` 中无影响范围分数时取档位基线。
+- **最终轮次上限**：由目标 Skill 在阶段启动时按 `max(档位上限, 影响范围分数映射)` 计算；`.status.md` 中无影响范围分数时取档位上限。该上限为**外层迭代轮次的上限**（下限恒为 1 轮），达成见证轮收敛时 SHALL 提前终止。
 
 > 详细轮次决策逻辑参见 `skills/kflow-bug-triage/references/repetition.md` §14。
 

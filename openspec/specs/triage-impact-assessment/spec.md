@@ -66,8 +66,8 @@ The system SHALL provide a mapping from impact scope score to recommended repeti
 - **THEN** the triage report SHALL include round recommendations taken from the tier-driven-repetition mapping:
   - Score <= 3: 1 round
   - Score 4-15: 3 rounds
-  - Score > 15: 10 rounds
-- **AND** the recommendation SHALL be presented as the impact mapping component of `max(tier baseline, impact mapping)`, not as an absolute round count
+  - Score > 15: 5 rounds
+- **AND** the recommendation SHALL be presented as the impact mapping component of `max(tier upper bound, impact mapping)`, not as an absolute round count
 
 #### Scenario: No locally defined round ranges
 

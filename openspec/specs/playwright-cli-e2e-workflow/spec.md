@@ -142,6 +142,6 @@
 #### Scenario: summary.md 中的元素触达率趋势
 
 - **WHEN** 生成 summary.md
-- **THEN** 报告 SHALL 包含 10 轮元素触达率趋势表
+- **THEN** 报告 SHALL 包含各执行轮次的元素触达率趋势表
 - **AND** 若某轮触达率 < 100%，SHALL 标注原因和恢复情况
 - **AND** 若最终轮触达率 < 100%，SHALL 标记为阻塞（不得释放 E2E 测试门控）

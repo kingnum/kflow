@@ -9,7 +9,7 @@
 
 ```yaml
 name: kflow-api-test
-description: 接口单元测试阶段 - 使用 curl/HTTP 请求对 api-tests/ 中定义的接口逐条测试。适用于所有项目类型（前后端+纯后端）。档位驱动的弹性重复制执行（目标轮次由变更档位决定：轻量 1 / 标准 3 / 完整 10，回退重执行按影响范围分数叠加），每轮输出 round-{n}.md，最终输出 summary.md 含健康评分。覆盖 traceability.md「接口测试(ID)」列。阶段钩子引用 `skills/kflow-api-test/references/hooks.md`（每轮前 STOP→编译→迁移→START→健康检查，每轮后 STOP）。/接口测试/API测试/接口单元测试
+description: 接口单元测试阶段 - 使用 curl/HTTP 请求对 api-tests/ 中定义的接口逐条测试。适用于所有项目类型（前后端+纯后端）。档位驱动、收敛驱动的重复制执行（轮次上限由变更档位上限决定：轻量 1 / 标准 3 / 完整 5，回退重执行按 `max(档位上限, 影响范围分数映射)` 叠加），每轮输出 round-{n}.md，最终输出 summary.md 含健康评分。覆盖 traceability.md「接口测试(ID)」列。阶段钩子引用 `skills/kflow-api-test/references/hooks.md`（每轮前 STOP→编译→迁移→START→健康检查，每轮后 STOP）。/接口测试/API测试/接口单元测试
 license: MIT
 triggers:
   - 接口测试
@@ -240,22 +240,23 @@ API 测试阶段流程 (curl/HTTP 驱动):
 
 > ⚠ **子代理强制规则**（参见 skills/kflow-api-test/references/repetition.md §12）：本阶段（接口单元测试）主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收，SHALL NOT 直接执行接口测试主工作（curl测试/健康评分/报告生成等），无例外。子代理崩溃时轮次级重试（≤3 次），全部失败标记 ⚠️ 阻塞。
 
-接口单元测试阶段属于执行类阶段，采用档位驱动的弹性重复制模式，目标轮次按**档位基线**确定：
+接口单元测试阶段属于执行类阶段，采用档位驱动、收敛驱动的重复制模式，轮次上限按**档位上限**确定（轮次下限全局统一为 1 轮，无例外；变更档位表示上限，SHALL NOT 表示必须完成的固定轮次数）：
 
-| 变更档位 | 执行类阶段目标轮次 |
+| 变更档位 | 执行类阶段轮次上限 |
 |---------|------------------|
 | 轻量 | 1 |
 | 标准 | 3 |
-| 完整 | 10 |
+| 完整 | 5 |
 
 - **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段。
 - **缺省回退**：`.status.md` 不含「变更档位」字段时按 `完整` 档处理（等价历史行为）。
-- **回退重执行**：目标轮次取 `max(档位基线, 影响范围分数映射)`；`.status.md` 中无影响范围分数时取档位基线。
+- **回退重执行**：轮次上限取 `max(档位上限, 影响范围分数映射)`；`.status.md` 中无影响范围分数时取档位上限。
 - **执行方式**：子代理每轮遍历 api-tests/ 全部接口用例，逐条 curl/HTTP 执行。
+- **终止条件**：执行轮次 >= 1 且最近一轮为见证轮（零新发现 + 零修改 + 报告证明全部接口用例已完成全量遍历）→ 终止原因 `收敛`；执行轮次 = 轮次上限 → 终止原因 `达上限`。阶段终止时 SHALL 在 `.status.md` 写入终止原因。
 
 > **统一映射**：影响范围分数 → 轮次的映射唯一定义于 `tier-driven-repetition` 能力，本 Skill 仅引用，SHALL NOT 自行定义分数区间或轮次数值。
 
-> 通用规范（复杂度公式、轮次执行细节、prompt 规范、档位轮次决策、验证门控）参见 `skills/kflow-api-test/references/repetition.md`
+> 通用规范（复杂度公式、轮次执行细节、prompt 规范、档位轮次上限决策、验证门控）参见 `skills/kflow-api-test/references/repetition.md`
 
 ### 阶段特定参数
 
@@ -294,7 +295,7 @@ API 测试阶段流程 (curl/HTTP 驱动):
 - **后续阶段**：E2E 测试（前后端项目）或集成测试（纯后端项目）
 - **服务管理**：服务生命周期由变更级 agent 独占管理，子变更 agent 为纯消费者
 - **项目类型**：所有项目类型必须执行；轻量档下按阶段适用性声明条件执行
-- **执行模式**：档位驱动的弹性重复制，目标轮次按变更级 `.status.md` 的「变更档位」字段取档位基线（轻量 1 / 标准 3 / 完整 10），回退重执行取 `max(档位基线, 影响范围分数映射)`（映射见 `tier-driven-repetition` 能力，参见 skills/kflow-api-test/references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
+- **执行模式**：档位驱动、收敛驱动的重复制，轮次上限按变更级 `.status.md` 的「变更档位」字段取档位上限（轻量 1 / 标准 3 / 完整 5），回退重执行取 `max(档位上限, 影响范围分数映射)`（映射见 `tier-driven-repetition` 能力，参见 skills/kflow-api-test/references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环
 
 ---
 

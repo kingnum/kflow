@@ -1,6 +1,6 @@
 ---
 name: kflow-code-review
-version: 0.18.0
+version: 0.19.0
 description: Use when user needs code review/代码审查、审查代码、code review, or subchange coding is complete and ready for review. 按变更档位分级审查（轻量档单 Agent 单轮覆盖两视角全部检查项 / 标准档与完整档两视角并行），修复后验证按档位分支（轻量单轮复检 / 标准与完整分级重审闭环）。独立于编码阶段，子变更级必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，纯静态分析）。
 license: MIT
 triggers:
@@ -231,11 +231,11 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 审查形态按变更档位分支；档位读取自变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理）。
 
-| 变更档位 | 审查形态 | 目标轮次 |
+| 变更档位 | 审查形态 | 轮次上限 |
 |---------|---------|---------|
 | 轻量 | 单 Agent 单轮，串行覆盖「安全+规范」与「质量+性能」两视角的**全部**检查项 | 1 |
 | 标准 | 两视角并行（Agent 1 / Agent 2） | 3 |
-| 完整 | 两视角并行（Agent 1 / Agent 2） | 10 |
+| 完整 | 两视角并行（Agent 1 / Agent 2） | 5 |
 
 ### 轻量档：单 Agent 审查（覆盖两视角全部检查项）
 
@@ -305,7 +305,8 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 - **变更档位**: {轻量|标准|完整}
 - **审查文件数**: {数量}
 - **审查 Agent 数**: {轻量档 1 / 标准档与完整档 2}
-- **执行轮次**: {N} / {目标轮次}（轻量 1 / 标准 3 / 完整 10）
+- **执行轮次**: {N} / {轮次上限}（轻量 1 / 标准 3 / 完整 5；N >= 1 且（见证轮 ∨ N = 上限））
+- **终止原因**: {收敛|达上限}
 
 ## 审查结果汇总
 
@@ -381,7 +382,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 # 重复制（执行类阶段）
 
-代码审查阶段属于执行类阶段，采用重复制模式。目标轮次由变更档位决定：读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理），档位基线为 `轻量` 1 轮 / `标准` 3 轮 / `完整` 10 轮；回退重执行取 `max(档位基线, 影响范围分数映射)`，映射规则统一在 `tier-driven-repetition` 能力定义（参见 `skills/kflow-code-review/references/repetition.md` §14），本 SKILL.md SHALL NOT 另行定义区间。
+代码审查阶段属于执行类阶段，采用收敛制重复模式。**轮次下限恒为 1 轮（无例外），轮次上限由变更档位决定**：读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理），档位上限为 `轻量` 1 轮 / `标准` 3 轮 / `完整` 5 轮；回退重执行取 `max(档位上限, 影响范围分数映射)`，映射规则统一在 `tier-driven-repetition` 能力定义（参见 `skills/kflow-code-review/references/repetition.md` §14），本 SKILL.md SHALL NOT 另行定义区间。达成**见证轮**（零新发现 + 零修改 + 报告证明全部子变更与代码变更已完成全量遍历）时 SHALL 提前终止；达上限仍无见证轮 → 非收敛分支。
 
 ## 每轮工作内容
 
@@ -412,14 +413,14 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 低复杂度 (< 20 分) / 中复杂度 (20-50 分) / 高复杂度 (> 50 分)
 ```
 
-分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。无论复杂度高低，均须完成目标轮次（按变更档位取值：轻量 1 / 标准 3 / 完整 10）迭代后方可返回。
+分级阈值保留但仅用于信息分类，复杂度分写入 .status.md 备注列标注「仅供参考，不驱动执行行为」。复杂度不参与轮次决策——轮次上限仅由变更档位（回退时叠加影响范围分数映射）决定；迭代终止由见证轮收敛或达上限决定。
 
 ## 执行流程
 
 ```
 1. 复杂度评估 → 写入 .status.md 备注列（仅信息展示，不驱动执行行为）
 
-1.5 INIT → 读取变更级 .status.md 的「变更档位」字段（缺失按完整档处理），按档位基线确定目标轮次 N（轻量 1 / 标准 3 / 完整 10；回退重执行取 max(档位基线, 影响范围分数映射)），写入 .status.md 执行轮次为 1 / N
+1.5 INIT → 读取变更级 .status.md 的「变更档位」字段（缺失按完整档处理），按档位上限确定轮次上限 N（轻量 1 / 标准 3 / 完整 5；回退重执行取 max(档位上限, 影响范围分数映射)），写入 .status.md 执行轮次为 1 / N
 
 2. 构建阶段专属提示词
    ├── 分层加载（基础层 + 执行层）:
@@ -435,16 +436,17 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
    │   「每轮遍历全部已完成编码的子变更，每个子变更内遍历全部代码变更独立执行完整审查。
    │     更新 .status.md 中执行轮次计数器为当前轮次号。
    │     禁止按轮次分段分配工作重点——每轮均须对所有子变更的全部代码变更执行完整检查。
-   │     必须完成全部目标轮次（按目标轮次取值，见 .status.md 执行轮次 1/N）迭代后才可返回验收报告，禁止在达到目标轮次前返回。
-   │     若当前轮次无新发现且无可执行工作，仍须递增计数器并继续。」
-   ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/本轮建议关注），注入下一轮子代理 prompt（参见 repetition-model.md §13）
+   │     执行轮次 SHALL 不少于 1 轮且不超过轮次上限 N；当某轮零新发现且零修改、且报告证明
+   │     全部子变更与代码变更已完成全量遍历时，该轮构成见证轮，SHALL 提前返回验收报告。
+   │     达成收敛或达到轮次上限之前 SHALL NOT 无理由返回。」
+   ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/本轮建议关注），注入下一轮子代理 prompt（参见 repetition.md §13）
    └── 完成承诺: COMPLETED
 
 3. 启动 Agent 迭代子代理 (Agent(description, prompt, run_in_background))
    └── 子代理内维持按变更档位的审查形态 + 修复后验证机制
 
 4. 主 Agent 验收
-   ├── 轮次: .status.md 执行轮次 = N / N（N 为目标轮次，由变更档位确定）
+   ├── 轮次: .status.md 执行轮次 >= 1 且（最近一轮为见证轮 或 执行轮次 = 轮次上限 N）
    ├── 产物: code-review.md 存在且格式正确，含问题追踪矩阵
    ├── 门控: 按档位分支——轻量档 单 Agent 高 = 0 且 中 < 3；标准/完整档 Agent 1 高 = 0 且 Agent 2 高 = 0 且 Agent 2 中 < 3
    ├── 闭环: 所有高/中严重度问题已修复并验证
@@ -456,8 +458,8 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 | 情况 | 处理方式 |
 |------|---------|
 | 通过 | 更新 .status.md → 释放接口单元测试阶段门控 |
-| 轮次不足（< 目标轮次 N） | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
-| 轮次达标但产物不合格 | 记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑 |
+| 无见证轮且未达轮次上限 | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
+| 达上限仍无见证轮，或产物不合格 | 进入非收敛分支：记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑；用户选「否」→ 标记 ⚠️ 阻塞 |
 
 ---
 
@@ -470,7 +472,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 | 前置阶段 | 编码 | 门控依赖 |
 | 后续阶段 | 接口单元测试（子变更级）→ E2E 测试（前后端项目） | 阶段链 |
 | 关系说明 | 从 `kflow-code` 拆分出的独立 Skill | 原 `kflow-code` 不再包含代码审查子阶段 |
-| 执行模式 | 重复制（内嵌按档位的审查形态） | 档位驱动轮次决策（轻量 1 / 标准 3 / 完整 10，参见 skills/kflow-code-review/references/repetition.md §14），复杂度评估仅信息展示，主 Agent 验收闭环 |
+| 执行模式 | 重复制（内嵌按档位的审查形态） | 档位驱动轮次上限（轮次下限 1、上限 轻量 1 / 标准 3 / 完整 5，参见 skills/kflow-code-review/references/repetition.md §14），见证轮收敛终止，复杂度评估仅信息展示，主 Agent 验收闭环 |
 
 # 核心提醒
 

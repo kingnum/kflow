@@ -1,7 +1,7 @@
 ---
 name: kflow-explore
-version: 0.18.0
-description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - detects project type (frontend+backend vs pure backend), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tier-driven self-review (轻量 0 / 标准 2 / 完整 10 rounds, score floor > 8 for 完整 tier only) and two-action save rule for external info gathering.
+version: 0.19.0
+description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - detects project type (frontend+backend vs pure backend), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tier-driven self-review (floor 1 round, cap 轻量 1 / 标准 2 / 完整 5 by tier, witness-round convergence termination; score floor > 8 applies to 完整 tier only) and two-action save rule for external info gathering.
 license: MIT
 triggers:
   - 开始新需求
@@ -34,7 +34,7 @@ allowed-tools:
   → 功能点原子级拆分 + 变更档位初判 + 用户覆盖确认 + 阶段集合提示
   → 关联关系分析
   → 输出 functional-designs/（index.md + part-NN.md 目录化结构）
-  → 自循环审查（按变更档位轮次，完整性/闭环性/必要性/清晰性）
+  → 自循环审查（按变更档位轮次上限，完整性/闭环性/必要性/清晰性，见证轮收敛终止）
   → 原型设计决策门控（AskUserQuestion，仅前后端项目，prototype_decision 标记幂等）
   → 标记阶段完成
 ```
@@ -48,8 +48,8 @@ allowed-tools:
 - `functional-designs/index.md` **不再包含**子变更划分方案（子变更划分后置到 design 阶段）
 - `functional-designs/` 至少包含一个 `part-NN.md` 分册文件
 - `.status.md` 必须存在并标记设计探索阶段为 ✅ 完成，且基本信息含「变更档位」字段（`{轻量|标准|完整}`）
-- `self-reviews/explore/` 目录下自审报告文件份数与变更档位匹配（标准档 2 份；完整档 10 份；轻量档 0 份，不创建该目录）
-- 轻量档下改以产物完整性门控替代自审：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符
+- `self-reviews/explore/` 目录下自审报告文件份数不超过档位轮次上限（轻量 ≤1 份；标准 ≤2 份；完整 ≤5 份；收敛提前终止时份数少于上限属正常情形）
+- 全部档位均执行自审（下限 1 轮），轻量档附加产物完整性门控：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符
 
 # 输入要求
 
@@ -67,7 +67,7 @@ allowed-tools:
 | 功能设计文档 | `docs/changes/{change}/functional-designs/` | ✅ 必须 | 需求描述、项目类型、功能点清单（每功能点含：用户故事、所属页面与菜单、可执行操作、表单项定义、业务规则、业务流程上下文）、功能点关联关系、功能结构树（模块→功能点树状图，含FP-ID/优先级/简述）、核心业务流程图、变更类型判断、版本号+统一修订记录表（合并原需求变更记录与修订记录，格式：版本/日期/修订类型/修订内容/影响功能点/触发阶段） |
 | 领域词汇表 | `CONTEXT.md`（项目根目录） | ✅ 必须 | 项目级领域术语定义，首次构建或增补。每术语含：定义、别名、边界 |
 | 状态文件 | `docs/changes/{change}/.status.md` | ✅ 必须 | 标记设计探索阶段完成，含项目类型字段、**变更档位**字段、执行备注 |
-| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | 🔶 条件 | 自审报告（标准档 2 份 / 完整档 10 份；轻量档 0 份不产出），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
+| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | 🔶 条件 | 自审报告（份数 ≤ 档位轮次上限：轻量 ≤1 / 标准 ≤2 / 完整 ≤5；收敛提前终止时少于上限属正常情形），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
 
 # 执行流程
 
@@ -92,7 +92,8 @@ allowed-tools:
 │  │   ├── 检测 CONTEXT.md 是否存在                                │
 │  │   ├── 不存在 → 首次构建（从需求描述提炼领域术语）             │
 │  │   ├── 已存在 → 增补检查（新术语/模糊术语对齐）                │
-│  │   └── 对齐检查（功能点术语 vs CONTEXT.md 定义）               │
+│  │   ├── 对齐检查（功能点术语 vs CONTEXT.md 定义）               │
+│  │   └── 收敛门: 清单为空或已降级（进入 SPLIT 前置条件）         │
 │  7. SPLIT     → 拆分功能点到原子级                                │
 │  8. TIER      → 变更档位初判 + 用户覆盖确认                       │
 │  │   ├── 按「变更类型 + 功能点数」映射初判档位                    │
@@ -108,8 +109,8 @@ allowed-tools:
 │  │   子代理发现问题 → 直接修复 + 生成自审报告                     │
 │  │   主 Agent 读报告 + 确认修复 → 启动下一轮子代理                │
 │  │   报告路径: self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md       │
-│  │   轻量 0 轮（跳过，改以产物完整性门控）/ 标准 2 轮 / 完整 10 轮 │
-│  │   评分底线 > 8 仅完整档适用                                   │
+│  │   下限 1 轮 / 上限 轻量 1·标准 2·完整 5（见证轮收敛终止）   │
+│  │   评分底线 > 8 且收敛 仅完整档适用                            │
 │  12. PROTO_GATE → 原型设计决策门控（仅前后端项目）             │
 │  │   ├── 轻量档 → 不主动询问，跳过本门控（用户显式要求时仍可执行）│
 │  │   ├── 检查 .status.md 中是否存在 prototype_decision 标记     │
@@ -131,7 +132,7 @@ allowed-tools:
    └── 产品需求: {platform-name}
 2. 创建目录 docs/changes/{change}/:
    └── functional-designs/ 目录
-   ⚠️ 不在此创建 self-reviews/explore/ —— 该目录仅在自审目标轮次 > 0（标准档/完整档）时由 SELFREV 步骤创建
+   ⚠️ 不在此创建 self-reviews/explore/ —— 该目录在 SELFREV 步骤（步骤 11）执行时创建（全部档位均执行自审，下限 1 轮）
 3. 创建 docs/changes/{change}/.status.md（变更级状态文件）:
    └── 填写基本信息: 创建时间、变更类型（初始标记）、变更档位（待 TIER 判定）、
        项目类型（待检测）、变更描述、当前阶段=设计探索
@@ -207,7 +208,7 @@ allowed-tools:
 
 #### CONTEXT.md 文件格式
 
-详见 [references/context-template.md](references/context-template.md) — 文件格式模板、术语提炼规则（定义精确性/别名必查/边界明确/过载术语处理/禁止实现耦合）、消费链。
+`CONTEXT.md` 的格式 SHALL 以 [references/context-template.md](references/context-template.md) 为准——该文件是 CONTEXT.md 格式的**唯一权威来源**，含文件格式模板（项目名标题、术语列表〔定义/别名/边界〕、修订记录三要素）、术语提炼规则（定义精确性/别名必查/边界明确/过载术语处理/禁止实现耦合）与消费链。系统 SHALL NOT 将 CONTEXT.md 的格式定义委托给任何外部技能的格式文件。
 
 ### 6b. 需求澄清
 
@@ -219,7 +220,23 @@ allowed-tools:
 - **业务规则**：前置条件、校验规则、触发条件、后置结果
 - **业务流程**：用户视角的完整业务流程闭环（从触发点到最终结果）
 
+### 6c. 收敛门（进入 SPLIT 的前置条件）
+
+CLARIFY SHALL 维护「未决问题清单」，并在进入 SPLIT 之前要求清单为**空**；清单中每一项须被**消解**，或被**显式降级**为 `待补充` 并记录降级理由与责任阶段。存在未处理项时 SHALL NOT 进入 SPLIT。要点：
+
+- **候选来源**：由页面结构/菜单、可执行操作、表单项、业务规则、业务流程**五个内容域逐域遍历**产生候选；清单为空时 SHALL 说明五域均已遍历且未发现歧义
+- **消歧路径限定**：仅可经 (a) 澄清提问、(b) 精确化 CONTEXT.md 术语定义、(c) 代码库/事实查库解析；SHALL NOT 以扩增功能设计内容（新增功能点、字段、章节或分支）的方式消歧
+- **非必要不增加**：SHALL NOT 为假想分支或将来需求预留功能点、字段与章节；歧义须**收敛为一个确定答案**，SHALL NOT 铺开为多个可能
+- **提问纪律**：事实项自动查证（不占用用户注意力），仅决策项提交用户，且一次只提交一项；提问遵循依赖序遍历
+- **落点**：清单与降级项写入变更级 `.status.md`，不新增独立产物文件
+
+详见 [references/clarify-convergence.md](references/clarify-convergence.md) — 收敛硬门、候选清单生成规则、消歧路径限定、内容克制、提问纪律，以及降级标记 `待补充`（须含降级理由与责任阶段）与 TODO/TBD 占位符的区分。
+
 ## 步骤 7：SPLIT — 拆分功能点到原子级 + 标记 FP 类型
+
+### 7.0 前置条件：收敛门已通过（硬门）
+
+进入本步骤前 SHALL 确认步骤 6c 的**未决问题清单**为空，或清单中每一项均已消解、已显式降级为 `待补充`（含降级理由与责任阶段）。存在未处理项时 SHALL NOT 进入 SPLIT，须返回 6c 逐项消解或降级后再继续。规则依据见 [references/clarify-convergence.md](references/clarify-convergence.md)。
 
 ### 7a. 原子级判定标准
 
@@ -316,9 +333,9 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 
 | 档位 | explore 自身影响 |
 |------|----------------|
-| 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 跳过；PROTO_GATE 不主动询问 |
-| 标准 | 标准产出；SELFREV 2 轮 |
-| 完整 | 完整产出；SELFREV 10 轮（含评分底线） |
+| 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 1 轮（下限即上限）；PROTO_GATE 不主动询问 |
+| 标准 | 标准产出；SELFREV 至多 2 轮（见证轮收敛即止） |
+| 完整 | 完整产出；SELFREV 至多 5 轮（含评分底线，且需达成收敛） |
 
 > 档位判定公式、单向升档安全阀与缺省回退规则详见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.1.1 与 `docs/designs/skills/kflow-explore.md`。
 
@@ -413,6 +430,7 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 - skills/kflow-explore/references/state-values.md（摘要）
 - skills/kflow-explore/references/gates.md（当前阶段相关门控）
 - skills/kflow-explore/references/self-review.md
+- skills/kflow-explore/references/clarify-convergence.md（创意层，explore 专属：CLARIFY 收敛门规则）
 
 > **子代理隔离规则**：自审子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管自审执行。同一任务最多重试 3 次（1 次初始 + 3 次重试），全部失败后标记 ⚠️ 阻塞并提示用户。重新创建的子代理是全新 Agent，不依赖前上下文。
 
@@ -428,14 +446,17 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 | 发现节奏 | 后期才暴露其他维度问题 | 早期就暴露各类问题 |
 | 收敛趋势 | 不明显 | 自然收敛（后期问题越来越少） |
 
-### 变更档位自审轮次
+### 变更档位自审轮次上限
 
 轮次取值、评分底线与轻量档产物门控详见 [references/self-review.md](references/self-review.md) §4。要点：
 
 - **档位读取**：读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档处理。
-- **轮次取值**：轻量 0 轮 / 标准 2 轮 / 完整 10 轮。
-- **评分底线**：仅完整档适用——各维度评分均 > 8 方通过，未达标补审至 10 轮上限。
-- **轻量档**：完全跳过 SELFREV，不启动自审子代理、不创建 `self-reviews/explore/` 目录、不产出自审报告；改以产物完整性门控替代（产物全部存在且无 TODO/TBD/未填充占位符，否则阻塞）。
+- **轮次取值**：下限恒为 1 轮（无例外）；上限 轻量 1 / 标准 2 / 完整 5。档位表示**轮次上限**，SHALL NOT 表示必须完成的固定轮次数。
+- **终止条件**：**见证轮**（零新发现 + 零修改 + 报告证明全维全量遍历）出现即终止（终止原因 `收敛`）；否则继续至轮次上限（终止原因 `达上限`）。
+- **评分底线**：仅完整档适用——各维度评分均 > 8 **且**最近一轮为见证轮方通过，未达标补审至 5 轮上限。
+- **轻量档**：执行 1 轮 SELFREV（下限即上限），SHALL NOT 豁免自审——启动自审子代理、创建 `self-reviews/explore/` 目录并产出自审报告；产物完整性门控保留为附加硬门（产物全部存在且无 TODO/TBD/未填充占位符，否则阻塞）。
+- **非收敛分支**：达轮次上限仍无见证轮 → 记录 `skill-suggestion.md` + AskUserQuestion → 可标记 ⚠️ 阻塞。
+- **轮间摘要**：第 2 轮起的子代理 prompt SHALL 注入前轮摘要（见 `references/self-review.md` §1 与 `references/repetition.md` §13）；见证轮候选须逐项复核摘要中的全部前轮修复。
 
 ### 审查维度与检查规则
 
@@ -447,34 +468,39 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 自审执行流程（子代理串行，每轮全维度，按变更档位分级）:
 
 1. 读取变更级 .status.md「变更档位」字段（缺失按 完整 档处理）
-2. 轻量档（0 轮）→ 跳过自审：不创建 self-reviews/explore/ 目录、不启动子代理，
-   改以产物完整性门控（functional-designs/ 产物全部存在且无占位符）后直接进入步骤 12
+2. 确定轮次上限：轻量 1 / 标准 2 / 完整 5（下限恒为 1 轮，无 0 轮豁免路径）
 3. 创建 self-reviews/explore/ 目录，启动第一轮子代理:
    Agent(
      subagent_type="claude",
      description="Explore 自审 Round 1",
      prompt="读取 functional-designs/ 下的所有产物文件，按完整性、闭环性、必要性、清晰性全部四个维度独立检查。发现问题直接修复产物文件，生成审查报告到 self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。"
    )
+   └── 第 2 轮起：prompt 注入前轮摘要，并加入「见证轮候选须逐项复核摘要中列出的全部前轮修复」要求
 4. 子代理返回审查报告路径
-5. 主 Agent 读取报告，确认修复内容
+5. 主 Agent 读取报告，确认修复内容，并判定本轮是否为见证轮（零新发现 + 零修改 + 全量遍历）
 6. 修复不合理 → 主 Agent 补充修复
-7. 启动下一轮子代理（Round N+1），步骤同 Round 3
+7. 本轮为见证轮 → 终止；否则（未达轮次上限）启动下一轮子代理（Round N+1），步骤同 Round 3
 8. SHALL NOT 并行启动多个子代理（串行执行）
 9. 轮次控制：
-   ├── 标准档 → 完成全部 2 轮
-   └── 完整档 → 完成全部 10 轮，各维度评分均 > 8 即通过；未达标补审至 10 轮上限
-10. 全部完成后标记阶段完成
+   ├── 全部档位 → 至少执行 1 轮
+   ├── 轻量档（上限 1）→ 第 1 轮即为见证轮时终止，否则因已达上限而终止
+   ├── 标准档（上限 2）→ 出现见证轮即提前终止，至多 2 轮
+   └── 完整档（上限 5）→ 各维度评分均 > 8 且最近一轮为见证轮方通过；未达标补审至 5 轮上限
+10. 终止时写入 .status.md 终止原因（收敛 / 达上限）；达上限仍无见证轮 → 非收敛分支
+11. 终止后标记阶段完成
 ```
 
 ### 强制执行规则
 
-- 轻量档 SHALL NOT 执行 SELFREV、SHALL NOT 启动自审子代理、SHALL NOT 创建 `self-reviews/explore/` 目录或产出自审报告；以产物完整性门控替代
-- 标准档 SHALL 完成全部 2 轮自审，不允许提前终止
-- 完整档 SHALL 完成全部 10 轮自审，且各维度评分均 > 8 方通过；未达标补审至 10 轮上限
-- 即使连续多轮无新问题，也须完成全部目标轮次（标准 2 轮 / 完整 10 轮）
+- 全部档位 SHALL 至少执行 1 轮自审，SHALL NOT 存在 0 轮豁免路径
+- 轻量档 SHALL 执行 1 轮自审（启动子代理、创建 `self-reviews/explore/` 目录并产出自审报告），产物完整性门控保留为附加硬门
+- 标准档 SHALL 至多执行 2 轮自审；出现见证轮即提前终止
+- 完整档 SHALL 至多执行 5 轮自审，且各维度评分均 > 8 且最近一轮为见证轮方通过；未达标补审至 5 轮上限
+- SHALL NOT 为凑满轮次上限而继续执行无增量价值的轮次
 - SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审
 - SHALL NOT 并行启动多个子代理（串行执行，前一轮完成后再启动下一轮）
-- 自审全部完成后标记阶段完成，释放 prototype 或 design 阶段门控
+- 终止时 SHALL 写入 .status.md 终止原因（收敛 / 达上限）；达上限仍无见证轮 SHALL 进入非收敛分支
+- 自审终止后标记阶段完成，释放 prototype 或 design 阶段门控
 
 ## 步骤 12：PROTO_GATE — 原型设计决策门控（仅前后端项目）
 
@@ -553,7 +579,7 @@ prototype_decision: 已选择原型设计 | 已跳过
 ### 越界处理
 
 当 explore 阶段发现信息不足以完成功能设计时：
-1. 在当前阶段文档中标记"待补充"并说明缺少什么
+1. 在当前阶段文档中标记"待补充"，并同步记录**降级理由**与**责任阶段**——该标记与步骤 6c 收敛门的显式降级为**同一语义**，须写入变更级 `.status.md` 的未决问题清单；缺降级理由或责任阶段即退化为被禁止的占位符（详见 [references/clarify-convergence.md](references/clarify-convergence.md) §六）
 2. 记录到 `docs/skill-suggestion.md`
 3. 禁止自创新文档来填补信息空缺
 4. 禁止越界输出技术方案或接口定义
@@ -583,7 +609,7 @@ CONTEXT.md 消费链:
 
 - **FP 类型标记**：每个功能点 SHALL 标记为「后端」或「前端」，无法归类的 FP 必须继续拆分，类型作为后续子变更划分类型校验的依据
 - **子变更划分不在此阶段执行**：后置到详细设计阶段完成后基于完整设计认知划分
-- **档位自审强制执行（子代理串行 + 重复制）**：轮次按变更档位取值（轻量 0 轮跳过 / 标准 2 轮 / 完整 10 轮）；完整档各维度评分均 > 8 方通过（未达标补审至 10 轮上限）。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），子代理边审边修，串行不可并行，不可提前终止
+- **档位自审强制执行（子代理串行 + 重复制）**：轮次下限 1 轮、上限按变更档位取值（轻量 1 / 标准 2 / 完整 5）；完整档各维度评分均 > 8 且最近一轮为见证轮方通过（未达标补审至 5 轮上限）。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），子代理边审边修，串行不可并行，达成见证轮收敛即终止，SHALL NOT 为凑满上限而空转
 - **两动作规则**：每 2 次外部信息收集操作后立即保存关键发现到 functional-designs/
 - **CONTEXT.md**：项目级领域词汇表，首次构建后持续增补，后续阶段只引用不修改
 - **functional-designs/ 结构**：index.md（含版本号、需求变更记录表、配置项影响矩阵）+ part-NN.md 目录化结构
@@ -591,6 +617,7 @@ CONTEXT.md 消费链:
 - **变更粒度**：产品级 → 完整流程；功能需求级 → 标准流程；功能缺陷级 → 简化流程
 - **档位阶段集合提示**：档位初判（含用户覆盖）后 SHALL 向用户输出该档位的阶段集合——轻量档为「计划→编码→代码审查」恒执行，接口单元测试/E2E测试/集成测试为条件适用（由 `kflow-design` 的阶段适用性声明判定）；标准档与完整档全阶段执行、无裁剪。提示为信息性输出，不作为新的确认点；轻量档不改动探索流程本身
 - **禁止越界**：不得输出技术方案、接口定义、数据模型、子变更划分方案
+- **需求澄清收敛门**：CLARIFY SHALL 维护未决问题清单，清单为空或每项已消解/已显式降级（`待补充` + 降级理由 + 责任阶段）方可进入 SPLIT；候选须由五个内容域逐域遍历产生，SHALL NOT 以直接置空代替；SHALL NOT 以扩增功能设计内容的方式消歧；事实项自动查证、决策项一次一项
 - **变更名称**：使用 kebab-case 格式
 - **原型设计决策门控**：探索完成后 SHALL 询问是否进入原型设计（前后端项目），写入 `prototype_decision` 标记控制幂等，避免重复询问
 - **CONTEXT.md 对齐检查**：增补后必须执行术语对齐检查

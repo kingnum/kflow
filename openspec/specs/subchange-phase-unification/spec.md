@@ -51,7 +51,7 @@ Defines the subchange phase unification (5 phases) with per-round batch sync and
 
 #### Scenario: 基本信息区包含执行轮次
 - **WHEN** 子变更 .status.md 进入执行类阶段
-- **THEN** `## 基本信息` 区 MUST 包含 `**执行轮次**: {N} / 10` 字段
+- **THEN** `## 基本信息` 区 MUST 包含 `**执行轮次**: {N} / {上限}` 字段
 - **AND** 该字段位于 `**当前阶段**` 之后、`**执行类型**` 同级区域
 
 #### Scenario: 等待同步状态的使用场景

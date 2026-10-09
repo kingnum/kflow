@@ -11,10 +11,10 @@
 
 - **WHEN** kflow-prototype-design 执行 BUILD、VERIFY 和 SELFREV 步骤
 - **THEN** 产物 SHALL 按以下结构存放：
-  - `self-reviews/prototype/{YYYYMMDD}-{HHMMSS}.md` — 按 self-review 分级轮次产出的自审报告
-  - `self-reviews/prototype/nav-check/round-{1..5}.md` — 5 轮导航合理性验证报告
-  - `self-reviews/prototype/playwright-check/round-{1..5}.md` — 5 轮 Playwright 验证报告
-  - `self-reviews/prototype/ux-check/round-{1..5}.md` — 5 轮 UX 规则审查报告
+  - `self-reviews/prototype/{YYYYMMDD}-{HHMMSS}.md` — 按 self-review 分级轮次上限产出的自审报告
+  - `self-reviews/prototype/nav-check/round-{N}.md` — 导航合理性验证报告（下限 1 / 上限 5，见证轮收敛终止）
+  - `self-reviews/prototype/playwright-check/round-{N}.md` — Playwright 验证报告（下限 1 / 上限 5，见证轮收敛终止）
+  - `self-reviews/prototype/ux-check/round-{N}.md` — UX 规则审查报告（下限 1 / 上限 5，见证轮收敛终止）
   - `self-reviews/prototype/contrast-check/report.md` — 对比度检测报告
   - `self-reviews/prototype/cdn-crossref-check/report.md` — CDN 扫描 + 交叉引用 + 必检产物 + 清单一致 综合报告
 - **AND** SHALL NOT 将验证报告散落在产品级原型目录 `docs/designs/prototypes/` 下
@@ -28,7 +28,7 @@
 #### Scenario: 子代理自动审查验证路径产出全部报告
 
 - **WHEN** 审查方式为"子代理自动审查验证"
-- **THEN** 系统 SHALL 产出自审报告、5 轮导航验证报告、5 轮 Playwright 验证报告、5 轮 UX 规则审查报告、对比度检测报告与 BUILD 报告
+- **THEN** 系统 SHALL 产出自审报告、导航验证报告、Playwright 验证报告、UX 规则审查报告、对比度检测报告与 BUILD 报告（各验证报告的轮次不超过上限 5）
 
 #### Scenario: 目录自动创建
 

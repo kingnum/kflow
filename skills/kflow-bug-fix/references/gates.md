@@ -6,7 +6,7 @@
 > **加载层级**: 基础层
 > **适用阶段**: 全部
 >
-> **v1.1.0**: 门控按变更档位分支——进入计划门控（Gate 2）按三档检查审查产物，代码审查门控新增轻量档单 Agent 判定，自审记录份数检查改为按档位目标轮次。新增「变更档位」字段的透传与校验要求。
+> **v1.1.0**: 门控按变更档位分支——进入计划门控（Gate 2）按三档检查审查产物，代码审查门控新增轻量档单 Agent 判定，自审记录份数检查改为按档位轮次上限。新增「变更档位」字段的透传与校验要求。
 >
 > **v1.2.0**: 新增 §1.2「阶段适用性声明与四态判定」——轻量档裁剪阶段的门控判定矩阵与无依据跳过的阻塞规则；进入接口单元测试/E2E测试/集成测试/归档四个门控新增裁剪分支。
 
@@ -118,9 +118,9 @@
    - 检查: 详细设计状态 = ✅ 完成 [全部]
    - 检查: 变更级 detailed-design.md 文件存在 [全部]
    - 检查: 自审记录按档位分支验证 [全部]:
-     ├── 轻量档: 不执行自审（目标轮次 0）→ self-reviews/design/ 目录不存在是合法状态，SHALL NOT 判为缺项
-     ├── 标准档: self-reviews/design/ 存在且自审报告份数 = 2
-     └── 完整档: self-reviews/design/ 存在且自审报告份数 = 10
+     ├── 轻量档: 执行 1 轮自审 → self-reviews/design/ 存在且含 1 份自审报告；缺失判为缺项
+     ├── 标准档: self-reviews/design/ 存在且自审报告份数 ≤ 2（收敛提前终止时 < 2 为正常）
+     └── 完整档: self-reviews/design/ 存在且自审报告份数 ≤ 5（收敛提前终止时 < 5 为正常）
    - 检查: 设计审查产物按档位分支验证 [全部]:
      ├── 轻量档（简化模式）: cross-reviews/{timestamp}/synthesis.md 存在且标记审查通过；SHALL NOT 检查独立视角报告
      ├── 标准档（两视角模式）: business-technical-review.md + security-quality-review.md + synthesis.md 均存在且最新批次 synthesis.md 标记审查通过；SHALL NOT 检查四份独立视角报告
@@ -249,12 +249,12 @@
 
 9. 中断恢复产物完整性验证门控（kflow-resume GATE 步骤）:
    - 对 .status.md 中标记为「✅ 完成」的每个阶段执行产物验证:
-     - 编码: 执行轮次=N/N（N 由弹性轮次决策确定）+ traceability 编码列=100% + 无占位符
+     - 编码: 执行轮次 >= 1 且（最近一轮为见证轮 或 = 轮次上限）+ traceability 编码列=100% + 无占位符
      - 代码审查: code-review.md 存在 + 审查通过标记
      - 接口测试: api/summary.md 存在 + 健康评分达标
      - E2E 测试: e2e/summary.md 存在
      - 集成测试: integration/summary.md 存在
-     - 详细设计: detailed-design.md + self-reviews/design 份数 = 自审目标轮次（首次 10 / 非首次弹性）+ cross-reviews ≥1 批次 + traceability 设计列=100%
+     - 详细设计: detailed-design.md + self-reviews/design ≥1 份自审报告 + cross-reviews ≥1 批次 + traceability 设计列=100%
      - 原型设计: docs/designs/prototypes/manifest.md 与变更级 prototype-changes.md 存在 + 用户评审=✅已确认 或 ⏭️跳过 + BUILD 报告存在（self-reviews/prototype/cdn-crossref-check/report.md）
    - 验证不通过 → 拒绝认定该阶段完成，标记为「⚠️ 需修订」，调度回退重新执行
    - 仅验证「✅ 完成」阶段，不检查「⏳ 待开始」或「🔄 进行中」阶段

@@ -29,7 +29,7 @@
 
 #### Scenario: 轻量档单轮执行
 - **WHEN** 变更档位为 `轻量`
-- **THEN** 代码审查目标轮次 SHALL 为 1 轮
+- **THEN** 代码审查轮次上限 SHALL 为 1 轮
 - **AND** SHALL NOT 启动多轮重复制迭代
 
 #### Scenario: 轻量档检查项不得缩减

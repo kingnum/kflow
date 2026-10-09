@@ -98,14 +98,13 @@
 #### Scenario: 执行四项自动验证
 
 - **WHEN** 审查方式为"子代理自动审查验证"
-- **THEN** 系统 SHALL 依次执行 5 轮导航验证、5 轮 Playwright 验证、5 轮 UX 规则审查
+- **THEN** 系统 SHALL 依次执行导航验证、Playwright 验证、UX 规则审查（各为下限 1 轮、上限 5 轮，达成见证轮即收敛终止）
 - **AND** 系统 SHALL 执行对比度检测（WCAG 相对亮度计算，标记 <4.5:1 的颜色对），报告输出到 `self-reviews/prototype/contrast-check/report.md`
-- **AND** 系统 SHALL 执行原型阶段 SELFREV，轮次按 self-review 分级规则确定
+- **AND** 系统 SHALL 执行原型阶段 SELFREV，轮次按 self-review 分级规则确定（下限 1、上限按变更档位）
 - **AND** 各项验证 SHALL 串行执行，SHALL NOT 并行启动多个子代理
 
 #### Scenario: 自动验证不通过时修复后继续
 
 - **WHEN** 某一轮自动验证发现问题
 - **THEN** 主 Agent SHALL 修复原型产物后启动下一轮
-- **AND** SHALL NOT 提前终止尚未完成的轮次
-- **AND** 系统 SHALL 完成全部规定轮次后方可进入用户评审（REVIEW）
+- **AND** 系统 SHALL 在达成见证轮（收敛）或达到轮次上限后方可进入用户评审（REVIEW）

@@ -6,45 +6,46 @@
 
 ## Requirements
 
-### Requirement: Change-tier repetition round decision
+### Requirement: Change-tier repetition round upper bound
 
-The system SHALL determine repetition target rounds from the change tier, and for re-execution SHALL use the higher of the tier baseline and the impact scope score mapping. The fixed 10-round minimum for first execution SHALL NOT exist.
+The system SHALL determine the repetition round **upper bound** from the change tier, and for re-execution SHALL use the higher of the tier upper bound and the impact scope score mapping. Rounds SHALL never be fewer than the global floor of 1. The fixed 10-round minimum for first execution SHALL NOT exist.
 
-#### Scenario: First execution uses the tier baseline
+#### Scenario: First execution uses the tier upper bound
 
 - **WHEN** an execution phase (code/code-review/api-test/e2e-test/integration-test/bug-fix, and plan) is executed for the first time in a change
-- **THEN** the target rounds SHALL be the tier baseline: 轻量 = 1 round, 标准 = 3 rounds, 完整 = 10 rounds
-- **AND** for the plan phase, whose iteration loop is a product self-review, the target rounds SHALL be the design self-review basis instead: 轻量 = 0 rounds, 标准 = 2 rounds, 完整 = 10 rounds
-- **AND** all standard repetition rules apply (full sweep each round, natural convergence)
-- **AND** the target rounds SHALL NOT be fixed at 10 regardless of tier
+- **THEN** the round upper bound SHALL be: 轻量 = 1 round, 标准 = 3 rounds, 完整 = 5 rounds
+- **AND** for the plan phase, whose iteration loop is a product self-review, the round upper bound SHALL be the design self-review basis instead: 轻量 = 1 round, 标准 = 2 rounds, 完整 = 5 rounds
+- **AND** the execution rounds SHALL be at least 1
+- **AND** all repetition rules apply (full sweep each round, convergence-driven termination)
+- **AND** the rounds SHALL NOT be fixed at 10 regardless of tier
 
-#### Scenario: Re-execution uses the higher of tier baseline and impact mapping
+#### Scenario: Re-execution uses the higher of tier upper bound and impact mapping
 
 - **WHEN** an execution phase is re-executed after a phase rollback (REVISION or rollback re-execution)
 - **THEN** the system SHALL read the impact scope score from .status.md "Recent Revision Info"
-- **AND** the target rounds SHALL be `max(tier baseline, impact mapping)` where the impact mapping is:
+- **AND** the round upper bound SHALL be `max(tier upper bound, impact mapping)` where the impact mapping is:
   - Score <= 3: 1 round
   - Score 4-15: 3 rounds
-  - Score > 15: 10 rounds
-- **AND** the determined rounds SHALL be written to .status.md as the target round count
+  - Score > 15: 5 rounds
+- **AND** the determined upper bound SHALL be written to .status.md as the target round count
 
-#### Scenario: No impact score falls back to the tier baseline
+#### Scenario: No impact score falls back to the tier upper bound
 
 - **WHEN** a phase is re-executed but no impact scope score is available in .status.md
-- **THEN** the target rounds SHALL be the tier baseline for the change tier
+- **THEN** the round upper bound SHALL be the tier upper bound for the change tier
 
 #### Scenario: Change tier is not determined by project design basis
 
-- **WHEN** determining the target rounds for any execution phase
+- **WHEN** determining the round upper bound for any execution phase
 - **THEN** the system SHALL NOT use whether the project has design basis (docs/CONTEXT.md existence, docs/designs/detailed-designs/ emptiness) as an input
 
 ### Requirement: Flexible repetition verification gate
 
-When target rounds are fewer than 10, the system SHALL enforce a verification gate to ensure quality.
+When an execution phase terminates by convergence before reaching the tier round upper bound, the system SHALL enforce a verification gate to ensure quality.
 
 #### Scenario: Verification gate for reduced rounds
 
-- **WHEN** target rounds < 10 (flexible mode)
+- **WHEN** 执行轮次 < tier round upper bound at termination
 - **THEN** the system SHALL enforce the following verification criteria:
   - Affected items: 100% coverage verification (every affected functional point/interface fully checked)
   - Full sweep: at least 1 round of complete full-sweep traversal (all work items)
@@ -76,7 +77,7 @@ The system SHALL track phase execution history in .status.md to distinguish firs
   - Phase name
   - Execution count (1st, 2nd, etc.)
   - Last execution type (First Execution / REVISION / Rollback Re-execution)
-  - Rounds completed (e.g., 3/3, 10/10)
+  - Rounds completed (e.g., 3/3, 2/5)
   - Impact scope score (if applicable)
   - Notes
 

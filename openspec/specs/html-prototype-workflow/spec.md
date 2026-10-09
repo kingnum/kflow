@@ -1,7 +1,7 @@
 # html-prototype-workflow Specification
 
 ## Purpose
-定义原型设计阶段中 HTML 原型的子代理委托生成、design-prompt.md 文件化、prompt 上下文组装、导航合理性验证、Playwright 5 轮全覆盖验证、输出产物和流程编排的需求规格。
+定义原型设计阶段中 HTML 原型的子代理委托生成、design-prompt.md 文件化、prompt 上下文组装、原型验证轮次的统一引用（导航合理性验证与 Playwright 全覆盖验证的轮次规则均引用对应专门能力）、输出产物和流程编排的需求规格。
 
 ## Requirements
 
@@ -102,47 +102,22 @@
 - **AND** 修订完成后再次进入评审
 - **AND** 修订确认后 SHALL 重新更新产品级 `docs/designs/prototypes/manifest.md`
 
-### Requirement: Playwright 5 轮全覆盖验证
+### Requirement: 原型验证轮次的统一引用
 
-系统 SHALL 仅在该变更选择「子代理自动审查验证」审查方式时，在原型交付前使用 Playwright 执行 5 轮全覆盖验证，每轮启动独立子代理执行全部 5 项检查（页面可达性、按钮/链接全覆盖点击、表单全覆盖、弹窗/抽屉全覆盖、端到端业务流程）；该变更选择「人工审查」时 SHALL 完全跳过该验证，不保留兜底轮次。
+html-prototype-workflow 中的导航合理性验证（9.1 节）与 Playwright 全覆盖验证（9.2 节）的轮次规则 SHALL 引用对应的专门能力：导航验证引用 `prototype-navigation-verification` 能力的「导航合理性验证轮次（收敛驱动）」，Playwright 验证引用 `prototype-playwright-5round-verification` 能力的「Playwright 全覆盖验证轮次（收敛驱动）」。本能力 SHALL NOT 另行定义固定 5 轮或「不允许提前终止」的轮次规则。
 
-#### Scenario: 5 轮 Playwright 全覆盖验证
-- **WHEN** 导航合理性验证（9.1 节）完成
-- **AND** 该变更选择「子代理自动审查验证」审查方式
-- **AND** Playwright 可用且原型为 flow demo 交互原型
-- **THEN** 系统 SHALL 执行 5 轮子代理串行 Playwright 验证
-- **AND** 每轮子代理 SHALL 执行全部 5 项检查
-- **AND** 每轮验证 pageerror 数量 SHALL 为 0
-- **AND** 每轮子代理完成后主 Agent SHALL 读取报告并修复发现问题
-- **AND** SHALL 完成全部 5 轮，不允许提前终止
+#### Scenario: 轮次规则单一来源
 
-#### Scenario: 人工审查路径跳过 Playwright 验证
+- **WHEN** 需要确定导航合理性验证或 Playwright 验证的轮次
+- **THEN** 规则 SHALL 取自对应的专门能力（下限 1、上限 5、见证轮收敛终止）
+- **AND** 本能力 SHALL NOT 重复定义轮次数值与终止条件
+
+#### Scenario: 验证方式为人工审查时跳过
+
 - **WHEN** 该变更选择「人工审查」审查方式
-- **THEN** 系统 SHALL 跳过 Playwright 5 轮全覆盖验证
-- **AND** SHALL NOT 启动任何 Playwright 验证子代理
+- **THEN** 系统 SHALL 跳过导航合理性验证与 Playwright 全覆盖验证
+- **AND** SHALL NOT 启动任何验证子代理
 - **AND** 系统 SHALL 直接进入用户评审 REVIEW 步骤
-
-#### Scenario: Playwright 不可用降级
-- **WHEN** Playwright 未安装或执行失败
-- **THEN** 系统降级为手动文件分析
-- **AND** 在验证报告中记录降级原因
-
-### Requirement: 导航合理性验证
-
-系统 SHALL 仅在该变更选择「子代理自动审查验证」审查方式时，在 BUILD 步骤的 CDN 扫描（7.1）和交叉引用检查（7.2）通过后、Playwright 验证之前，执行 5 轮导航合理性验证（9.1 节），每轮启动独立子代理执行全部 5 项检查；该变更选择「人工审查」时 SHALL 完全跳过该验证。
-
-#### Scenario: 5 轮导航合理性验证
-- **WHEN** BUILD 步骤的 CDN 扫描（7.1）和交叉引用检查（7.2）通过
-- **AND** 该变更选择「子代理自动审查验证」审查方式
-- **THEN** 系统 SHALL 执行 5 轮子代理串行导航合理性验证
-- **AND** 每轮子代理 SHALL 执行全部 5 项检查（页面可达性、返回/取消按钮合理性、表单切换链、弹窗/抽屉导航、跨页面流程闭环）
-- **AND** 每轮子代理完成后主 Agent SHALL 读取报告并修复发现问题
-- **AND** SHALL 完成全部 5 轮，不允许提前终止
-
-#### Scenario: 人工审查路径跳过导航合理性验证
-- **WHEN** 该变更选择「人工审查」审查方式
-- **THEN** 系统 SHALL 跳过 5 轮导航合理性验证
-- **AND** SHALL NOT 启动任何导航合理性验证子代理
 
 ### Requirement: design-prompt.md 文件输出
 

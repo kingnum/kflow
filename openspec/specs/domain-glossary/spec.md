@@ -64,7 +64,7 @@
 
 ### Requirement: CONTEXT.md 格式
 
-`CONTEXT.md` SHALL 遵循 grill-with-docs 的 CONTEXT-FORMAT.md 格式定义。
+`CONTEXT.md` SHALL 遵循 KFlow 自有的 `skills/kflow-explore/references/context-template.md`（开发布局）或 `.claude/skills/kflow-explore/references/context-template.md`（消费布局）所定义的格式。该格式权威 SHALL 在安装布局中可解析，且 SHALL 随 KFlow Skill 一同安装并自包含——系统 SHALL NOT 将 `CONTEXT.md` 的格式权威委托给任何外部技能的格式文件。
 
 #### Scenario: CONTEXT.md 文件结构
 

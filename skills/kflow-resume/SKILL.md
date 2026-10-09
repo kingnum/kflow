@@ -1,6 +1,6 @@
 ---
 name: kflow-resume
-version: 0.18.0
+version: 0.19.0
 description: Use when user needs to resume interrupted work/继续、恢复、resume {change-name}, or when kflow-guide routes to RESUME mode.
 license: MIT
 triggers:
@@ -82,7 +82,7 @@ VERIFY(存在性验证) -> STATE(优先级链读状态) -> LOCATE(断点定位) 
 │     ├── 检查前置阶段产物是否存在                                  │
 │     ├── 检查前置阶段状态是否为 ✅ 完成                            │
 │     ├── 产物完整性验证（对已完成阶段二次校验）                    │
-│     │   ├── 执行轮次 = N / N（N 由弹性轮次决策确定）                  │
+│     │   ├── 执行轮次 >= 1 且（见证轮 ∨ = 轮次上限）                  │
 │     │   ├── 产物文件存在性                                       │
 │     │   └── traceability 覆盖率达标                              │
 │     ├── 门控通过 -> 继续                                         │
@@ -190,13 +190,13 @@ Priority 5: tasks.md（兜底）
 
 3. 产物完整性验证（对标记为 ✅ 完成的阶段执行二次校验）:
    ├── 3a. 执行轮次验证:
-   │   ├── 读取 .status.md 执行轮次计数器
+   │   ├── 读取 .status.md 执行轮次计数器与终止原因字段（收敛 / 达上限）
    │   ├── 执行类阶段（plan/code/code-review/api-test/e2e-test/integration-test/bug-fix）
-   │   │   └── 要求: 执行轮次 = N / N（N 由弹性轮次决策确定）
+   │   │   └── 要求: 执行轮次 >= 1 且（最近一轮为见证轮 或 执行轮次 = 轮次上限）
    │   ├── 自审类阶段（explore/prototype/design）
-   │   │   └── 要求: 自审轮次 = 10 / 10
+   │   │   └── 要求: 执行轮次 >= 1 且（最近一轮为见证轮 或 执行轮次 = 轮次上限）
    │   └── 验证类阶段（prototype VERIFY）
-   │       └── 要求: 导航验证 = 5 / 5, Playwright 验证 = 5 / 5
+   │       └── 要求: 导航验证与 Playwright 验证各执行 1~5 轮且（见证轮 ∨ = 上限 5）
    ├── 3b. 产物文件存在性:
    │   ├── 设计探索: functional-designs/index.md + part-NN.md + CONTEXT.md
    │   ├── 原型设计: docs/designs/prototypes/manifest.md + prototype-changes.md
