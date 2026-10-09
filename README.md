@@ -280,11 +280,13 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 
 ## 目录结构速查
 
+> 以下为**安装 KFlow 后的业务项目**（Skills 的运行目标项目）的目录形态。本仓库是 Skills 的开发仓库，自身结构不同——Skill 实现产物在 `skills/`、体系设计文档在 `docs/designs/`、规格在 `openspec/specs/`，均不出现在业务项目中。
+
 ```
-VERSION                                # 统一版本号（Skill 体系版本标识）
 .claude/
-├── settings.local.json                # 项目级 Claude Code 配置
-└── skills/                            # 运行时 Skills（每个 Skill 自包含，零外部依赖）
+├── settings.json                      # kflow-init 生成的权限配置（幂等合并，不覆盖既有内容）
+├── settings.local.json                # 本地个人配置（可选，Claude Code 标准文件）
+└── skills/                            # 安装的 KFlow Skills（每个 Skill 自包含，零外部依赖）
     ├── kflow-guide/SKILL.md
     ├── kflow-explore/SKILL.md
     ├── kflow-code/                    #   单个 Skill 的目录形态（示例）
@@ -297,8 +299,9 @@ VERSION                                # 统一版本号（Skill 体系版本标
     │   │   └── service-lifecycle.md   #     服务生命周期管理：daemon 模式、端口冲突检测
     │   └── scripts/                   #   运行该阶段所需的脚本（无则省略）
     │       └── with_server.py         #     服务管理脚本（--daemon/--status/--health/--stop-all）
-    ├── ...                            # 18 个 kflow-* Skills + openspec-* + 设计 Skills
-    └── skill-creator/SKILL.md
+    └── ...                            # 共 18 个 kflow-* Skills
+
+.kflow-runtime/                        # 运行时隔离区（Playwright 隔离安装等，受 .gitignore 排除）
 
 docs/
 ├── CONTEXT.md                        # 项目级领域词汇表
@@ -326,6 +329,7 @@ docs/
 │       ├── self-reviews/             # 自循环审查记录（explore/prototype/design）
 │       ├── cross-reviews/            # 交叉审查报告（完整四视角/标准两视角/轻量单 synthesis，批次目录，按变更档位）
 │       ├── migrations/               # 数据库迁移（变更级）
+│       ├── bugs/                     # 问题登记（index.md + bug-NNN-NNN.md 分页详情）
 │       └── subchanges/               # 子变更目录
 │           └── {subchange-name}/
 │               ├── .status.md        # 子变更状态文件
@@ -353,9 +357,6 @@ docs/
 │   └── changelog.md                  # 变更日志（按年归档）
 │
 └── adr/                              # 架构决策记录
-
-openspec/
-└── specs/                            # OpenSpec 规格文件（131 个核心机制/阶段规格）
 ```
 
 ---
