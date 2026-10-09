@@ -53,9 +53,9 @@
 
 | 变更档位 | 接口单元测试 | E2E测试 | 集成测试 | 审计形态 |
 |---------|-------------|---------|---------|---------|
-| 轻量 | 条件适用（⏭️ 可裁剪） | 条件适用（⏭️ 可裁剪） | 条件适用（⏭️ 可裁剪） | 主 Agent 轻量自检 |
-| 标准 | 必须 | 前后端必须 | 必须 | 七维度加权评分 |
-| 完整 | 必须 | 前后端必须 | 必须 | 七维度加权评分 |
+| 轻量 | 条件适用（⏭️ 可裁剪） | 条件适用（⏭️ 可裁剪） | 条件适用（⏭️ 可裁剪） | 单一子代理轻量自检（三项检查项） |
+| 标准 | 必须 | 前后端必须 | 必须 | 单一子代理四维度加权评分 |
+| 完整 | 必须 | 前后端必须 | 必须 | 单一子代理四维度加权评分 |
 
 > 轻量档以单一子变更为前提（跳过 DIVIDE 划分）；功能点类型混合时不成立，系统升档为 `标准`。裁剪仅适用于轻量档，标准档与完整档的阶段集合维持既有规则不变。
 
@@ -87,7 +87,7 @@
 | `kflow-integration-test` | 集成测试 | 变更级 | 必须（轻量档条件适用） | 集成测试执行、内聚四分法修复循环、架构评估自动触发 |
 | `kflow-status` | 状态总结 | — | 按需 | 未归档变更汇总、子变更进度矩阵 |
 | `kflow-archive` | 归档 | 变更级 | 必须 | 变更归档、集成测试门控、索引更新、设计合并 |
-| `kflow-audit` | 使用评估 | — | 归档门控+按需 | 按变更档位分流：轻量档主 Agent 轻量自检（三项检查项）/ 标准与完整档七维度评估、审计报告、审计回退路由 |
+| `kflow-audit` | 使用评估 | — | 归档门控+按需 | 按变更档位分流：轻量档单一子代理轻量自检（三项检查项）/ 标准与完整档单一子代理四维度评估、审计报告、审计回退路由 |
 | `kflow-init` | 环境初始化 | — | 按需 | 环境能力发现、工具推荐矩阵、toolchain.md 输出 |
 | `kflow-resume` | 中断恢复 | — | 按需 | 变更名定位断点、优先级链读取状态、调度阶段 Skill |
 
@@ -137,7 +137,7 @@ docs/designs/
 - [skills/kflow-integration-test.md](skills/kflow-integration-test.md) - 集成测试阶段（变更级，内聚四分法修复循环 + 架构评估自动触发）
 - [skills/kflow-status.md](skills/kflow-status.md) - 状态总结（含子变更进度矩阵）
 - [skills/kflow-archive.md](skills/kflow-archive.md) - 归档阶段（含集成测试门控、功能/详细设计合并、原型改动登记）
-- [skills/kflow-audit.md](skills/kflow-audit.md) - 使用评估（含七维度审计、归档门控集成）
+- [skills/kflow-audit.md](skills/kflow-audit.md) - 使用评估（含四维度审计、归档门控集成）
 - [skills/kflow-init.md](skills/kflow-init.md) - 环境初始化（含工具推荐矩阵、toolchain.md 输出）
 - [skills/kflow-resume.md](skills/kflow-resume.md) - 中断恢复（变更名定位断点、优先级链读取、直接调度阶段 Skill）
 
@@ -198,7 +198,7 @@ docs/designs/
 | 数据库迁移 | 变更级管理 | migrations/ 目录，含迁移脚本和回滚脚本 |
 | 多环境配置 | 四环境 | service-guide.md 区分 dev/test/staging/prod |
 | 跨变更冲突检测 | 编码前检查 | 检查活跃变更影响文件重叠 |
-| 使用评估 | 归档前自动审计 + 手动调用 | 七维度评估（流程合规性、产物完整性、审查质量、测试充分性、缺陷管理、效率指标、Post-mortem汇总） |
+| 使用评估 | 归档前自动审计 + 手动调用 | 四维度评估（流程与产物合规性 45%、审查与缺陷闭环 30%、测试充分性 15%、效率与改进 10%） |
 | 环境初始化 | 能力发现 + 工具推荐 | 检测 MCP servers 和 Skills，评估组合可行性，输出 toolchain.md |
 | 缺陷修复等级 | 三级分离 | `kflow-bug-triage` 负责用户反馈四层溯源诊断；`kflow-bug-fix` 负责子变更级二分法；`kflow-integration-test` 内聚变更级四分法 |
 | 设计合并 | 归档时合并到产品级 | 功能设计合并到 docs/designs/functional-designs/（前后端：{menu}/index.md + part-NN.md；纯后端：{domain}.md）+ 详细设计分散更新到 detailed-designs/ 6 文件（含 config-items.md、error-handling.md），标注来源变更 |

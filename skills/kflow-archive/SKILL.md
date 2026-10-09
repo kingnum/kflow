@@ -1,6 +1,6 @@
 ---
 name: kflow-archive
-version: 0.19.0
+version: 0.20.0
 description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md）。
 license: MIT
 triggers:
@@ -33,7 +33,7 @@ allowed-tools:
 - 所有子变更各阶段完成检查（计划、编码、接口单元测试、E2E测试）
 - **裁剪合法性检查**：标记 `⏭️ 不适用` 的阶段均须在变更级 `.status.md` 的「阶段适用性声明」区有对应判定依据；无声明依据的 `⏭️` SHALL 阻塞归档
 - 集成测试通过检查（`test-reports/integration/summary.md` 存在且标记"集成测试通过"；集成测试阶段被合法裁剪时视为满足，SHALL NOT 要求该文件存在，见「归档条件」）
-- **审计门控通过**（kflow-audit 七维度评估通过，无阻塞/严重问题）
+- **审计门控通过**（kflow-audit 四维度评估通过，无阻塞/严重问题）
 - **用户验收确认通过**（`.status.md` 中「用户验收确认」状态 = ✅ 已确认 或 ⏭️ 用户跳过）
 
 # 输入要求
@@ -256,7 +256,7 @@ Options:
 - [ ] 前后端项目：所有子变更 E2E测试和接口单元测试通过
 - [ ] 纯后端项目：所有子变更接口单元测试通过
 - [ ] 集成测试通过（test-reports/integration/summary.md 存在且标记"集成测试通过"）
-- [ ] 审计门控通过（kflow-audit 七维度评估，无阻塞/严重问题）
+- [ ] 审计门控通过（kflow-audit 四维度评估，无阻塞/严重问题）
 - [ ] ADR 索引已更新（如有新增 ADR，docs/adr/index.md 已包含本次变更的 ADR）
 - [ ] 无遗留的阻碍记录
 - [ ] **用户验收确认通过**（.status.md 中「用户验收确认」状态 = ✅ 已确认 或 ⏭️ 用户跳过）

@@ -1,6 +1,6 @@
 ---
 name: kflow-explore
-version: 0.19.0
+version: 0.20.0
 description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - detects project type (frontend+backend vs pure backend), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tier-driven self-review (floor 1 round, cap 轻量 1 / 标准 2 / 完整 5 by tier, witness-round convergence termination; score floor > 8 applies to 完整 tier only) and two-action save rule for external info gathering.
 license: MIT
 triggers:

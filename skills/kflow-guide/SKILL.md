@@ -1,6 +1,6 @@
 ---
 name: kflow-guide
-version: 0.19.0
+version: 0.20.0
 description: Use when user needs workflow guidance/流程指引、帮助、如何开始、下一步做什么 or says 继续/恢复/resume with a change name. Also use when user expresses intent to start new work/做、添加、实现、修复、搭建 or design revision/设计需调整/功能设计需调整/原型.*调整/详细设计.*调整/接口设计.*改/修改.*设计/调整.*设计.自动检测用户意图、项目类型、活跃变更，降低使用门槛，无需记忆所有 Skill 名称。RESUME 路由 + NEW CHANGE 指引 + 定向指引 + DESIGN_REVISION 设计修订分流。**RESUME 路由优先级最高，匹配「继续/恢复/resume + 变更名」时禁止 Plan Mode，直接进入 Skill 路由链。**
 license: MIT
 triggers:
@@ -405,7 +405,7 @@ NEW CHANGE 指引流程:
 | 接口单元测试 | — | 接口单元测试（子变更级） |
 | E2E测试 | kflow-e2e-test | 浏览器自动化测试（前后端项目必须） |
 | 集成测试 | kflow-integration-test | 变更级集成测试、四分法修复循环（内聚） |
-| 审计 | kflow-audit | 七维度评估、审计报告（归档门控） |
+| 审计 | kflow-audit | 四维度评估、审计报告（归档门控） |
 | 归档 | kflow-archive | 变更归档、设计合并、索引更新 |
 | 产物诊断 | kflow-verify | 独立诊断 Skill（非流程阶段），七维度全阶段产物诊断、严重度分级、修复路由 |
 | 问题分诊 | kflow-bug-triage | 独立诊断 Skill（非流程阶段），四层溯源定位问题源头并路由修复 |

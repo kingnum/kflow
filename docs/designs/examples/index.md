@@ -49,7 +49,7 @@
 
 | 示例 | 文件 | 内容说明 |
 |------|------|---------|
-| 审计报告示例 | [audit-report.md](audit-report.md) | 七维度审计报告（含评分、问题分级、效率统计） |
+| 审计报告示例 | [audit-report.md](audit-report.md) | 四维度审计报告（含维度证据、评分、问题分级、效率统计） |
 | 工具链配置示例 | [toolchain.md](toolchain.md) | toolchain.md 配置（含 MCP/Skills 扫描、方案对比） |
 | 集成测试修复报告示例 | [integration-fix-report.md](integration-fix-report.md) | 变更级缺陷修复报告（含四分法根因分类） |
 | 产品级领域文档示例 | [product-domain-doc.md](product-domain-doc.md) | docs/designs/functional-designs/{module}.md（含功能+技术设计、来源标注） |
