@@ -1,6 +1,6 @@
 ---
 name: kflow-code
-version: 0.20.1
+version: 0.21.0
 description: Use when user needs coding implementation/编码实现、TDD、功能实现, or subchange task plan is ready for execution. 子变更级TDD编码——编译验证、数据库迁移管理、多Agent并行编码、跨变更冲突检测。必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:

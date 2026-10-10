@@ -10,7 +10,7 @@
 
 | 文件 | 章节 | 说明 |
 |------|------|------|
-| [01-project-types.md](01-project-types.md) | 一、项目类型区分机制 | 前后端/纯后端项目检测规则、阶段差异 |
+| [01-project-types.md](01-project-types.md) | 一、项目类型区分机制 | 前后端/纯后端项目检测规则、阶段差异、项目级记录与继承（真源与三级读取优先级、确认时机、静默校验与漂移、显式覆盖、变更级快照冻结） |
 | [02-directory-structure.md](02-directory-structure.md) | 二、目录结构规范 | 变更管理目录、命名规范、文档拆分策略 |
 | [03-status-and-tasks.md](03-status-and-tasks.md) | 三~四、状态文件 + 任务清单 | 状态文件格式、门控规则、任务清单模板 |
 | [04-gates-and-transitions.md](04-gates-and-transitions.md) | 五~六、条件产物引用 + 阶段流转 | 产物引用图例、正向/回退流转、归档条件、设计合并 |

@@ -2,7 +2,7 @@
 
 一套**文档驱动的阶段门控开发流程体系**，将软件开发从设计到交付的全流程标准化为一系列 Claude Code Skills，确保每个阶段产物可追溯、可验证。
 
-> **版本**: 0.20.1 | **更新时间**: 2026-10-10 | **适用版本**: KFlow Skills 体系 2.0.0+
+> **版本**: 0.21.0 | **更新时间**: 2026-10-10 | **适用版本**: KFlow Skills 体系 2.0.0+
 
 ---
 
@@ -436,6 +436,16 @@ docs/
 ---
 
 ## 版本更新说明
+
+### v0.21.0 (2026-10-10)
+**项目类型确认前移到 init、变更创建链路改为继承项目级记录、新增漂移检测与用户显式覆盖逃生舱**
+- **确认动作前移到 init（BREAKING）**：`kflow-init` 在 DETECT 之后新增 CONFIRM 步骤，使用 AskUserQuestion 确认一次项目类型并写入项目级记录；re-init 时记录已存在且重扫结果一致则**静默复用**，仅扫描与记录冲突时才询问。原先「每次创建变更都重扫项目根目录 + 让用户重复回答同一个问题」的行为被消除——项目类型是仓库级不变量，却被当成变更级变量反复重算
+- **变更创建链路改为三级回落读取（BREAKING）**：`kflow-explore` 的 TYPEDET/CONFIRM 两步由「重扫 + 询问」改写为读取回落链（CLAUDE.md「项目画像」项目类型行 → `docs/toolchain.md` 头部字段 → 就地检测）＋**静默一致性校验**；一致则静默继承并输出「项目类型: X（继承项目级记录）」，冲突才 AskUserQuestion 复核。`kflow-guide` 的 NEW CHANGE 创建前指引同样由「重新扫描判定」改为「读取项目级记录」，SHALL NOT 在指引阶段重新扫描判定
+- **未 init 项目降级自愈**：项目级记录完全缺失时，变更创建链路检测并确认**一次**，补写 `docs/toolchain.md` 头部（不写 CLAUDE.md「项目画像」——该区块为 init 整体扫描产物，残缺写入会与受管 marker 替换逻辑冲突），此后该项目的所有变更均静默继承
+- **新增漂移检测**：变更创建时对项目类型执行一次静默一致性校验，扫描前端工程标识并与项目级记录比对；一致时不打扰用户，冲突时用 AskUserQuestion 展示冲突项并请求裁决、可选更新记录；校验因项目根目录不可读等原因无法完成时沿用记录值继续，**不阻塞**变更创建
+- **新增用户显式覆盖逃生舱**：用户在需求描述中显式声明项目类型（或指出既有记录有误）时，该声明优先于项目级记录与扫描结果并触发记录更新——为初始误判（扫描信号与错误记录一致，一致性校验无法发现）提供纠正通道，且不要求用户重新执行 init
+- **变更级快照保留、来源改为继承**：`.status.md` 与 `functional-designs/index.md` 的项目类型字段继续保留并在变更生命周期内冻结（否则已 `⏭️ 跳过` 的阶段会中途复活），取值来自项目级记录而非重新检测；消费侧（`kflow-design`、`kflow-prototype-design`、`kflow-api-test`、`kflow-e2e-test`、`kflow-verify`、`kflow-audit`、`kflow-archive`）只读快照的判定逻辑与读取路径不变
+- **同步范围**：3 个能力（`project-type-detection`、`devflow-guide`、`init-claude-md-injection`）的 delta 已合并到主 specs；实现侧同步 `skills/kflow-init/SKILL.md`、`skills/kflow-explore/SKILL.md`、`skills/kflow-guide/SKILL.md` 与 `docs/designs/core-mechanisms/01-project-types.md` 等设计文档及变更模板
 
 ### v0.20.1 (2026-10-10)
 **注入模板作用域修正、marker 版本判据内化、注入规则规格去重**

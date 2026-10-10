@@ -1,7 +1,7 @@
 ---
 name: kflow-guide
-version: 0.20.1
-description: Use when user needs workflow guidance/流程指引、帮助、如何开始、下一步做什么 or says 继续/恢复/resume with a change name. Also use when user expresses intent to start new work/做、添加、实现、修复、搭建 or design revision/设计需调整/功能设计需调整/原型.*调整/详细设计.*调整/接口设计.*改/修改.*设计/调整.*设计.自动检测用户意图、项目类型、活跃变更，降低使用门槛，无需记忆所有 Skill 名称。RESUME 路由 + NEW CHANGE 指引 + 定向指引 + DESIGN_REVISION 设计修订分流。**RESUME 路由优先级最高，匹配「继续/恢复/resume + 变更名」时禁止 Plan Mode，直接进入 Skill 路由链。**
+version: 0.21.0
+description: Use when user needs workflow guidance/流程指引、帮助、如何开始、下一步做什么 or says 继续/恢复/resume with a change name. Also use when user expresses intent to start new work/做、添加、实现、修复、搭建 or design revision/设计需调整/功能设计需调整/原型.*调整/详细设计.*调整/接口设计.*改/修改.*设计/调整.*设计.自动检测用户意图、活跃变更，读取项目级项目类型记录，降低使用门槛，无需记忆所有 Skill 名称。RESUME 路由 + NEW CHANGE 指引 + 定向指引 + DESIGN_REVISION 设计修订分流。**RESUME 路由优先级最高，匹配「继续/恢复/resume + 变更名」时禁止 Plan Mode，直接进入 Skill 路由链。**
 license: MIT
 triggers:
   - 流程指引
@@ -22,11 +22,11 @@ allowed-tools:
 
 # 角色
 
-KFlow 流程入口。不做阶段执行，只做意图识别和路由分发。将用户的自然语言输入映射到正确的阶段 Skill，并检测项目上下文（类型、活跃变更、冲突）。正则解析优先（继续/恢复/resume + 变更名 -> RESUME 路由到 kflow-resume），关键词意图识别映射，活跃变更检测，项目类型判断，NEW CHANGE 创建前指引（类型分类+命名建议+冲突预检），定向指引，指引错误记录到 skill-suggestion.md。
+KFlow 流程入口。不做阶段执行，只做意图识别和路由分发。将用户的自然语言输入映射到正确的阶段 Skill，并检测项目上下文（类型、活跃变更、冲突）。正则解析优先（继续/恢复/resume + 变更名 -> RESUME 路由到 kflow-resume），关键词意图识别映射，活跃变更检测，项目类型读取（继承项目级记录，SHALL NOT 重新扫描判定），NEW CHANGE 创建前指引（类型分类+命名建议+冲突预检），定向指引，指引错误记录到 skill-suggestion.md。
 
 # 任务
 
-接收用户输入 -> 变更名正则解析（优先级最高）-> 关键词意图识别 -> 活跃变更检测 -> 项目类型判断 -> NEW CHANGE 指引（条件触发）或 定向指引（条件触发）-> 输出流程概览和下一步建议 -> 指引错误记录（按需）。
+接收用户输入 -> 变更名正则解析（优先级最高）-> 关键词意图识别 -> 活跃变更检测 -> 项目类型读取（继承项目级记录）-> NEW CHANGE 指引（条件触发）或 定向指引（条件触发）-> 输出流程概览和下一步建议 -> 指引错误记录（按需）。
 
 # 门控检查
 
@@ -56,7 +56,7 @@ KFlow 流程入口。不做阶段执行，只做意图识别和路由分发。�
 
 ```
 INPUT -> PARSE(变更名正则/设计修订检测) -> INTENT(关键词映射)
-    -> CHANGES(活跃变更) -> TYPECHECK(项目类型) -> GUIDE(输出) -> ERRORLOG(按需)
+    -> CHANGES(活跃变更) -> TYPEREAD(项目类型读取) -> GUIDE(输出) -> ERRORLOG(按需)
 ```
 
 ```
@@ -77,7 +77,9 @@ INPUT -> PARSE(变更名正则/设计修订检测) -> INTENT(关键词映射)
 │     ├── 无活跃变更 -> 引导创建新变更（NEW CHANGE 指引）          │
 │     ├── 单个活跃变更 -> 自动选择该变更                            │
 │     └── 多个活跃变更 -> 列出供用户选择                            │
-│  5. TYPECHECK  项目类型判断（确定基础阶段集合）                   │
+│  5. TYPEREAD   项目类型读取（读取项目级记录，确定基础阶段集合）   │
+│     ├── 读取优先级 1) CLAUDE.md 项目画像 -> 2) toolchain.md 头部 │
+│     ├── 前两级均不可用 -> 就地扫描检测（仅展示，不写文件）        │
 │     ├── 前后端项目 -> 前后端阶段集合（9 阶段）                    │
 │     └── 纯后端项目 -> 纯后端阶段集合（7 阶段）                    │
 │  6. GUIDE      输出流程概览和下一步建议                           │
@@ -243,9 +245,17 @@ NEW CHANGE vs 活跃变更裁决：
 - 用户表达新变更意图 + 有活跃变更 -> 先确认是否创建新变更（不同于继续）
 - 用户未明确 -> AskUserQuestion 确认
 
-## 步骤 5：TYPECHECK — 项目类型判断
+## 步骤 5：TYPEREAD — 项目类型读取
 
-根据检测结果确定基础阶段集合，再叠加变更档位裁剪：
+**读取项目级项目类型记录**并据此确定基础阶段集合，再叠加变更档位裁剪。SHALL NOT 在流程指引中重新扫描判定项目类型。读取优先级与降级规则由 `project-type-detection` 能力定义（`docs/designs/core-mechanisms/01-project-types.md` §1.4），本 Skill SHALL NOT 重复定义：
+
+| 优先级 | 读取源 |
+|--------|--------|
+| 1 | CLAUDE.md「## 项目画像」表的「项目类型」行 |
+| 2 | `docs/toolchain.md` 头部的「项目类型」字段 |
+| 3 | 前两级均不可用（项目从未 init）→ 就地扫描检测，仅用于指引展示，见下 |
+
+第 3 级（就地扫描）的检测标识：
 
 | 检测标识 | 判断为 |
 |---------|--------|
@@ -261,6 +271,8 @@ NEW CHANGE vs 活跃变更裁决：
 
 > 项目类型决定基础阶段集合，变更档位在此基础上裁剪（见步骤 8）：`轻量` 档按阶段适用性声明将 `接口单元测试`、`E2E测试`、`集成测试` 标注为 `⏭️ 不适用` 时，实际阶段数量相应减少。
 
+**项目级记录缺失时的指引**（未 init 项目）：SHALL 执行扫描检测并在指引输出中展示检测结果，标注该结果待变更创建阶段（`kflow-explore`）确认与补写；SHALL NOT 在指引阶段创建或修改任何文件（含 `docs/toolchain.md`）。
+
 ## 步骤 6：NEW CHANGE 创建前指引（条件触发）
 
 当用户表达新变更意图（新功能/修复Bug/搭建平台）且不指定变更名时，提供创建前指引，不创建任何文件：
@@ -275,9 +287,10 @@ NEW CHANGE 指引流程:
 │     ├── 产品需求: 搭建/创建平台/系统/完整/产品                    │
 │     ├── 功能需求: 添加/新增/实现/开发/做/增加                     │
 │     └── 功能缺陷: 修复/Bug/问题/报错/异常/修                      │
-│  2. DETECT     检测项目类型                                       │
-│     ├── 前后端项目（存在前端框架依赖/前端源文件）                 │
-│     └── 纯后端项目（无前端工程）                                  │
+│  2. DETECT     读取项目级项目类型记录（继承优先）                 │
+│     ├── 1) CLAUDE.md「## 项目画像」表的项目类型行                │
+│     ├── 2) docs/toolchain.md 头部的项目类型字段                  │
+│     └── 3) 均不可用 -> 就地扫描检测（仅展示，不创建文件）         │
 │  3. SUGGEST    建议变更名称                                      │
 │     ├── 功能需求: add-{feature-name} (kebab-case)                 │
 │     ├── 功能缺陷: fix-{issue-name} (kebab-case)                   │
@@ -306,7 +319,7 @@ NEW CHANGE 指引流程:
 `{suggested-change-name}`
 
 ### 项目类型
-{前后端项目/纯后端项目} -> {N} 阶段流程
+{前后端项目/纯后端项目}（来源: {项目级记录继承 | 降级检测}） -> {N} 阶段流程
 
 ### 适用流程阶段
 {根据项目类型和变更类型的阶段列表}
@@ -317,6 +330,8 @@ NEW CHANGE 指引流程:
 ### 下一步建议
 请使用 `kflow-explore` 开始设计探索。变更初始化将在 explore 阶段完成。
 ```
+
+> **记录缺失时的指引输出**：项目级记录不存在（未 init 项目）时，展示就地扫描检测结果并标注「待 `kflow-explore` 确认与补写」；本 Skill SHALL NOT 创建或修改任何文件（含 `docs/toolchain.md`），补写由变更创建阶段的降级路径完成。
 
 ## 步骤 7：定向指引（条件触发）
 
@@ -396,7 +411,7 @@ NEW CHANGE 指引流程:
 ### 各阶段说明
 | 阶段 | Skill | 核心功能 |
 |------|-------|---------|
-| 设计探索 | kflow-explore | 需求澄清、功能点拆分、项目类型检测 |
+| 设计探索 | kflow-explore | 需求澄清、功能点拆分、项目类型继承（读取项目级记录） |
 | 原型设计 | kflow-prototype-design | HTML 原型设计（前后端项目可选） |
 | 详细设计 | kflow-design | 变更级统一设计、四视角审查、子变更划分 |
 | 计划 | kflow-plan | Checkbox 任务清单、DoD 验收标准、功能点级全展开 |
@@ -494,6 +509,7 @@ NEW CHANGE 指引流程:
 - 无变更名 RESUME 时：0 活跃->引导新变更，1 活跃->自动 resume，>1 活跃->列出供选择
 - 指引错误必须记录到 skill-suggestion.md，便于后续优化关键词映射
 - 本 Skill 不创建变更目录和文件，变更初始化在 kflow-explore 阶段完成
+- 项目类型 SHALL 读取项目级记录（CLAUDE.md 项目画像 → `docs/toolchain.md` 头部），SHALL NOT 重新扫描判定；前两级均不可用时才就地扫描检测，且仅在指引中展示（标注待 explore 确认与补写），不创建或修改任何文件
 - 输出时根据项目类型显示对应流程（前后端 9 阶段 / 纯后端 7 阶段）；当前活跃变更为 `轻量` 档时，按阶段适用性声明标注 `⏭️ 不适用` 阶段并折算实际阶段数量（`标准`/`完整` 档不裁剪）
 - 跨变更冲突预检通过语义比对，非精确匹配
 - NEW CHANGE 指引不创建任何文件，仅给出建议和冲突预警

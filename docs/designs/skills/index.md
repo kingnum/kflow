@@ -11,7 +11,7 @@
 | Skill 名称 | 阶段 | 归属层级 | 必须性 | 核心功能 | 详细文档 |
 |-----------|------|---------|--------|---------|---------|
 | `kflow-guide` | 流程指引 | — | 按需 | 意图识别、活跃变更检测、跨变更冲突检测 | [kflow-guide.md](kflow-guide.md) |
-| `kflow-explore` | 设计探索 | 变更级 | 必须 | 需求澄清、功能点拆分、项目类型检测（不再划分子变更） | [kflow-explore.md](kflow-explore.md) |
+| `kflow-explore` | 设计探索 | 变更级 | 必须 | 需求澄清、功能点拆分、项目类型继承（读取项目级记录，不再划分子变更） | [kflow-explore.md](kflow-explore.md) |
 | `kflow-prototype-design` | 原型设计 | 变更级 | 可选 | HTML 原型设计（默认复用已锁定工具链，产物直写产品级 `docs/designs/prototypes/`）、BUILD 四项静态门控、审查方式二选一（人工审查 / 子代理自动审查验证）、用户评审确认 | [kflow-prototype-design.md](kflow-prototype-design.md) |
 | `kflow-design` | 详细设计 | **变更级** | 必须 | 统一详细设计（含NFR）、四视角审查、子变更划分、测试用例文档、用户评审确认 | [kflow-design.md](kflow-design.md) |
 | `kflow-plan` | 计划 | 子变更级 | 必须 | Checkbox 任务清单、DoD验收标准、功能点级全展开 | [kflow-plan.md](kflow-plan.md) |
@@ -55,9 +55,17 @@
 
 ---
 
-## 项目类型判断
+## 项目类型记录与继承
 
-在进入设计探索阶段时，系统自动检测项目类型：
+项目类型由 `kflow-init` 在初始化时确认**一次**，并写入两处项目级真源：CLAUDE.md「## 项目画像」表的「项目类型」行（权威来源）与 `docs/toolchain.md` 头部的「项目类型」字段（兜底来源）。变更创建链路（`kflow-guide`、`kflow-explore`）**继承**该记录，SHALL NOT 重新扫描判定项目类型。
+
+| 读取优先级 | 读取源 |
+|-----------|--------|
+| 1 | CLAUDE.md「## 项目画像」表的「项目类型」行 |
+| 2 | `docs/toolchain.md` 头部的「项目类型」字段 |
+| 3 | 前两级均不可用（项目从未 init）→ 就地扫描检测，确认一次后补写 `docs/toolchain.md` 头部（SHALL NOT 写入 CLAUDE.md 项目画像区块） |
+
+第 3 级的扫描检测标识：
 
 | 检测标识 | 存在时判断为 |
 |---------|------------|
@@ -65,6 +73,8 @@
 | 前端源文件（.vue, .tsx, .jsx, .svelte） | 前后端项目 |
 | 前端构建配置（vite.config, webpack.config） | 前后端项目 |
 | 以上均不存在 | 纯后端项目 |
+
+> **静默一致性校验**：变更创建时执行一次扫描与记录的比对——一致则静默继承、不打扰用户；冲突才 AskUserQuestion 复核（可沿用记录值或更新记录）；校验失败沿用记录值继续，不阻塞。变更级快照在变更生命周期内冻结。规则权威定义见 [core-mechanisms/01-project-types.md](../core-mechanisms/01-project-types.md#14-项目类型记录与继承)。
 
 ---
 

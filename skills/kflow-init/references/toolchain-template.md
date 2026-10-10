@@ -90,3 +90,5 @@
 
 如需为特定变更使用不同的工具链，在 `docs/changes/{change}/toolchain.md` 创建覆盖配置。变更级配置优先级高于项目级。
 ```
+
+> **头部「项目类型」字段的性质**：该字段是项目类型项目级记录的**兜底真源**。`docs/toolchain.md` 是本 Skill 的唯一必须输出文件，存在性有保证，因此当 CLAUDE.md 缺失或无「## 项目画像」区块时，变更创建链路（`kflow-guide`、`kflow-explore`）回退读取本字段。两处由同一轮扫描写入，值一致；读取优先级见 `docs/designs/core-mechanisms/01-project-types.md` §1.4。

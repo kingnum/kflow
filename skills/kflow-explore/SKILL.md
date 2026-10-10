@@ -1,7 +1,7 @@
 ---
 name: kflow-explore
-version: 0.20.1
-description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - detects project type (frontend+backend vs pure backend), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tier-driven self-review (floor 1 round, cap 轻量 1 / 标准 2 / 完整 5 by tier, witness-round convergence termination; score floor > 8 applies to 完整 tier only) and two-action save rule for external info gathering.
+version: 0.21.0
+description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tier-driven self-review (floor 1 round, cap 轻量 1 / 标准 2 / 完整 5 by tier, witness-round convergence termination; score floor > 8 applies to 完整 tier only) and two-action save rule for external info gathering.
 license: MIT
 triggers:
   - 开始新需求
@@ -20,7 +20,7 @@ allowed-tools:
 
 # 角色
 
-设计探索入口。所有变更的起点，负责需求澄清、项目类型检测（前后端 vs 纯后端）、功能点原子级拆分、领域词汇表（CONTEXT.md）管理。**不在此阶段划分子变更**——子变更划分后置到详细设计阶段完成后基于完整设计认知执行。
+设计探索入口。所有变更的起点，负责需求澄清、**项目类型继承**（三级回落读取项目级记录，仅记录缺失时降级检测，见 §项目类型继承规则）、功能点原子级拆分、领域词汇表（CONTEXT.md）管理。**不在此阶段划分子变更**——子变更划分后置到详细设计阶段完成后基于完整设计认知执行。
 
 # 任务
 
@@ -28,7 +28,7 @@ allowed-tools:
 接收用户需求
   → 创建变更目录和状态文件
   → 探索项目上下文
-  → 检测项目类型 + 用户确认
+  → 三级回落读取项目类型 + 静默一致性校验（默认不询问用户）
   → 判断变更粒度（产品级/功能需求级/功能缺陷级）
   → 需求澄清 + CONTEXT.md 管理（首次构建或增补 + 对齐检查）
   → 功能点原子级拆分 + 变更档位初判 + 用户覆盖确认 + 阶段集合提示
@@ -81,12 +81,15 @@ allowed-tools:
 ├──────────────────────────────────────────────────────────────────┤
 │  1. INIT      → 创建变更目录和状态文件                             │
 │  2. CONTEXT   → 探索项目上下文（文件、文档、提交记录）              │
-│  3. TYPEDET   → 检测项目类型（前后端 vs 纯后端）                  │
-│  │   ├── 检测 package.json 前端框架依赖                          │
-│  │   ├── 检测 .vue/.tsx/.jsx 等前端源文件                       │
-│  │   ├── 检测 vite.config/webpack.config 构建配置               │
-│  │   └── 判断结果 → 前后端项目 或 纯后端项目                     │
-│  4. CONFIRM   → 用户确认项目类型（AskUserQuestion）              │
+│  3. TYPEDET   → 三级回落读取项目类型（继承优先）                  │
+│  │   ├── 1) CLAUDE.md「## 项目画像」表的项目类型行               │
+│  │   ├── 2) docs/toolchain.md 头部的项目类型字段                 │
+│  │   ├── 3) 就地扫描检测（仅前两级均不可用）                      │
+│  │   └── 标注来源 → 项目级记录继承 / 降级检测                     │
+│  4. CONFIRM   → 静默一致性校验（默认不询问用户）                  │
+│  │   ├── 校验一致 → 静默继承，输出「项目类型: X（继承项目级记录）」│
+│  │   ├── 校验冲突 → AskUserQuestion 复核（可更新项目级记录）      │
+│  │   └── 校验失败 → 沿用记录值继续，不阻塞                        │
 │  5. CLASSIFY  → 判断变更粒度（产品级/功能需求级/功能缺陷级）       │
 │  6. CLARIFY   → 澄清需求 + 收集用户意图 + CONTEXT.md 管理        │
 │  │   ├── 检测 CONTEXT.md 是否存在                                │
@@ -135,7 +138,7 @@ allowed-tools:
    ⚠️ 不在此创建 self-reviews/explore/ —— 该目录在 SELFREV 步骤（步骤 11）执行时创建（全部档位均执行自审，下限 1 轮）
 3. 创建 docs/changes/{change}/.status.md（变更级状态文件）:
    └── 填写基本信息: 创建时间、变更类型（初始标记）、变更档位（待 TIER 判定）、
-       项目类型（待检测）、变更描述、当前阶段=设计探索
+       项目类型（待 TYPEDET 写入：继承项目级记录 / 降级检测，并标注来源）、变更描述、当前阶段=设计探索
 ```
 
 ## 步骤 2：CONTEXT — 探索项目上下文
@@ -149,7 +152,17 @@ allowed-tools:
 4. 活跃变更情况（docs/changes/ 下的现有变更）
 ```
 
-## 步骤 3：TYPEDET — 检测项目类型
+## 步骤 3：TYPEDET — 三级回落读取项目类型
+
+按优先级读取**项目级项目类型记录**，命中即止；SHALL NOT 在项目级记录可用时重新扫描判定项目类型。规则权威定义见 `docs/designs/core-mechanisms/01-project-types.md` §1.4。
+
+| 优先级 | 读取源 | 判定 |
+|--------|--------|------|
+| 1 | CLAUDE.md「## 项目画像」表的「项目类型」行 | CLAUDE.md 存在、含「## 项目画像」marker、且该行有值 → 读取该值，SHALL NOT 再读 `docs/toolchain.md` |
+| 2 | `docs/toolchain.md` 头部的「项目类型」字段 | 优先级 1 不可用（CLAUDE.md 不存在 / 无 marker / 该行缺失）时读取 |
+| 3 | 就地扫描检测 | 仅前两级均不可用（项目从未 init）时执行 |
+
+第 3 级（就地扫描）的检测标识：
 
 | 检测标识 | 存在时判断为 |
 |---------|------------|
@@ -158,12 +171,36 @@ allowed-tools:
 | 前端构建配置（vite.config.*, webpack.config.*, tsconfig.json） | 前后端项目 |
 | 以上均不存在 | 纯后端项目 |
 
-## 步骤 4：CONFIRM — 用户确认项目类型
+**来源标注**：TYPEDET 结束后 SHALL 记录取值来源，取值 `项目级记录继承`（优先级 1、2）或 `降级检测`（优先级 3），供步骤 4 与产物写入使用。
 
-使用 AskUserQuestion 展示检测结果：
-- 显示检测到的项目类型（前后端项目 / 纯后端项目）
-- 用户可确认或手动修正项目类型
-- 修正结果记录到 `functional-designs/index.md`
+## 步骤 4：CONFIRM — 静默一致性校验
+
+本步骤**默认路径 SHALL NOT 使用 AskUserQuestion**。校验内容：扫描项目根目录的前端工程标识，与项目级记录读取值比对。
+
+| 校验结果 | 处理 |
+|---------|------|
+| 一致 | 静默继承记录值并输出「项目类型: {值}（继承项目级记录）」，SHALL NOT 询问用户 |
+| 冲突（如纯后端记录的项目新增了前端工程标识） | AskUserQuestion 展示冲突项（扫描结果 vs 记录值），用户可沿用记录值或修正为扫描值；选择修正时更新项目级记录 |
+| 校验失败（项目根目录不可读等） | 沿用记录值继续，**校验失败不阻塞**变更创建 |
+
+> 校验是安全阀而非门禁：冲突只触发复核请求，SHALL NOT 自动改写记录。
+
+### 记录缺失时的降级路径（未 init 项目）
+
+前两级记录均不可用时，SHALL 检测并确认**一次**，补写 `docs/toolchain.md` 头部：
+
+- AskUserQuestion 展示检测结果，用户可确认或手动修正
+- 结果写入 `docs/toolchain.md` 头部的项目类型字段（文件不存在时创建仅含头部与该字段的最小文件）
+- SHALL NOT 写入 CLAUDE.md「## 项目画像」区块——该区块由 `kflow-init` 整体扫描填充，单项补写会产生残缺区块并与受管 marker 的替换逻辑冲突
+- 此后该项目的所有变更均静默继承，不再询问
+
+### 用户显式覆盖
+
+用户在需求描述中显式声明的项目类型（或指出记录有误）优先于项目级记录与扫描结果：采用声明值、更新项目级记录、本次变更的变更级快照写入声明值。这是初始误判（扫描信号与错误记录一致，校验比对不出冲突）的唯一纠正通道。
+
+### 变更级快照
+
+读取或降级检测的结果 SHALL 写入变更级快照（`functional-designs/index.md` 与变更级 `.status.md` 的项目类型字段）并标注来源。变更进入执行阶段后快照值冻结，SHALL NOT 随项目级记录变化而变更。
 
 ### 项目类型对后续阶段的影响
 
@@ -608,6 +645,7 @@ CONTEXT.md 消费链:
 # 核心提醒
 
 - **FP 类型标记**：每个功能点 SHALL 标记为「后端」或「前端」，无法归类的 FP 必须继续拆分，类型作为后续子变更划分类型校验的依据
+- **项目类型继承**：三级回落读取项目级记录（CLAUDE.md 项目画像 → `docs/toolchain.md` 头部 → 就地检测），项目级记录可用时 SHALL NOT 重新扫描判定；静默一致性校验一致即静默继承（不询问用户），仅记录缺失或校验冲突时才 AskUserQuestion；校验失败不阻塞；降级补写落在 `docs/toolchain.md` 头部且 SHALL NOT 写入 CLAUDE.md 项目画像区块；变更级快照在变更生命周期内冻结
 - **子变更划分不在此阶段执行**：后置到详细设计阶段完成后基于完整设计认知划分
 - **档位自审强制执行（子代理串行 + 重复制）**：轮次下限 1 轮、上限按变更档位取值（轻量 1 / 标准 2 / 完整 5）；完整档各维度评分均 > 8 且最近一轮为见证轮方通过（未达标补审至 5 轮上限）。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），子代理边审边修，串行不可并行，达成见证轮收敛即终止，SHALL NOT 为凑满上限而空转
 - **两动作规则**：每 2 次外部信息收集操作后立即保存关键发现到 functional-designs/
