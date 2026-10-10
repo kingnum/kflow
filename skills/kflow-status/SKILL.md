@@ -1,6 +1,6 @@
 ---
 name: kflow-status
-version: 0.20.0
+version: 0.20.1
 description: Use when user needs status overview/状态查看、进度、任务总结、进度汇总.
 license: MIT
 triggers:

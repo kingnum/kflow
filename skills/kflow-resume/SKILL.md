@@ -1,6 +1,6 @@
 ---
 name: kflow-resume
-version: 0.20.0
+version: 0.20.1
 description: Use when user needs to resume interrupted work/继续、恢复、resume {change-name}, or when kflow-guide routes to RESUME mode.
 license: MIT
 triggers:

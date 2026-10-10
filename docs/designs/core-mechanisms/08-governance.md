@@ -191,9 +191,15 @@
 
 所有 git commit 操作不自动 push 到远程仓库。push 操作由用户自行决定时机。
 
-### 18.5 强制规则注入
+### 18.5 强制规则注入的作用域边界
 
-kflow-init 在向 CLAUDE.md 注入「变更流程强制规则」时，包含以下 git 规则：
+kflow-init 注入消费方 CLAUDE.md 的「变更流程强制规则」section SHALL NOT 包含 git 规则。本节所述两项 git 行为均在 skill 自身的执行流程中完成，写入消费方 CLAUDE.md 即构成双重定义：
 
-1. **首次 init 时，若目录非 git 仓库，询问是否执行 git init**
-2. **归档完成后，询问是否将当前变更及相关文件提交 git**（若确认，则在 commit 前按序执行六步：判定版本自增级别 → 更新仓库根 `VERSION` 文件 → 运行 `scripts/sync-version.sh` 把版本值同步到各 SKILL.md 的 `version` 字段 → 更新 `README.md` 版本行与版本更新说明条目 → 运行 `scripts/package-skills.sh` 打包 → 执行 git commit。zip 产物位于 `targets/`，受 `.gitignore` 排除，不纳入提交；任一步骤失败不阻塞归档本身）
+| 事项 | 承载位置 |
+|------|---------|
+| 归档完成后询问是否执行 git commit | `kflow-archive` 的归档流程（§18.1 表中「归档后」节点） |
+| 首次 init 时目录非 git 仓库，询问是否执行 git init | `kflow-init` 的步骤 GIT INIT（§18.1 末段） |
+
+注入模板的模板版本标识取自 kflow-init 自身 front matter 的 `version` 字段，SHALL NOT 引用消费方项目中可能不存在的文件。
+
+> kflow-init 注入的「变更流程强制规则」只承载跨 skill 的路由约束、用户接口约定与流程概览，其内容要求由 `init-claude-md-injection` 能力定义。本仓库自身归档后的版本自增与打包流程适用于 KFlow Skills 开发仓库，不属于消费方项目的注入规则——详见本仓库归档后规则（`CLAUDE.md`）。

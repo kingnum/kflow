@@ -1,6 +1,6 @@
 ---
 name: kflow-code-review
-version: 0.20.0
+version: 0.20.1
 description: Use when user needs code review/代码审查、审查代码、code review, or subchange coding is complete and ready for review. 按变更档位分级审查（轻量档单 Agent 单轮覆盖两视角全部检查项 / 标准档与完整档两视角并行），修复后验证按档位分支（轻量单轮复检 / 标准与完整分级重审闭环）。独立于编码阶段，子变更级必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，纯静态分析）。
 license: MIT
 triggers:

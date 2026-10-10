@@ -2,7 +2,7 @@
 
 一套**文档驱动的阶段门控开发流程体系**，将软件开发从设计到交付的全流程标准化为一系列 Claude Code Skills，确保每个阶段产物可追溯、可验证。
 
-> **版本**: 0.20.0 | **更新时间**: 2026-10-09 | **适用版本**: KFlow Skills 体系 2.0.0+
+> **版本**: 0.20.1 | **更新时间**: 2026-10-10 | **适用版本**: KFlow Skills 体系 2.0.0+
 
 ---
 
@@ -426,7 +426,7 @@ docs/
 - [阶段钩子规范](docs/designs/core-mechanisms/09-phase-hooks.md) — PRE_HOOK/POST_HOOK 配置表、RELOAD 清单、服务生命周期
 - [运行时钩子规范（示例：kflow-code）](skills/kflow-code/references/hooks.md) — 各阶段自身的 `references/hooks.md` 定义该阶段的 PRE_HOOK/POST_HOOK 步骤序列
 - [服务生命周期管理（示例：kflow-code）](skills/kflow-code/references/service-lifecycle.md) — daemon 模式、端口冲突检测、服务停止超时链
-- [OpenSpec 规格](openspec/specs/) — 131 个核心机制/阶段规格文件
+- [OpenSpec 规格](openspec/specs/) — 130 个核心机制/阶段规格文件
 - [CLAUDE.md](CLAUDE.md) — Claude Code 项目指令（含钩子引用强制规则、版本自增+打包规则）
 
 ---
@@ -436,6 +436,15 @@ docs/
 ---
 
 ## 版本更新说明
+
+### v0.20.1 (2026-10-10)
+**注入模板作用域修正、marker 版本判据内化、注入规则规格去重**
+- **注入模板去除开发态内容**：`kflow-init` 注入消费方 CLAUDE.md 的「变更流程强制规则」section 移除归档后 git commit、版本自增、`scripts/` 打包等**技能开发仓库特有**规则（消费方不存在 `VERSION`、`scripts/`、`targets/`，原规则无法执行），section 收敛为 6 条跨 skill 路由约束 / 用户接口约定 / 流程概览。同类项的 skill 内部执行步骤（归档后 git commit 询问、非 git 仓库时的 git init 询问）归还各 SKILL.md 承载，不再在消费方 CLAUDE.md 中双重定义
+- **marker 版本判据内化（BREAKING）**：marker 区块的模板版本标识由「参见消费方仓库根 `VERSION` 文件」改为 `kflow-init` 自身 `SKILL.md` front matter 的 `version` 字段——原判据在消费方悬空，导致模板修正后 `re-init` 仍可能判定为无变化。版本判据缺失或无法解析时一律判定为版本不同并全量替换，使存量消费方 CLAUDE.md 中的错误规则能在下次 `kflow-init` 时被清除
+- **项目自定义规则区块受保护**：新增不受框架管理的 `## 项目自定义规则` marker 区块；`re-init` 只替换自己管理的 marker 区块，不覆盖项目自行维护的内容，用户在框架管理区块之外新增的内容不被删除
+- **注入规则规格去重**：`devflow-init` 与 `init-claude-md-injection` 重复定义的「变更流程强制规则 section 扩展」Requirement 收敛至 `init-claude-md-injection`，后者成为 CLAUDE.md marker 注入规则（内容要求、版本判据、替换策略）的唯一权威定义位置；`devflow-init` 保留工具推荐矩阵与 GAP 检测要求
+- **新增注入模板作用域守卫**：新增 `injection-scope-guard` 能力与 `scripts/validate-injection-scope.sh` 校验入口，扫描 kflow-init 的注入模板是否含 `scripts/sync-version.sh`、`scripts/package-skills.sh`、`targets/`、`VERSION` 文件、README 版本条目等开发态词汇，命中时输出词汇与所在行并非零退出，未匹配到校验对象时同样判定失败
+- **同步范围**：3 个能力（`devflow-init`、`init-claude-md-injection`、新增 `injection-scope-guard`）的 delta 已合并到主 specs；实现侧同步 `skills/kflow-init/SKILL.md` 与 `docs/designs/skills/kflow-init.md`、`docs/designs/core-mechanisms/08-governance.md` 设计文档
 
 ### v0.20.0 (2026-10-09)
 **审计执行者统一为单一子代理、维度模型七→四重构、总分门控地位明确**

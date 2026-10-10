@@ -1,6 +1,6 @@
 ---
 name: kflow-init
-version: 0.20.0
+version: 0.20.1
 description: Use when user needs environment initialization/初始化、环境配置、工具推荐、设置, project kickoff/项目启动, or legacy project reverse analysis/老项目逆向分析.
 license: MIT
 triggers:
@@ -25,7 +25,7 @@ allowed-tools:
 
 # 任务
 
-检测项目类型 -> 扫描三层环境能力（运行时MCP/配置settings.json/知识库推荐）-> 扫描项目画像（技术栈、目录结构、8项产品文档状态）-> 权限配置（读取 permission-model.md → 检测 settings.json → 用户确认 → 创建/追加/跳过 → 输出到 toolchain.md）-> 匹配工具推荐矩阵 -> 检测能力缺口 -> 组合可行性评估 -> 输出多方案对比 -> 用户确认方案 -> 输出 toolchain.md -> 老项目逆向分析（条件触发）-> CLAUDE.md 注入（三层 marker + skill-suggestion 自动捕获）-> Re-init 变更对齐检查（条件触发）-> 检测 git 仓库并询问是否 git init（条件触发）。
+检测项目类型 -> 扫描三层环境能力（运行时MCP/配置settings.json/知识库推荐）-> 扫描项目画像（技术栈、目录结构、8项产品文档状态）-> 权限配置（读取 permission-model.md → 检测 settings.json → 用户确认 → 创建/追加/跳过 → 输出到 toolchain.md）-> 匹配工具推荐矩阵 -> 检测能力缺口 -> 组合可行性评估 -> 输出多方案对比 -> 用户确认方案 -> 输出 toolchain.md -> 老项目逆向分析（条件触发）-> CLAUDE.md 注入（受管 marker 3 个 + 项目自定义规则区块）-> Re-init 变更对齐检查（条件触发）-> 检测 git 仓库并询问是否 git init（条件触发）。
 
 # 门控检查
 
@@ -50,8 +50,9 @@ allowed-tools:
 | 工具链配置 | docs/toolchain.md | ✅ 必须 | 各阶段推荐工具（含优先级）、环境能力扫描结果、权限配置状态、安装建议 |
 | 变更级覆盖（可选） | docs/changes/{change}/toolchain.md | 🔶 条件 | 特定变更需要不同工具链时创建，优先级高于项目级 |
 | CLAUDE.md 注入（项目画像） | CLAUDE.md | 🔶 条件 | 注入「项目画像」section（技术栈、目录结构、产品文档状态），marker 检测幂等 |
-| CLAUDE.md 注入（流程规则） | CLAUDE.md | 🔶 条件 | 注入/更新「变更流程强制规则」section（含 git commit 规则），marker 检测幂等 |
+| CLAUDE.md 注入（流程规则） | CLAUDE.md | 🔶 条件 | 注入/更新「变更流程强制规则」section（跨 skill 路由约束与用户接口约定，不含 skill 内部执行步骤），marker 检测幂等 |
 | CLAUDE.md 注入（skill-suggestion 捕获） | CLAUDE.md | 🔶 条件 | 注入/更新「Skill 改进建议自动捕获」section（三种触发模式），marker 检测幂等 |
+| CLAUDE.md 注入（项目自定义规则） | CLAUDE.md | 🔶 条件 | CLAUDE.md 不含 `## 项目自定义规则` marker 时创建该区块并标注由项目自行维护；re-init 不读取、不替换、不删除其内容 |
 | 产品文档草稿（老项目） | docs/CONTEXT.md, docs/designs/*.md, docs/service-guide.md | 🔶 条件 | 老项目产品文档缺失时，代码逆向扫描生成草稿，用户审核确认后写入 |
 | CONTEXT.md 检测 | docs/CONTEXT.md | ✅ 必须 | 检测 docs/CONTEXT.md 是否存在，存在时加载词汇表，不存在时标记"待构建" |
 
@@ -138,10 +139,11 @@ DETECT(项目类型) -> SCAN(环境能力) -> PROFILE(项目画像) -> PERM_CONF
 │     ├── L1 配置文件 -> L2 目录结构 -> L2.5 前端扫描 -> L3 源码语义 │
 │     ├── 生成草稿 -> 用户审核确认 -> 写入                         │
 │     └── 跳过 -> 标注为 ❌ 不存在                                 │
-│ 11. INJECT     注入 CLAUDE.md（三层 marker）                     │
-│     ├── 注入「项目画像」section                                 │
-│     ├── 注入「变更流程强制规则」section                         │
+│ 11. INJECT     注入 CLAUDE.md（受管 marker 3 个）                │
+│     ├── 注入「项目画像」section                                  │
+│     ├── 注入「变更流程强制规则」section（版本判据替换）          │
 │     ├── 注入「Skill 改进建议自动捕获」section                    │
+│     ├── 创建「项目自定义规则」区块（不受管，不覆盖）             │
 │     └── CLAUDE.md 不存在 -> 跳过注入（可选）                     │
 │ 12. ALIGN      Re-init 变更对齐检查（条件触发）                   │
 │     ├── 扫描未归档变更的阶段列表                                  │
@@ -287,7 +289,7 @@ CONTEXT 检测:
 
 详见 [references/legacy-analysis.md](references/legacy-analysis.md) — 三层逆向扫描（L1 配置文件 / L2 目录结构 / L2.5 前端工程 / L3 源码语义）、生成文档草稿（10 项产品文档）、产品文档 8 项检测、用户审核确认。
 
-## 步骤 11：INJECT — 注入 CLAUDE.md（三层 marker）
+## 步骤 11：INJECT — 注入 CLAUDE.md（受管 marker 3 个 + 项目自定义规则区块）
 
 ### Marker 1：项目画像
 
@@ -328,7 +330,7 @@ CONTEXT 检测:
 ## 变更流程强制规则
 
 > **来源**: kflow-init 自动生成
-> **版本**: 参见 VERSION 文件（统一版本管理）
+> **模板版本**: {kflow-init 的 version 值}
 > **生成时间**: {YYYY-MM-DD HH:MM}
 
 本项目使用 KFlow Skills 体系管理所有变更。以下为强制规则：
@@ -339,16 +341,20 @@ CONTEXT 检测:
 4. **禁止直接调用** `kflow-code`、`kflow-plan`、`kflow-explore`、`kflow-design` 等阶段 Skill 跳过 guide 指引
 5. **流程阶段**: 设计探索 -> 原型设计(可选) -> 详细设计 -> 计划 -> 编码 -> 代码审查 -> 接口单元测试 -> E2E测试(前后端) -> 集成测试 -> 审计 -> 归档
 6. **查看状态**: 使用「状态」「进度」关键词触发 `kflow-status` 查看变更状态
-7. **归档完成后询问是否执行 git commit**，提交信息包含变更名称和归档日期；若确认提交，则先执行版本自增、SKILL.md 版本同步与打包（读取 VERSION → 版本自增判定（Major 手动/Minor 新功能/Patch 修复）→ 更新 VERSION → 运行 sync-version.sh 同步各 SKILL.md 的 version 字段 → 更新 README 版本条目 → 运行 package-skills.sh 生成本地 zip 产物）再提交 VERSION、SKILL.md 版本变更与 README 版本条目（zip 产物受 .gitignore 排除，不提交）
-8. **首次 init 时若目录非 git 仓库，询问是否执行 git init**
 ```
+
+**模板版本取值**：`{kflow-init 的 version 值}` 取本文件 front matter 的 `version` 字段值。
+
+**作用域边界**：该 section 只承载跨 skill 的路由约束、用户接口约定与流程概览。归档后的 git commit 询问由 `kflow-archive` 的归档流程承载，非 git 仓库时的 git init 询问由本 Skill 步骤 13 承载——二者均为 skill 在自身执行流程中完成的步骤，SHALL NOT 写入该 section；该 section 中亦 SHALL NOT 出现技能开发仓库特有的脚本、产物目录与文件。
 
 ### Marker 3：Skill 改进建议自动捕获
 
 ```markdown
 ## Skill 改进建议自动捕获
 
-> **来源**: kflow-init 自动生成 | **版本**: 1.0.0
+> **来源**: kflow-init 自动生成
+> **模板版本**: {kflow-init 的 version 值}
+> **生成时间**: {YYYY-MM-DD HH:MM}
 
 当 AI 对话中出现以下触发模式时，自动记录到 `docs/skill-suggestion.md`：
 
@@ -359,10 +365,27 @@ CONTEXT 检测:
 记录格式：触发场景、具体内容、改进建议、时间戳、来源（kflow-init 注入规则）。业务功能问题记录为缺陷参考，Skill 执行机制问题记录为 skill-suggestion。
 ```
 
+**模板版本取值**：与 Marker 2 一致，取本文件 front matter 的 `version` 字段值。
+
+### 项目自定义规则区块（不受管，不参与替换）
+
+CLAUDE.md 不含 `## 项目自定义规则` marker 时创建该区块，创建位置与既有区块一致（追加到 CLAUDE.md 末尾）：
+
+```markdown
+## 项目自定义规则
+
+> **来源**: kflow-init 创建 | **维护方**: 项目自身
+> 本区块由项目自行维护，kflow-init 不读取、不替换、不删除其内容。
+
+（在此填写项目自身的规则约定）
+```
+
+该区块不参与版本比较与替换：任何 re-init 均不读取、不修改、不删除其内容，用户在框架管理区块之外新增的内容同样不被删除。
+
 ### 幂等策略
 
 ```
-双层注入幂等逻辑:
+注入幂等逻辑（受管 marker 3 个 + 不受管区块 1 个）:
 
 Marker 1: "## 项目画像"
   1. 检测:
@@ -379,21 +402,31 @@ Marker 2: "## 变更流程强制规则"
   1. 检测:
      ├── Grep: "## 变更流程强制规则"
      ├── 未找到 -> 追加模式
-     └── 已找到 -> 替换模式（含版本比较）
+     └── 已找到 -> 读取区块版本行，与本文件 front matter 的 version 字段比较
   2. 更新策略:
-     ├── 版本相同 -> 仅更新时间戳
-     └── 版本不同 -> 替换为最新版本（含最新 git 规则）
+     ├── 未读到版本行（旧版模板产物 / 用户删改）-> 视为版本不同 -> 全量替换
+     ├── 读到但无法解析为版本号 -> 视为版本不同 -> 全量替换
+     ├── 读到且等于当前 version -> 仅更新生成时间戳
+     └── 读到且不等于当前 version -> 全量替换为当前模板内容
 
 Marker 3: "## Skill 改进建议自动捕获"
   1. 检测:
      ├── Grep: "## Skill 改进建议自动捕获"
      ├── 未找到 -> 追加模式
-     └── 已找到 -> 替换模式
+     └── 已找到 -> 读取区块版本行，与本文件 front matter 的 version 字段比较
   2. 更新策略:
      ├── 版本相同 -> 不更新（此规则稳定后不变化）
-     └── 版本不同 -> 替换为最新版本
+     └── 版本不同 / 未读到 / 无法解析 -> 全量替换为当前模板内容
 
-3. CLAUDE.md 不存在:
+项目自定义规则区块: "## 项目自定义规则"（不受管）
+  1. 检测:
+     ├── Grep: "## 项目自定义规则"
+     ├── 未找到 -> 创建区块（追加到 CLAUDE.md 末尾）
+     └── 已找到 -> 跳过
+  2. 更新策略:
+     └── 不读取、不替换、不删除——不参与版本比较，内容始终归属项目
+
+CLAUDE.md 不存在:
    └── 跳过注入（可选操作，不阻塞主流程）
 ```
 
@@ -405,6 +438,7 @@ Marker 3: "## Skill 改进建议自动捕获"
 - 起始: "## 项目画像" 或 "## 变更流程强制规则" 或 "## Skill 改进建议自动捕获"
 - 结束: 下一个 "## " 开头的行 或 EOF
 - 替换: 保持 marker 行，替换 marker 后的内容到下一个 "## " 之前
+- 排除: "## 项目自定义规则" 不在替换范围内——不受管区块，其内容与相邻 marker 的边界判定互不影响
 ```
 
 ## 步骤 12：ALIGN — Re-init 变更对齐检查（条件触发）
@@ -475,14 +509,17 @@ git init 失败不阻塞 init 流程，提示失败原因。
    └── 保留用户手动修改的其他 CLAUDE.md 内容
 
 2. 流程规则 section:
-   ├── 检查版本号
+   ├── 读取区块版本行与本文件 front matter 的 version 字段比较
    ├── 版本相同 -> 仅更新时间戳
-   └── 版本不同 -> 替换为最新版本（含新增 git 规则）
+   └── 版本不同 / 未读到版本行 / 无法解析 -> 全量替换为当前模板内容
 
-3. 产品文档状态:
+3. 项目自定义规则区块:
+   └── 已存在 -> 跳过；不存在 -> 创建（任何情况下不读取、不替换、不删除其内容）
+
+4. 产品文档状态:
    └── 重新扫描并更新状态标记
 
-4. 不重复询问:
+5. 不重复询问:
    ├── 产品文档已存在 -> 不询问逆向分析
    └── 产品文档仍缺失 -> 再次询问
 ```
@@ -494,14 +531,15 @@ git init 失败不阻塞 init 流程，提示失败原因。
 - **输出给**：所有后续阶段 Skill 可参考 toolchain.md 中的工具推荐
 - **前置阶段**：无
 - **后续阶段**：`kflow-guide`（流程指引）、`kflow-explore`（设计探索）
-- **CLAUDE.md 注入**：注入项目画像和变更流程强制规则（含 git 规则），引导后续所有变更通过 `kflow-guide` 流转
+- **CLAUDE.md 注入**：注入项目画像、变更流程强制规则（跨 skill 路由约束与用户接口约定）与 Skill 改进建议自动捕获，并为项目创建不受管的「项目自定义规则」区块，引导后续所有变更通过 `kflow-guide` 流转
 
 # 核心提醒
 
 - toolchain.md 是唯一必须输出文件，其他均为条件产物
 - 三层环境感知（运行时/配置/知识库）确保工具推荐覆盖全面
 - 逆向生成的文档必须标注"由 AI 逆向分析生成，待人工审核"
-- 三层 marker 注入确保幂等：同版本不重复写入，仅更新时间戳（项目画像 / 流程规则 / skill-suggestion 捕获）
+- 受管 marker 注入确保幂等：同版本不重复写入，仅更新时间戳（项目画像 / 变更流程强制规则 / Skill 改进建议自动捕获）；版本行缺失或无法解析时全量替换
+- 「项目自定义规则」区块不受管：仅在不存在时创建，re-init 不读取、不替换、不删除其内容
 - Re-init 不重复询问已有产品文档
 - git init 失败不阻塞 init 流程
 - CLAUDE.md 不存在时跳过注入，不阻塞主流程
