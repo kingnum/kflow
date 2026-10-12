@@ -8,7 +8,7 @@
 
 ### Requirement: Change-tier repetition round upper bound
 
-The system SHALL determine the repetition round **upper bound** from the change tier, and for re-execution SHALL use the higher of the tier upper bound and the impact scope score mapping. Rounds SHALL never be fewer than the global floor of 1. The fixed 10-round minimum for first execution SHALL NOT exist.
+The system SHALL determine the repetition round **upper bound** from the change tier, and for re-execution SHALL use the higher of the tier upper bound and the impact scope score mapping. Rounds SHALL never be fewer than the global floor of 1. The fixed 10-round minimum for first execution SHALL NOT exist. When the accumulated unverified-fix list is non-empty at the termination point, a recheck round SHALL be appended in addition to the determined upper bound, SHALL NOT consume it, and SHALL be limited to one per phase.
 
 #### Scenario: First execution uses the tier upper bound
 
@@ -29,6 +29,13 @@ The system SHALL determine the repetition round **upper bound** from the change 
   - Score > 15: 5 rounds
 - **AND** the determined upper bound SHALL be written to .status.md as the target round count
 
+#### Scenario: Recheck round applies outside the determined upper bound
+
+- **WHEN** an execution phase reaches its termination point with a non-empty accumulated unverified-fix list
+- **THEN** the recheck round SHALL be appended outside the determined upper bound
+- **AND** the determined upper bound SHALL NOT be increased or reduced by the recheck round
+- **AND** the recheck round SHALL be limited to one per phase
+
 #### Scenario: No impact score falls back to the tier upper bound
 
 - **WHEN** a phase is re-executed but no impact scope score is available in .status.md
@@ -41,7 +48,7 @@ The system SHALL determine the repetition round **upper bound** from the change 
 
 ### Requirement: Flexible repetition verification gate
 
-When an execution phase terminates by convergence before reaching the tier round upper bound, the system SHALL enforce a verification gate to ensure quality.
+When an execution phase terminates by convergence before reaching the tier round upper bound, the system SHALL enforce a verification gate to ensure quality. When an execution phase terminates with 终止原因 `收敛（复检轮）`, the recheck round SHALL have verified every accumulated unverified fix, and this verification SHALL count as satisfying the full-sweep criterion.
 
 #### Scenario: Verification gate for reduced rounds
 
@@ -51,6 +58,13 @@ When an execution phase terminates by convergence before reaching the tier round
   - Full sweep: at least 1 round of complete full-sweep traversal (all work items)
   - Product integrity: all required outputs exist and are format-compliant
 - **AND** all three criteria MUST pass for acceptance
+
+#### Scenario: Verification gate when the recheck round is used
+
+- **WHEN** an execution phase terminates with 终止原因 `收敛（复检轮）`
+- **THEN** 执行轮次 SHALL equal the tier round upper bound (the recheck round is not counted)
+- **AND** the full-sweep criterion SHALL be satisfied by the recheck round's proof of complete traversal
+- **AND** the affected-items and product-integrity criteria MUST pass for acceptance
 
 #### Scenario: Affected items verification
 

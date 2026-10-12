@@ -1,6 +1,6 @@
 ---
 name: kflow-code-review
-version: 0.21.0
+version: 0.22.0
 description: Use when user needs code review/代码审查、审查代码、code review, or subchange coding is complete and ready for review. 按变更档位分级审查（轻量档单 Agent 单轮覆盖两视角全部检查项 / 标准档与完整档两视角并行），修复后验证按档位分支（轻量单轮复检 / 标准与完整分级重审闭环）。独立于编码阶段，子变更级必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，纯静态分析）。
 license: MIT
 triggers:
@@ -305,8 +305,8 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 - **变更档位**: {轻量|标准|完整}
 - **审查文件数**: {数量}
 - **审查 Agent 数**: {轻量档 1 / 标准档与完整档 2}
-- **执行轮次**: {N} / {轮次上限}（轻量 1 / 标准 3 / 完整 5；N >= 1 且（见证轮 ∨ N = 上限））
-- **终止原因**: {收敛|达上限}
+- **执行轮次**: {N} / {轮次上限}（轻量 1 / 标准 3 / 完整 5；N >= 1 且（见证轮 ∨ N = 上限 ∨ 存在通过的复检轮）；复检轮不计入该字段）
+- **终止原因**: {收敛|收敛（复检轮）|达上限}
 
 ## 审查结果汇总
 
@@ -382,7 +382,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 # 重复制（执行类阶段）
 
-代码审查阶段属于执行类阶段，采用收敛制重复模式。**轮次下限恒为 1 轮（无例外），轮次上限由变更档位决定**：读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理），档位上限为 `轻量` 1 轮 / `标准` 3 轮 / `完整` 5 轮；回退重执行取 `max(档位上限, 影响范围分数映射)`，映射规则统一在 `tier-driven-repetition` 能力定义（参见 `skills/kflow-code-review/references/repetition.md` §14），本 SKILL.md SHALL NOT 另行定义区间。达成**见证轮**（零新发现 + 零修改 + 报告证明全部子变更与代码变更已完成全量遍历）时 SHALL 提前终止；达上限仍无见证轮 → 非收敛分支。
+代码审查阶段属于执行类阶段，采用收敛制重复模式。**轮次下限恒为 1 轮（无例外），轮次上限由变更档位决定**：读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理），档位上限为 `轻量` 1 轮 / `标准` 3 轮 / `完整` 5 轮；回退重执行取 `max(档位上限, 影响范围分数映射)`，映射规则统一在 `tier-driven-repetition` 能力定义（参见 `skills/kflow-code-review/references/repetition.md` §14），本 SKILL.md SHALL NOT 另行定义区间。达成**见证轮**（零新发现 + 零修改 + 报告证明全部子变更与代码变更已完成全量遍历）时 SHALL 提前终止；达上限仍无见证轮 → 非收敛分支。**终止点复检轮**：到达终止点（见证轮，或已达轮次上限）且「累积未复核修复清单」非空时，SHALL 追加 1 轮复检轮（SHALL NOT 消耗档位轮次预算，最多 1 轮），逐项复核自审循环开始以来全部尚未通过独立复核的修复；复检轮构成见证轮即为通过（终止原因 `收敛（复检轮）`），未构成则 `达上限` 并进入非收敛分支。复检轮机制权威定义见 `recheck-round` 能力，落地表述见 `skills/kflow-code-review/references/repetition.md` §14.5.1。
 
 ## 每轮工作内容
 
@@ -439,14 +439,15 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
    │     执行轮次 SHALL 不少于 1 轮且不超过轮次上限 N；当某轮零新发现且零修改、且报告证明
    │     全部子变更与代码变更已完成全量遍历时，该轮构成见证轮，SHALL 提前返回验收报告。
    │     达成收敛或达到轮次上限之前 SHALL NOT 无理由返回。」
-   ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/本轮建议关注），注入下一轮子代理 prompt（参见 repetition.md §13）
+   ├── 轮间摘要注入（第 2 轮起）: 主 Agent 每轮子代理返回后提取摘要（已发现问题/未解决问题/覆盖率变化/累积未复核修复清单/本轮建议关注），注入下一轮子代理 prompt（参见 repetition.md §13）；见证轮候选与复检轮须逐项复核「累积未复核修复清单」内全部条目
    └── 完成承诺: COMPLETED
 
 3. 启动 Agent 迭代子代理 (Agent(description, prompt, run_in_background))
    └── 子代理内维持按变更档位的审查形态 + 修复后验证机制
 
 4. 主 Agent 验收
-   ├── 轮次: .status.md 执行轮次 >= 1 且（最近一轮为见证轮 或 执行轮次 = 轮次上限 N）
+   ├── 轮次: .status.md 执行轮次 >= 1 且（最近一轮为见证轮 或 执行轮次 = 轮次上限 N 或 存在通过的复检轮）
+   ├── 终止点复检轮判定: 累积未复核修复清单须为空，或已追加复检轮并据其结论写入终止原因；清单非空却未追加复检轮 → 拒收并追加 1 轮复检轮（不询问用户）
    ├── 产物: code-review.md 存在且格式正确，含问题追踪矩阵
    ├── 门控: 按档位分支——轻量档 单 Agent 高 = 0 且 中 < 3；标准/完整档 Agent 1 高 = 0 且 Agent 2 高 = 0 且 Agent 2 中 < 3
    ├── 闭环: 所有高/中严重度问题已修复并验证
@@ -459,7 +460,10 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 |------|---------|
 | 通过 | 更新 .status.md → 释放接口单元测试阶段门控 |
 | 无见证轮且未达轮次上限 | 拒收，直接重新启动 Agent 子代理继续执行，不进入 AskUserQuestion |
-| 达上限仍无见证轮，或产物不合格 | 进入非收敛分支：记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑；用户选「否」→ 标记 ⚠️ 阻塞 |
+| 终止点清单非空却未追加复检轮 | 拒收，直接追加 1 轮复检轮（不消耗档位轮次预算）后重新验收，不进入 AskUserQuestion |
+| 达上限、无通过的复检轮、且无见证轮；或产物不合格 | 进入非收敛分支：记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑；用户选「否」→ 标记 ⚠️ 阻塞 |
+
+> **终止原因**：阶段终止时 SHALL 在 .status.md 写入终止原因，取值 `收敛` / `收敛（复检轮）` / `达上限`；`执行轮次` 字段格式保持 `{N} / {上限}` 且不计入复检轮。
 
 ---
 
@@ -472,7 +476,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 | 前置阶段 | 编码 | 门控依赖 |
 | 后续阶段 | 接口单元测试（子变更级）→ E2E 测试（前后端项目） | 阶段链 |
 | 关系说明 | 从 `kflow-code` 拆分出的独立 Skill | 原 `kflow-code` 不再包含代码审查子阶段 |
-| 执行模式 | 重复制（内嵌按档位的审查形态） | 档位驱动轮次上限（轮次下限 1、上限 轻量 1 / 标准 3 / 完整 5，参见 skills/kflow-code-review/references/repetition.md §14），见证轮收敛终止，复杂度评估仅信息展示，主 Agent 验收闭环 |
+| 执行模式 | 重复制（内嵌按档位的审查形态） | 档位驱动轮次上限（轮次下限 1、上限 轻量 1 / 标准 3 / 完整 5，参见 skills/kflow-code-review/references/repetition.md §14），见证轮收敛终止；终止点清单非空时追加 1 轮复检轮（不占上限，不超过 1 轮），复杂度评估仅信息展示，主 Agent 验收闭环 |
 
 # 核心提醒
 

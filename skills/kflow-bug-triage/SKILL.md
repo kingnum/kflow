@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-triage
-version: 0.21.0
+version: 0.22.0
 description: Use when user needs bug triage/问题分诊、反馈、报告问题、报bug、提bug、问题诊断, or user reports an issue through kflow-guide. Independent diagnostic Skill (not a workflow phase). 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、问题登记（bugs/目录）、路由决策（REVISION模式或kflow-bug-fix）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md, bugs/）。
 license: MIT
 triggers:
@@ -226,8 +226,9 @@ REGISTER 步骤 SHALL 按以下规则执行：
 - **档位上限**：由变更级 `.status.md` 的「变更档位」字段确定（轻量 1 / 标准 3 / 完整 5），字段缺失时按 `完整` 档处理。
 - **影响映射分量**：由上述统一映射按影响范围分数取值。
 - **最终轮次上限**：由目标 Skill 在阶段启动时按 `max(档位上限, 影响范围分数映射)` 计算；`.status.md` 中无影响范围分数时取档位上限。该上限为**外层迭代轮次的上限**（下限恒为 1 轮），达成见证轮收敛时 SHALL 提前终止。
+- **终止点复检轮不占该上限**：目标 Skill 到达终止点且「累积未复核修复清单」非空时，SHALL 在其轮次上限之外追加 1 轮复检轮（不消耗该上限，单个阶段最多 1 轮），逐项复核清单内全部修复。终止原因取 `收敛` / `收敛（复检轮）` / `达上限`；本 Skill 仅诊断与路由，不执行修复，故不自行追加复检轮——追加由被路由的执行类 Skill 按其 `references/repetition.md` §14.5.1 执行。
 
-> 详细轮次决策逻辑参见 `skills/kflow-bug-triage/references/repetition.md` §14。
+> 详细轮次决策逻辑（含复检轮）参见 `skills/kflow-bug-triage/references/repetition.md` §14 与 §14.5.1。
 
 ---
 
@@ -294,6 +295,7 @@ docs/changes/{change}/bugs/
 - 路由前必须获得用户确认
 - 问题登记到 bugs/ 目录，使用模板格式
 - 🔴 阻塞级问题未关闭时阻断归档
+- **轮次上限与复检轮**：被路由的执行类 Skill 的轮次上限为 `max(档位上限, 影响范围分数映射)`（下限恒为 1 轮），达成见证轮即收敛终止；终止点「累积未复核修复清单」非空时追加 1 轮复检轮（不占该上限，最多 1 轮）。终止原因取 `收敛` / `收敛（复检轮）` / `达上限`；本 Skill 不执行修复，SHALL NOT 自行追加复检轮
 
 # 反馈机制
 
