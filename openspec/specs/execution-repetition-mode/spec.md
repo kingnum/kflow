@@ -2,39 +2,9 @@
 
 ## Purpose
 
-本能力定义各执行阶段 Skill 的重复制执行模型，规定重复模式权威定义文件的位置、标准重复与灵活重复两套轮次规则、子代理 prompt 的分层加载构造方式，以及轮次间摘要要求。
+本能力定义各执行阶段 Skill 的重复制执行模型，规定重复模式权威定义文件的位置、收敛驱动的终止口径（`SHALL NOT` 保留任何轮数上限或分数→轮次映射）、子代理 prompt 的分层加载构造方式与审查范围冻结要求，以及轮次间摘要要求。
 
 ## Requirements
-
-### Requirement: Per-skill repetition model definition file
-Each execution-phase skill SHALL provide its own `references/repetition.md` file as the source of truth for repetition mode execution specifications. The model SHALL support both the tier round **upper bound** (rounds capped by the change tier) and the flexible re-execution overlay (the upper bound raised by the impact scope score). No centralized `kflow-shared/repetition-model.md` SHALL exist. Termination SHALL follow the convergence condition defined in the `tier-driven-repetition` capability, including the recheck round appended when the accumulated unverified-fix list is non-empty at the termination point; the recheck round SHALL NOT consume the tier round upper bound.
-
-#### Scenario: Standard repetition for first execution
-- **WHEN** an execution phase runs for the first time in a change
-- **THEN** the repetition model SHALL cap rounds by the tier upper bound (轻量 1 / 标准 3 / 完整 5)
-- **AND** execution rounds SHALL be at least the global floor of 1
-- **AND** each round SHALL traverse all work items with complete phase-specific workflow
-- **AND** the rounds SHALL NOT be fixed at 10 regardless of tier
-- **AND** the phase SHALL terminate early when the convergence condition (witness round) is met
-
-#### Scenario: Flexible repetition for re-execution
-- **WHEN** an execution phase re-executes after a phase rollback
-- **THEN** the repetition model SHALL determine the round upper bound as `max(tier upper bound, impact score mapping)` using the score from .status.md
-- **AND** apply the score-to-round mapping rules defined in the tier-driven-repetition capability
-- **AND** the recheck round SHALL apply in addition to that upper bound, not within it
-
-#### Scenario: Verification gate for flexible mode
-- **WHEN** an execution phase terminates by convergence with 执行轮次 < the tier round upper bound
-- **THEN** the acceptance criteria SHALL include:
-  - Affected items: 100% coverage verification
-  - Full sweep: at least 1 complete round
-  - Product integrity: all required outputs exist and are format-compliant
-
-#### Scenario: Verification gate when the recheck round is used
-- **WHEN** an execution phase terminates with 终止原因 `收敛（复检轮）`
-- **THEN** `执行轮次` SHALL equal the tier round upper bound (the recheck round is not counted)
-- **AND** the recheck round SHALL have verified every accumulated unverified fix
-- **AND** the acceptance criteria SHALL include: affected items 100% coverage, all required outputs exist and are format-compliant
 
 ### Requirement: Subagent prompt construction follows layered loading from local references
 Subagent prompt construction SHALL follow the layered loading strategy using files from the skill's own `references/` directory. Each phase SKILL.md SHALL specify which `references/` files to load.
@@ -50,3 +20,39 @@ Each execution-phase skill's `references/repetition.md` SHALL include inter-roun
 #### Scenario: Repetition file includes inter-round summary
 - **WHEN** `references/repetition.md` is read for any execution-phase skill
 - **THEN** it SHALL contain a section on inter-round summary format and injection rules
+
+### Requirement: Per-skill convergence-driven repetition model definition file
+
+Each execution-phase skill SHALL provide its own `references/repetition.md` file as the source of truth for repetition mode execution specifications. The model SHALL determine rounds by when convergence actually occurs, SHALL NOT cap rounds by the change tier, and SHALL NOT define or retain any round upper bound, impact-score-to-round mapping, or recheck round. No centralized `kflow-shared/repetition-model.md` SHALL exist. Termination SHALL follow the convergence condition defined in the `convergence-driven-repetition` capability (the witness round with its four conditions).
+
+#### Scenario: Convergence-driven repetition for first execution
+
+- **WHEN** an execution phase runs for the first time in a change
+- **THEN** the repetition model SHALL determine rounds by convergence, not by the change tier
+- **AND** execution rounds SHALL be at least the global floor of 1
+- **AND** each round SHALL traverse all work items with the complete phase-specific workflow
+- **AND** the phase SHALL terminate as soon as the convergence condition (witness round) is met
+- **AND** the rounds SHALL NOT be capped by any tier round upper bound
+
+#### Scenario: Re-execution does not preset or raise rounds
+
+- **WHEN** an execution phase re-executes after a phase rollback
+- **THEN** the repetition model SHALL NOT preset or raise a round upper bound
+- **AND** rounds SHALL be determined by convergence, exactly as for a first execution
+- **AND** the impact scope score SHALL NOT be mapped to a round count
+
+#### Scenario: Verification gate for flexible mode
+
+- **WHEN** an execution phase terminates by convergence
+- **THEN** the acceptance criteria SHALL include:
+  - Affected items: 100% coverage verification
+  - Product integrity: all required outputs exist and are format-compliant
+- **AND** all criteria MUST pass for acceptance
+- **AND** no fixed full-sweep floor round SHALL be required as a separate criterion
+
+#### Scenario: Verification gate aligned with the witness round
+
+- **WHEN** an execution phase terminates by convergence
+- **THEN** the terminating round SHALL have verified every accumulated unverified fix (the witness-round condition (d))
+- **AND** the acceptance criteria SHALL include affected items 100% coverage and product integrity
+- **AND** no recheck round SHALL be appended

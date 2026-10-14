@@ -149,12 +149,12 @@ allowed-tools:
 
 | 阶段 | 验证项 |
 |------|--------|
-| 编码 | 执行轮次 >= 1 且（最近一轮为见证轮 或 = 轮次上限 或 存在通过的复检轮） + traceability 编码列=100% + 无占位符；终止原因取 `收敛` / `收敛（复检轮）` / `达上限`，`达上限` 且份数 = 档位上限 + 1 表示复检轮已执行但未通过（按阻塞/需修订处理） |
+| 编码 | 执行轮次 >= 1 且最近一轮为见证轮 + traceability 编码列=100% + 无占位符；终止结果须为 `收敛`（`未收敛` 不认定完成，须核验存在对应的升级记录） |
 | 代码审查 | code-review.md 存在 + 审查通过标记 |
 | 接口测试 | api/summary.md 存在 + 健康评分达标 |
 | E2E 测试 | e2e/summary.md 存在 |
 | 集成测试 | integration/summary.md 存在 |
-| 详细设计 | detailed-design.md + self-reviews/design 份数 ≥ 1（下限 1 轮，上限由档位决定：轻量 1 / 标准 2 / 完整 5；终止原因含复检轮语义时允许 = 档位上限 + 1）+ cross-reviews ≥1 批次 + traceability 设计列=100% |
+| 详细设计 | detailed-design.md + self-reviews/design 份数 ≥ 1（份数 = 收敛实际发生的轮次，无上限）+ cross-reviews ≥1 批次 + traceability 设计列=100% |
 | 原型设计 | docs/designs/prototypes/manifest.md 与变更级 prototype-changes.md 存在 + BUILD 报告存在 + 用户评审=✅已确认 或 ⏭️跳过 |
 
 验证不通过时输出失败项清单，将对应阶段状态回退为「⚠️ 需修订」，调度回退到该阶段重新执行。仅验证「✅ 完成」阶段，不检查「⏳ 待开始」或「🔄 进行中」阶段。

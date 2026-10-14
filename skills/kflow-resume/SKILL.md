@@ -1,6 +1,6 @@
 ---
 name: kflow-resume
-version: 0.22.0
+version: 0.23.0
 description: Use when user needs to resume interrupted work/继续、恢复、resume {change-name}, or when kflow-guide routes to RESUME mode.
 license: MIT
 triggers:
@@ -82,7 +82,7 @@ VERIFY(存在性验证) -> STATE(优先级链读状态) -> LOCATE(断点定位) 
 │     ├── 检查前置阶段产物是否存在                                  │
 │     ├── 检查前置阶段状态是否为 ✅ 完成                            │
 │     ├── 产物完整性验证（对已完成阶段二次校验）                    │
-│     │   ├── 执行轮次 >= 1 且（见证轮 ∨ = 轮次上限 ∨ 存在通过的复检轮）  │
+│     │   ├── 执行轮次 >= 1 且最近一轮为见证轮；终止结果 = 收敛                │
 │     │   ├── 产物文件存在性                                       │
 │     │   └── traceability 覆盖率达标                              │
 │     ├── 门控通过 -> 继续                                         │
@@ -190,14 +190,14 @@ Priority 5: tasks.md（兜底）
 
 3. 产物完整性验证（对标记为 ✅ 完成的阶段执行二次校验）:
    ├── 3a. 执行轮次验证:
-   │   ├── 读取 .status.md 执行轮次计数器与终止原因字段（收敛 / 收敛（复检轮）/ 达上限）
-   │   ├── 复检轮识别: 终止原因含 `复检轮` 语义（`收敛（复检轮）`）时，该阶段的复检轮已执行且通过——恢复流程 SHALL 认定该阶段正常终止，SHALL NOT 判为轮次不足或缺项；终止原因为 `达上限` 且报告份数 = 档位上限 + 1 时，复检轮已执行但未通过，该阶段已进入非收敛分支（恢复时按阻塞/需修订处理）
+   │   ├── 读取 .status.md 执行轮次计数器（格式 `{N} 轮`，历史 `{N} / {上限}` 形式取分子忽略分母）与终止结果字段（收敛 / 未收敛）
+   │   ├── 终止结果识别: 终止结果 = `收敛` 时该阶段以见证轮正常终止——恢复流程 SHALL 认定该阶段正常终止，SHALL NOT 判为轮次不足或缺项；终止结果 = `未收敛` 时该阶段已进入非收敛分支，恢复时 SHALL 核验存在对应的升级记录（skill-suggestion.md 条目 + 用户决策），无升级记录时按阻塞/需修订处理
    │   ├── 执行类阶段（plan/code/code-review/api-test/e2e-test/integration-test/bug-fix）
-   │   │   └── 要求: 执行轮次 >= 1 且（最近一轮为见证轮 或 执行轮次 = 轮次上限 或 存在通过的复检轮）
+   │   │   └── 要求: 执行轮次 >= 1 且最近一轮为见证轮，终止结果 = `收敛`
    │   ├── 自审类阶段（explore/prototype/design）
-   │   │   └── 要求: 执行轮次 >= 1 且（最近一轮为见证轮 或 执行轮次 = 轮次上限 或 存在通过的复检轮）
+   │   │   └── 要求: 执行轮次 >= 1 且最近一轮为见证轮，终止结果 = `收敛`；报告份数 >= 1
    │   └── 验证类阶段（prototype VERIFY）
-   │       └── 要求: 导航验证与 Playwright 验证各执行 1~5 轮且（见证轮 ∨ = 上限 5 ∨ 存在通过的复检轮，复检轮报告为 `round-recheck.md`）
+   │       └── 要求: 导航验证与 Playwright 验证各执行不少于 1 轮且最近一轮为见证轮（轮数由收敛决定，无上限；报告为 `round-{N}.md`）
    ├── 3b. 产物文件存在性:
    │   ├── 设计探索: functional-designs/index.md + part-NN.md + CONTEXT.md
    │   ├── 原型设计: docs/designs/prototypes/manifest.md + prototype-changes.md

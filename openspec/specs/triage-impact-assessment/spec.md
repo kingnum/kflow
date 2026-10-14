@@ -2,13 +2,13 @@
 
 ## Purpose
 
-定义诊断阶段的影响面评估规则，包括评估证据来源、路由输出中的执行模式声明以及影响评分到重复制轮次的映射关系。
+定义诊断阶段的影响面评估规则，包括评估证据来源、路由输出中的执行模式声明，以及影响面评估信息的去向——受影响项清单与影响范围分数 SHALL 仅用于下游阶段的受影响项清单与回退判定，`SHALL NOT` 映射为重复制轮次（轮数由收敛决定）。
 
 ## Requirements
 
 ### Requirement: Triage impact assessment on diagnosis
 
-kflow-bug-triage SHALL perform impact assessment as part of the diagnostic process, producing an impact scope evaluation that includes affected functional points, interfaces, data model changes, and an impact scope score.
+kflow-bug-triage SHALL perform impact assessment as part of the diagnostic process, producing an impact scope evaluation that includes affected functional points, interfaces, data model changes, and an impact scope score. The impact scope score SHALL NOT be mapped to repetition rounds.
 
 #### Scenario: Impact assessment included in diagnostic report
 
@@ -32,7 +32,8 @@ kflow-bug-triage SHALL perform impact assessment as part of the diagnostic proce
 
 - **WHEN** triage routes to L1 (explore REVISION), L2 (prototype-design REVISION), or L3 (design REVISION)
 - **THEN** the impact assessment SHALL be passed to the target phase via .status.md "Recent Revision Info" section
-- **AND** downstream phases SHALL use this information for flexible repetition mode round decisions
+- **AND** downstream phases SHALL use the affected items list for the verification gate and the rollback decision
+- **AND** downstream phases SHALL NOT use the impact scope score to determine repetition rounds
 
 ### Requirement: Impact assessment evidence sources
 
@@ -55,22 +56,3 @@ kflow-bug-triage SHALL include an execution mode declaration when routing to exe
 - **THEN** the route output SHALL include: `EXECUTION_MODE = SUBAGENT_REQUIRED`
 - **AND** the declaration SHALL specify that the target Skill MUST use Agent subagent for main work
 - **AND** the declaration SHALL specify that subagent SHOULD run in foreground mode (run_in_background=false recommended)
-
-### Requirement: Impact score to round mapping
-
-The system SHALL provide a mapping from impact scope score to recommended repetition rounds for downstream phases. This mapping SHALL be defined once in the tier-driven-repetition capability, and kflow-bug-triage SHALL reference it rather than defining its own numeric ranges.
-
-#### Scenario: Round recommendation table
-
-- **WHEN** impact scope score is calculated
-- **THEN** the triage report SHALL include round recommendations taken from the tier-driven-repetition mapping:
-  - Score <= 3: 1 round
-  - Score 4-15: 3 rounds
-  - Score > 15: 5 rounds
-- **AND** the recommendation SHALL be presented as the impact mapping component of `max(tier upper bound, impact mapping)`, not as an absolute round count
-
-#### Scenario: No locally defined round ranges
-
-- **WHEN** kflow-bug-triage and its `references/` files describe round recommendations
-- **THEN** they SHALL reference the tier-driven-repetition mapping
-- **AND** SHALL NOT define their own score ranges or round counts

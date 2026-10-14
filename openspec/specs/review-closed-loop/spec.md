@@ -78,8 +78,8 @@
 
 #### Scenario: 轻量档自审记录
 - **WHEN** 变更档位为 `轻量`
-- **THEN** 自审 SHALL 执行 1 轮（全局下限）并产出 `self-reviews/{phase}/` 记录
-- **AND** 审计 SHALL NOT 因自审轮次少于档位轮次上限（收敛提前终止）判定为缺项
+- **THEN** 自审 SHALL 执行不少于 1 轮（全局下限）并产出 `self-reviews/{phase}/` 记录
+- **AND** 审查轮数 SHALL 由收敛实际发生在第几轮决定，SHALL NOT 由变更档位预置轮数上限
 
 #### Scenario: cross-reviews 目录
 - **WHEN** kflow-design 执行交叉审查
@@ -108,4 +108,3 @@
 #### Scenario: 审查批次索引
 - **WHEN** synthesis.md 生成或更新
 - **THEN** 包含"审查批次"章节
-

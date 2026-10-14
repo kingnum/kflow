@@ -1,7 +1,7 @@
 ---
 name: kflow-explore
-version: 0.22.0
-description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces tier-driven self-review (floor 1 round, cap 轻量 1 / 标准 2 / 完整 5 by tier, witness-round convergence termination; score floor > 8 applies to 完整 tier only) and two-action save rule for external info gathering.
+version: 0.23.0
+description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces convergence-driven self-review (floor 1 round, rounds determined by convergence — no round cap; witness round with four conditions; score floor > 8 applies to 完整 tier only) and two-action save rule for external info gathering.
 license: MIT
 triggers:
   - 开始新需求
@@ -34,7 +34,7 @@ allowed-tools:
   → 功能点原子级拆分 + 变更档位初判 + 用户覆盖确认 + 阶段集合提示
   → 关联关系分析
   → 输出 functional-designs/（index.md + part-NN.md 目录化结构）
-  → 自循环审查（按变更档位轮次上限，完整性/闭环性/必要性/清晰性，见证轮收敛终止；终止点清单非空时追加 1 轮复检轮）
+  → 自循环审查（收敛驱动：完整性/闭环性/必要性/清晰性全四维度，下限 1 轮、无轮数上限，见证轮四项判据收敛终止）
   → 原型设计决策门控（AskUserQuestion，仅前后端项目，prototype_decision 标记幂等）
   → 标记阶段完成
 ```
@@ -48,9 +48,10 @@ allowed-tools:
 - `functional-designs/index.md` **不再包含**子变更划分方案（子变更划分后置到 design 阶段）
 - `functional-designs/` 至少包含一个 `part-NN.md` 分册文件
 - `.status.md` 必须存在并标记设计探索阶段为 ✅ 完成，且基本信息含「变更档位」字段（`{轻量|标准|完整}`）
-- `self-reviews/explore/` 目录下自审报告文件份数 SHALL 满足：份数 ≤ 档位上限（轻量 1 / 标准 2 / 完整 5），或份数 = 档位上限 + 1 当且仅当终止原因含复检轮语义（`收敛（复检轮）`，或 `达上限` 且复检轮已执行）；份数 > 档位上限 + 1 判违规，份数 = 档位上限 + 1 但终止原因不含复检轮语义亦判违规（防滥用）。收敛提前终止时份数少于上限属正常情形
-- 全部档位均执行自审（下限 1 轮），轻量档附加产物完整性门控：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符
-- 终止点复检轮：到达终止点（最近一轮为见证轮，或执行轮次 = 档位轮次上限）且累积未复核修复清单非空时，SHALL 追加 1 轮复检轮（不消耗档位轮次预算，最多 1 轮）；清单非空却未追加复检轮 SHALL 判为验收不通过
+- `self-reviews/explore/` 目录下自审报告文件份数 SHALL 满足「份数 ≥ 1」——份数 = 收敛实际发生的轮次，SHALL NOT 设份数上限、SHALL NOT 判「轮次超标」；份数为 0 判缺项（审查循环下限为 1 轮，无 0 轮豁免路径）
+- 全部档位均执行自审（下限 1 轮、无轮数上限，轮数由收敛决定），轻量档附加产物完整性门控：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符
+- 终止结果：阶段终止时 SHALL 在 `.status.md` 写入终止结果字段，取值 `收敛` / `未收敛`；`收敛` 当且仅当以见证轮终止，`未收敛` 须有对应的升级记录（`docs/skill-suggestion.md` 条目 + 用户决策）
+- 审查范围冻结：主 Agent 每轮从阶段产物既有内容生成审查对象集合并冻结，审查维度限于四维度枚举；冻结范围之外的发现降级为「范围外观察」，不改产物、不计入新发现数、不阻断收敛；越界轮 SHALL NOT 判为见证轮
 
 # 输入要求
 
@@ -68,7 +69,7 @@ allowed-tools:
 | 功能设计文档 | `docs/changes/{change}/functional-designs/` | ✅ 必须 | 需求描述、项目类型、功能点清单（每功能点含：用户故事、所属页面与菜单、可执行操作、表单项定义、业务规则、业务流程上下文）、功能点关联关系、功能结构树（模块→功能点树状图，含FP-ID/优先级/简述）、核心业务流程图、变更类型判断、版本号+统一修订记录表（合并原需求变更记录与修订记录，格式：版本/日期/修订类型/修订内容/影响功能点/触发阶段） |
 | 领域词汇表 | `CONTEXT.md`（项目根目录） | ✅ 必须 | 项目级领域术语定义，首次构建或增补。每术语含：定义、别名、边界 |
 | 状态文件 | `docs/changes/{change}/.status.md` | ✅ 必须 | 标记设计探索阶段完成，含项目类型字段、**变更档位**字段、执行备注 |
-| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | 🔶 条件 | 自审报告（份数 ≤ 档位上限：轻量 1 / 标准 2 / 完整 5；或 = 档位上限 + 1 当且仅当终止原因含复检轮语义；收敛提前终止时少于上限属正常情形），文件名格式：`{YYYYMMDD}-{HHMMSS}.md`，复检轮报告沿用同一命名并在报告内标注「复检轮」 |
+| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | 🔶 条件 | 自审报告（份数 ≥ 1，份数 = 收敛实际发生的轮次，无上限；份数为 0 判缺项），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
 
 # 执行流程
 
@@ -114,11 +115,8 @@ allowed-tools:
 │  │   主 Agent 读报告 + 确认修复 + 更新「累积未复核修复清单」      │
 │  │   → 启动下一轮子代理                                          │
 │  │   报告路径: self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md       │
-│  │   下限 1 轮 / 上限 轻量 1·标准 2·完整 5（见证轮收敛终止）   │
+│  │   下限 1 轮 / 轮数由收敛决定，无上限（见证轮四项判据收敛终止） │
 │  │   评分底线 > 8 且收敛 仅完整档适用                            │
-│  │   11.5 RECHECK → 终止点清单非空时追加 1 轮复检轮              │
-│  │      （不占档位轮次上限，最多 1 轮；报告内标注「复检轮」）      │
-│  │      通过 → 终止原因 收敛（复检轮）；未通过 → 达上限 → 非收敛 │
 │  12. PROTO_GATE → 原型设计决策门控（仅前后端项目）             │
 │  │   ├── 轻量档 → 不主动询问，跳过本门控（用户显式要求时仍可执行）│
 │  │   ├── 检查 .status.md 中是否存在 prototype_decision 标记     │
@@ -375,9 +373,9 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 
 | 档位 | explore 自身影响 |
 |------|----------------|
-| 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 1 轮（下限即上限），第 1 轮含修复时追加 1 轮复检轮（不占上限）；PROTO_GATE 不主动询问 |
-| 标准 | 标准产出；SELFREV 至多 2 轮（见证轮收敛即止），终止点清单非空时追加 1 轮复检轮 |
-| 完整 | 完整产出；SELFREV 至多 5 轮（含评分底线，且需达成收敛），终止点清单非空时追加 1 轮复检轮 |
+| 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 下限 1 轮、轮数由收敛决定（不因档位限制为 1 轮）；PROTO_GATE 不主动询问 |
+| 标准 | 标准产出；SELFREV 下限 1 轮、轮数由收敛决定（见证轮收敛即止） |
+| 完整 | 完整产出；SELFREV 下限 1 轮、轮数由收敛决定（含评分底线：各维度评分均 > 8 且该轮构成见证轮方为收敛） |
 
 > 档位判定公式、单向升档安全阀与缺省回退规则详见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.1.1 与 `docs/designs/skills/kflow-explore.md`。
 
@@ -488,18 +486,18 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 | 发现节奏 | 后期才暴露其他维度问题 | 早期就暴露各类问题 |
 | 收敛趋势 | 不明显 | 自然收敛（后期问题越来越少） |
 
-### 变更档位自审轮次上限
+### 收敛驱动的自审轮次与审查范围冻结
 
-轮次取值、评分底线与轻量档产物门控详见 [references/self-review.md](references/self-review.md) §4。要点：
+轮次取值、审查范围冻结、评分底线与轻量档产物门控详见 [references/self-review.md](references/self-review.md) §4。要点：
 
-- **档位读取**：读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档处理。
-- **轮次取值**：下限恒为 1 轮（无例外）；上限 轻量 1 / 标准 2 / 完整 5。档位表示**轮次上限**，SHALL NOT 表示必须完成的固定轮次数。
-- **终止条件（先判清单、再分支）**：到达终止点时主 Agent SHALL 先判定**累积未复核修复清单**是否为空——清单非空 → SHALL 追加 1 轮**复检轮**（不消耗档位轮次预算，最多 1 轮），SHALL NOT 在此时终止；清单为空 → **见证轮**（零新发现 + 零修改 + 报告证明全维全量遍历）出现即终止（终止原因 `收敛`），否则继续至轮次上限（终止原因 `达上限`）。
-- **复检轮**：只做验证、不再审不修复；逐项复核自审循环开始以来全部尚未通过独立复核的修复；构成见证轮即为通过（终止原因 `收敛（复检轮）`），未构成则 `达上限` 并进入非收敛分支。报告沿用时间戳命名并在报告内标注「复检轮」。
-- **评分底线**：仅完整档适用——各维度评分均 > 8 **且**最近一轮为见证轮方通过，未达标补审至 5 轮上限。
-- **轻量档**：执行 1 轮 SELFREV（下限即上限），SHALL NOT 豁免自审——启动自审子代理、创建 `self-reviews/explore/` 目录并产出自审报告；产物完整性门控保留为附加硬门（产物全部存在且无 TODO/TBD/未填充占位符，否则阻塞）。第 1 轮含修复时 SHALL 追加复检轮（实际 2 轮），SHALL NOT 因已达上限 1 而直接进入非收敛分支。
-- **非收敛分支**：达轮次上限、无通过的复检轮、且无见证轮 → 记录 `skill-suggestion.md` + AskUserQuestion → 可标记 ⚠️ 阻塞。
-- **轮间摘要**：第 2 轮起的子代理 prompt SHALL 注入前轮摘要（见 `references/self-review.md` §11，含「累积未复核修复清单」字段）；见证轮候选与复检轮须逐项复核清单中的全部条目。
+- **档位读取**：读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档处理。档位只决定**每轮审查形态与产出深度**，SHALL NOT 决定轮数。
+- **轮次取值**：下限恒为 1 轮（无例外）；轮数 SHALL NOT 被预置或限制为任何数值，由收敛实际发生在第几轮决定。
+- **终止条件（唯一成功终止条件）**：某轮同时满足见证轮四项判据——(a) 零新发现、(b) 零修改、(c) 报告证明全维全量遍历、(d) 累积未复核修复清单内全部条目逐项复核通过——时 SHALL 终止，终止结果 `收敛`。
+- **不收敛终止**：命中不收敛判定（无进展 / 振荡 / 安全丝）时 SHALL 终止，终止结果 `未收敛` → 记录 `skill-suggestion.md` + AskUserQuestion → 可标记 ⚠️ 阻塞。
+- **审查范围冻结**：主 Agent 每轮从阶段产物既有内容生成审查对象集合并冻结，审查维度限于四维度枚举；子代理 SHALL NOT 扩大范围、SHALL NOT 新增维度。冻结范围之外的发现降级为「范围外观察」——不改产物、不计入本轮新发现数、不阻断收敛；引入范围外新内容的轮次 SHALL NOT 判为见证轮，主 Agent SHALL 拒收该轮并要求在冻结范围内重审。
+- **评分底线**：仅完整档适用——各维度评分均 > 8 **且**该轮构成见证轮方为收敛；任一维度评分 ≤ 8 时该轮须列出对应具体问题项（故不构成见证轮）。
+- **轻量档**：执行至少 1 轮 SELFREV，SHALL NOT 豁免自审——启动自审子代理、创建 `self-reviews/explore/` 目录并产出自审报告；轮数 SHALL NOT 因档位限制为 1 轮；产物完整性门控保留为附加硬门（产物全部存在且无 TODO/TBD/未填充占位符，否则阻塞）。
+- **轮间摘要**：第 2 轮起的子代理 prompt SHALL 注入前轮摘要（见 `references/self-review.md` §11，含「累积未复核修复清单」与「范围外观察」字段）；见证轮候选须逐项复核清单中的全部条目。
 
 ### 审查维度与检查规则
 
@@ -508,50 +506,50 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 ### 自审执行流程（子代理串行 + 重复制）
 
 ```
-自审执行流程（子代理串行，每轮全维度，按变更档位分级）:
+自审执行流程（子代理串行，每轮全维度，收敛驱动）:
 
 1. 读取变更级 .status.md「变更档位」字段（缺失按 完整 档处理）
-2. 确定轮次上限：轻量 1 / 标准 2 / 完整 5（下限恒为 1 轮，无 0 轮豁免路径）
+   └── 档位只决定每轮审查形态与产出深度，SHALL NOT 决定轮数
+2. 主 Agent 从 functional-designs/ 既有产物生成本轮**审查对象清单**并冻结，
+   审查维度限于完整性、闭环性、必要性、清晰性四个枚举
 3. 创建 self-reviews/explore/ 目录，启动第一轮子代理:
    Agent(
      subagent_type="claude",
      description="Explore 自审 Round 1",
-     prompt="读取 functional-designs/ 下的所有产物文件，按完整性、闭环性、必要性、清晰性全部四个维度独立检查。发现问题直接修复产物文件，生成审查报告到 self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。"
+     prompt="读取 functional-designs/ 下的所有产物文件，按完整性、闭环性、必要性、清晰性全部四个维度独立检查。审查对象集合已冻结——SHALL NOT 审查清单之外的产物或文件、SHALL NOT 新增审查维度、SHALL NOT 借审查之名新增功能点/字段/章节/分支。发现问题直接修复产物文件，生成审查报告到 self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。冻结范围之外发现的问题 SHALL 记为『范围外观察』写入报告的『范围外观察』小节，不在本轮修复、不计入本轮新发现数。"
    )
    └── 第 2 轮起：prompt 注入前轮摘要（见 references/self-review.md §11），并加入「见证轮候选须逐项复核累积未复核修复清单中的全部条目」要求
 4. 子代理返回审查报告路径
-5. 主 Agent 读取报告，确认修复内容，更新「累积未复核修复清单」，并判定本轮是否为见证轮（零新发现 + 零修改 + 全量遍历）
-6. 修复不合理 → 主 Agent 补充修复
-7. 本轮为见证轮 → 终止；否则（未达轮次上限）启动下一轮子代理（Round N+1），步骤同 Round 3
-7.5 到达终止点（见证轮，或已达轮次上限）→ 主 Agent 判定清单是否为空：
-   ├── 清单为空 → 直接终止（收敛 / 达上限）
-   └── 清单非空 → 追加 1 轮复检轮（不占档位轮次预算，最多 1 轮）：
-       启动独立子代理，prompt SHALL 携带完整清单，要求逐项复核全部条目并证明 4 维度全量遍历
-       ├── 构成见证轮 → 终止（终止原因 收敛（复检轮））
-       └── 未构成 → 终止（终止原因 达上限）→ 非收敛分支
+5. 主 Agent 读取报告，确认修复内容，更新「累积未复核修复清单」，判定本轮是否为见证轮（四项判据），并校验本轮是否越界
+6. 修复不合理 → 主 Agent 补充修复；越界轮 → 拒收并要求在冻结范围内重审
+7. 本轮为见证轮 → 终止（终止结果 收敛）；命中不收敛判定 → 终止（终止结果 未收敛）→ 非收敛分支；
+   其余情形 → 递增计数器，启动下一轮子代理（Round N+1），步骤同 Round 3
 8. SHALL NOT 并行启动多个子代理（串行执行）
 9. 轮次控制：
-   ├── 全部档位 → 至少执行 1 轮
-   ├── 轻量档（上限 1）→ 第 1 轮即为见证轮时终止；第 1 轮含修复则追加复检轮，SHALL NOT 因已达上限 1 而直接进入非收敛分支
-   ├── 标准档（上限 2）→ 出现见证轮即提前终止，至多 2 轮
-   └── 完整档（上限 5）→ 各维度评分均 > 8 且最近一轮为见证轮方通过；未达标补审至 5 轮上限
-   └── 复检轮 SHALL NOT 计入上述上限（任意档位最多追加 1 轮）
-10. 终止时写入 .status.md 终止原因（收敛 / 收敛（复检轮）/ 达上限）；达上限、无通过的复检轮、且无见证轮 → 非收敛分支
+   ├── 全部档位 → 至少执行 1 轮，无 0 轮豁免路径
+   ├── 轮数 SHALL NOT 被预置或限制为任何数值；达成见证轮即终止
+   ├── 完整档 → 各维度评分均 > 8 且该轮构成见证轮方为收敛；评分 ≤ 8 时须列出具体问题项
+   ├── 命中不收敛判定 → 终止并升级用户
+   └── SHALL NOT 为凑轮数而继续执行无增量价值的轮次
+10. 终止时写入 .status.md 终止结果（收敛 / 未收敛）；未收敛 → 非收敛分支
 11. 终止后标记阶段完成
 ```
 
 ### 强制执行规则
 
 - 全部档位 SHALL 至少执行 1 轮自审，SHALL NOT 存在 0 轮豁免路径
-- 轻量档 SHALL 执行 1 轮自审（启动子代理、创建 `self-reviews/explore/` 目录并产出自审报告），产物完整性门控保留为附加硬门
-- 标准档 SHALL 至多执行 2 轮自审；出现见证轮即提前终止
-- 完整档 SHALL 至多执行 5 轮自审，且各维度评分均 > 8 且最近一轮为见证轮方通过；未达标补审至 5 轮上限
-- 到达终止点且累积未复核修复清单非空时 SHALL 追加 1 轮复检轮；复检轮 SHALL NOT 消耗档位轮次预算，单个阶段最多追加 1 轮，未通过时 SHALL NOT 追加第二轮
-- 复检轮 SHALL 逐项复核清单内**全部**修复（不限于最后一轮），并证明 4 维度全量遍历；未证明全量遍历或任一条目复核不通过时 SHALL NOT 判定为通过
-- SHALL NOT 为凑满轮次上限而继续执行无增量价值的轮次
-- SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审；复检轮同样由独立子代理执行，SHALL NOT 由主 Agent 接管，子代理异常时 MUST 重新创建
+- 轻量档 SHALL 执行至少 1 轮自审（启动子代理、创建 `self-reviews/explore/` 目录并产出自审报告），轮数 SHALL NOT 因档位限制为 1 轮；产物完整性门控保留为附加硬门
+- 轮数 SHALL NOT 被预置或限制为任何数值；达成见证轮即终止
+- 完整档各维度评分均 > 8 且该轮构成见证轮方为收敛；任一维度评分 ≤ 8 时该轮须列出对应具体问题项（不构成见证轮）
+- 审查对象集合 SHALL 由主 Agent 每轮从阶段产物既有内容生成并冻结，审查维度限于四维度枚举；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度
+- 冻结范围之外的发现 SHALL 记为「范围外观察」，SHALL NOT 在本轮修复、SHALL NOT 计入本轮新发现数、SHALL NOT 阻断收敛；引入范围外新内容的轮次 SHALL NOT 被判定为见证轮，主 Agent SHALL 拒收该轮并要求在冻结范围内重审
+- 见证轮候选 SHALL 逐项复核「累积未复核修复清单」内**全部**条目（不限于最后一轮），并证明 4 维度全量遍历；任一条目复核不通过或未证明全量遍历时 SHALL NOT 判定为见证轮
+- 命中不收敛判定（无进展 / 振荡 / 安全丝）时 SHALL 终止并升级用户，终止结果 `未收敛`
+- SHALL NOT 为凑轮数而继续执行无增量价值的轮次
+- SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审，子代理异常时 MUST 重新创建
 - SHALL NOT 并行启动多个子代理（串行执行，前一轮完成后再启动下一轮）
-- 终止时 SHALL 写入 .status.md 终止原因（收敛 / 收敛（复检轮）/ 达上限）；达上限、无通过的复检轮、且无见证轮时 SHALL 进入非收敛分支
+- 终止时 SHALL 写入 .status.md 终止结果（收敛 / 未收敛）；未收敛时 SHALL 进入非收敛分支
+- 主 Agent SHALL 在阶段终止时汇总「范围外观察」条目并向用户提示
 - 自审终止后标记阶段完成，释放 prototype 或 design 阶段门控
 
 ## 步骤 12：PROTO_GATE — 原型设计决策门控（仅前后端项目）
@@ -662,7 +660,7 @@ CONTEXT.md 消费链:
 - **FP 类型标记**：每个功能点 SHALL 标记为「后端」或「前端」，无法归类的 FP 必须继续拆分，类型作为后续子变更划分类型校验的依据
 - **项目类型继承**：三级回落读取项目级记录（CLAUDE.md 项目画像 → `docs/toolchain.md` 头部 → 就地检测），项目级记录可用时 SHALL NOT 重新扫描判定；静默一致性校验一致即静默继承（不询问用户），仅记录缺失或校验冲突时才 AskUserQuestion；校验失败不阻塞；降级补写落在 `docs/toolchain.md` 头部且 SHALL NOT 写入 CLAUDE.md 项目画像区块；变更级快照在变更生命周期内冻结
 - **子变更划分不在此阶段执行**：后置到详细设计阶段完成后基于完整设计认知划分
-- **档位自审强制执行（子代理串行 + 重复制）**：轮次下限 1 轮、上限按变更档位取值（轻量 1 / 标准 2 / 完整 5）；完整档各维度评分均 > 8 且最近一轮为见证轮方通过（未达标补审至 5 轮上限）。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），子代理边审边修，串行不可并行，达成见证轮收敛即终止，SHALL NOT 为凑满上限而空转。到达终止点且累积未复核修复清单非空时 SHALL 追加 1 轮**复检轮**（不消耗档位轮次预算，最多 1 轮），逐项复核清单内全部修复；复检轮通过写入终止原因 `收敛（复检轮）`，未通过写入 `达上限` 并进入非收敛分支
+- **自审强制执行（子代理串行 + 重复制 + 收敛驱动）**：轮次下限 1 轮、轮数由收敛决定（SHALL NOT 预设或限制为任何数值）；完整档各维度评分均 > 8 且该轮构成见证轮方为收敛，评分 ≤ 8 时须列出具体问题项。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），审查对象集合由主 Agent 冻结、维度集合封闭，子代理边审边修，串行不可并行，达成见证轮（四项判据）即终止，终止结果 `收敛`；命中不收敛判定时终止结果 `未收敛` 并进入非收敛分支。SHALL NOT 为凑轮数而空转
 - **两动作规则**：每 2 次外部信息收集操作后立即保存关键发现到 functional-designs/
 - **CONTEXT.md**：项目级领域词汇表，首次构建后持续增补，后续阶段只引用不修改
 - **functional-designs/ 结构**：index.md（含版本号、需求变更记录表、配置项影响矩阵）+ part-NN.md 目录化结构

@@ -1,0 +1,76 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: 中断恢复阶段产物完整性验证
+
+系统 SHALL 在 kflow-resume 的 GATE 步骤中，对 .status.md 标记为「✅ 完成」的阶段执行产物完整性验证，验证不通过时拒绝认定该阶段完成。执行类阶段的完成判定 SHALL 以「执行轮次 >= 1 且最近一轮为见证轮」为准，SHALL NOT 以「达到轮数上限」作为完成依据；该阶段终止结果 SHALL 为 `收敛`，终止结果为 `未收敛` 的阶段 SHALL NOT 被认定为完成。
+
+#### Scenario: 编码阶段产物验证
+
+- **WHEN** kflow-resume 读取 .status.md 发现编码阶段状态为「✅ 完成」
+- **THEN** 系统 SHALL 验证以下条件全部满足：
+  - `.status.md` 中「执行轮次」字段 >= 1 且最近一轮为见证轮
+  - `traceability.md` 文件中「编码实现」列覆盖率 = 100%
+  - 不存在 TODO/TBD/{待填写} 等占位符
+- **AND** 任一条件不满足 → 拒绝认定编码阶段完成，标记为「⚠️ 需修订」
+
+#### Scenario: 代码审查阶段产物验证
+
+- **WHEN** kflow-resume 读取 .status.md 发现代码审查阶段状态为「✅ 完成」
+- **THEN** 系统 SHALL 验证：`subchanges/{subchange}/test-reports/review/code-review.md` 文件存在且包含审查通过标记
+- **AND** 文件不存在或无通过标记 → 拒绝认定代码审查阶段完成
+
+#### Scenario: 接口测试阶段产物验证
+
+- **WHEN** kflow-resume 读取 .status.md 发现接口测试阶段状态为「✅ 完成」
+- **THEN** 系统 SHALL 验证：`subchanges/{subchange}/test-reports/api/summary.md` 文件存在且健康评分达到通过阈值
+- **AND** 文件不存在或评分不达标 → 拒绝认定接口测试阶段完成
+
+#### Scenario: E2E 测试阶段产物验证
+
+- **WHEN** kflow-resume 读取 .status.md 发现 E2E 测试阶段状态为「✅ 完成」
+- **THEN** 系统 SHALL 验证：`subchanges/{subchange}/test-reports/e2e/summary.md` 文件存在
+- **AND** 文件不存在 → 拒绝认定 E2E 测试阶段完成
+
+#### Scenario: 详细设计阶段产物验证
+
+- **WHEN** kflow-resume 读取 .status.md 发现详细设计阶段状态为「✅ 完成」
+- **THEN** 系统 SHALL 验证：
+  - `detailed-design.md` 文件存在
+  - `self-reviews/design/` 目录存在且包含至少 10 个自审报告文件
+  - `cross-reviews/` 目录存在且至少有一个批次目录
+  - `traceability.md` 存在且「详细设计」列覆盖率 = 100%
+
+#### Scenario: 全部验证通过
+
+- **WHEN** 所有标记为「✅ 完成」的阶段产物验证均通过
+- **THEN** 门控验证通过，进入 SUMMARIZE 步骤
+- **AND** 输出恢复摘要并调度对应阶段 Skill
+
+#### Scenario: 部分验证失败
+
+- **WHEN** 存在阶段标记为「✅ 完成」但产物验证不通过
+- **THEN** 系统 SHALL 输出验证失败项清单
+- **AND** 将对应阶段状态回退为「⚠️ 需修订」
+- **AND** 调度回退到该阶段重新执行
+- **AND** 提示用户状态文件与产物不一致
+
+### Requirement: 验证项映射表
+
+系统 SHALL 根据当前阶段映射对应的产物验证项。执行类阶段的完成判定 SHALL 读取该阶段的终止结果：终止结果为 `收敛`（即以见证轮终止）时合法，终止结果为 `未收敛` 时 SHALL NOT 认定为完成，无论执行轮次为何。
+
+#### Scenario: 阶段到产物验证映射
+
+- **WHEN** 系统执行产物验证
+- **THEN** 系统 SHALL 使用以下映射：
+
+| 阶段 | 验证项 |
+|------|--------|
+| 编码 | 执行轮次 >= 1 且最近一轮为见证轮 + traceability 编码列=100% + 无占位符 |
+| 代码审查 | code-review.md 存在 + 审查通过标记 |
+| 接口测试 | api/summary.md 存在 + 健康评分达标 |
+| E2E 测试 | e2e/summary.md 存在 |
+| 集成测试 | integration/summary.md 存在 |
+| 详细设计 | detailed-design.md + self-reviews/design ≥1 文件 + cross-reviews ≥1 批次 + traceability 设计列=100% |
+| 原型设计 | `docs/designs/prototypes/manifest.md` 与变更级 `prototype-changes.md` 存在 + BUILD 报告存在（`self-reviews/prototype/cdn-crossref-check/report.md`）+ 用户评审=✅已确认 或 ⏭️跳过 |
