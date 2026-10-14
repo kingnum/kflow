@@ -38,8 +38,9 @@ templates/
 │   │   ├── security-review.md                  #     安全视角审查报告模板（完整档；标准档并入 security-quality-review.md）
 │   │   ├── quality-review.md                   #     质量视角审查报告模板（完整档；标准档并入 security-quality-review.md）
 │   │   └── review-synthesis.md                 #     审查综合报告模板（全档位均产出；轻量档为唯一审查产物）
-│   ├── self-reviews/                           #   自循环审查报告（标准档 2 份 / 完整档 10 份；轻量档 0 份不产出）
-│   │   └── review-round.md                     #     自审轮次报告模板（轻量档不使用）
+│   ├── self-reviews/                           #   自循环审查报告（单轮验证，固定一份）
+│   │   ├── report.md                           #     单轮验证报告模板
+│   │   └── prototype/verify-report.md          #     VERIFY 单轮合并验证报告模板（五分区）
 │   ├── prototype-plan/                         #   原型过程产物（镜像 docs/changes/{change}/prototype-plan/）
 │   │   ├── design-prompt.md                    #     原型设计提示词模板
 │   │   └── style-decision.md                   #     风格选择决策模板
@@ -105,7 +106,8 @@ templates/
 | 8 | changes/{change}/element-coverage-tree.md | element-coverage-tree.md | kflow-prototype-design / kflow-design | 新建 |
 | 9 | changes/{change}/detailed-design.md | detailed-design.md | kflow-design | 抽取 |
 | 10 | changes/{change}/review-reports/review-synthesis.md | cross-reviews/{timestamp}/synthesis.md | kflow-design | 抽取 |
-| 11 | changes/{change}/self-reviews/review-round.md | self-reviews/{phase}/{YYYYMMDD}-{HHMMSS}.md | kflow-explore / kflow-prototype-design / kflow-design | 新建 |
+| 11 | changes/{change}/self-reviews/report.md | self-reviews/{phase}/report.md | kflow-explore / kflow-prototype-design / kflow-design / kflow-plan | 新建 |
+| 11a | changes/{change}/self-reviews/prototype/verify-report.md | self-reviews/prototype/verify-report.md | kflow-prototype-design | 新建 |
 | 12 | changes/{change}/review-reports/business-review.md | cross-reviews/{timestamp}/business-review.md | kflow-design | 新建 |
 | 13 | changes/{change}/review-reports/technical-review.md | cross-reviews/{timestamp}/technical-review.md | kflow-design | 新建 |
 | 14 | changes/{change}/review-reports/security-review.md | cross-reviews/{timestamp}/security-review.md | kflow-design | 新建 |

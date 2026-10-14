@@ -278,7 +278,7 @@ allowed-tools:
 | 接口单元测试 | kflow-api-test | curl/HTTP 接口测试（所有项目类型必须；`轻量` 档按阶段适用性声明判定） |
 | E2E测试 | kflow-e2e-test | 浏览器自动化测试（仅前后端项目，依赖 kflow-api-test） |
 | 集成测试 | kflow-integration-test | 变更级集成测试、四分法修复循环（内聚） |
-| 审计 | kflow-audit | 四维度评估、审计报告（归档门控） |
+| 审计 | kflow-audit | 四项记账职责、审计报告（归档门控） |
 | 归档 | kflow-archive | 变更归档、设计合并、索引更新 |
 | 产物诊断 | kflow-verify | 独立诊断（非流程阶段），可随时调用诊断产物完整性 |
 | 问题分诊 | kflow-bug-triage | 独立诊断（非流程阶段），四层溯源定位问题源头并路由修复 |

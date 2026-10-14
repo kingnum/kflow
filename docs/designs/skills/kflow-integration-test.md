@@ -9,7 +9,7 @@
 
 ```yaml
 name: kflow-integration-test
-description: 集成测试阶段 - 变更级集成测试执行，内聚四分法缺陷修复循环，架构评估自动触发。必须阶段（轻量档下按阶段适用性声明条件适用），变更级。适用于前后端和纯后端项目。阶段钩子引用 `skills/kflow-integration-test/references/hooks.md`（每轮前 STOP→编译→迁移→START→健康检查，每轮后 STOP+浏览器清理）。
+description: 集成测试阶段 - 变更级集成测试执行，内聚四分法缺陷修复循环，架构评估自动触发。必须阶段（轻量档下按阶段适用性声明条件适用），变更级。适用于前后端和纯后端项目。阶段钩子引用 `skills/kflow-integration-test/references/hooks.md`（执行前 STOP→编译→迁移→START→健康检查，执行后 STOP+浏览器清理）。
 license: MIT
 triggers:
   - 集成测试
@@ -80,13 +80,13 @@ allowed-tools:
 
 - SHALL NOT 启动 `kflow-integration-test`
 - SHALL NOT 执行任何 PRE_HOOK / POST_HOOK 步骤（含变更级服务刷新、编译重启、浏览器清理）
-- SHALL NOT 产出 `test-reports/integration/summary.md` 与轮次报告
+- SHALL NOT 产出 `test-reports/integration/summary.md` 与执行报告
 - SHALL **直接进入审计阶段**，跳过本阶段执行流程的全部步骤
 - 阶段状态由 `kflow-design` 写入适用性声明时一次性标记为 `⏭️ 不适用`，不由本阶段自身更新
 - 归档门控 SHALL 视为满足，SHALL NOT 要求集成测试产物存在
 - `traceability.md`「集成测试」列 SHALL 整列填 `⏭️`，不计入覆盖率分母
 
-> 轻量档集成测试仍适用时，SHALL 按收敛驱动的轮次口径执行（下限 1 轮、不设轮数上限），SHALL NOT 按任何档位的轮次数值要求阻塞；轮数由收敛实际发生在第几轮决定，不因档位判定为超限或缺项。
+> 轻量档集成测试仍适用时，SHALL 按**单轮全面执行 + 定向重验**口径执行（轮数恒为 1，定向重验后累计），SHALL NOT 按任何档位的轮次数值要求阻塞；不因档位判定为超限或缺项。
 
 ---
 
@@ -107,7 +107,7 @@ allowed-tools:
 
 | 产物 | 文件 | 模板 | 图例 | 验收标准 |
 |------|------|------|------|---------|
-| 测试轮次报告 | test-reports/integration/round-{n}.md | [集成测试轮次报告](../../templates/changes/{change}/integration/integration-round-report.md) | ✅ 必须 | 每轮测试结果记录 |
+| 测试执行报告 | test-reports/integration/round-{n}.md | [集成测试轮次报告](../../templates/changes/{change}/integration/integration-round-report.md) | ✅ 必须 | 单轮全面执行与定向重验结果记录 |
 | 测试总结文档 | test-reports/integration/summary.md | [集成测试总结](../../templates/changes/{change}/integration/integration-summary.md) | ✅ 必须 | 全部通过后输出"集成测试通过" |
 | 修复报告 | test-reports/integration/fix-reports/{type}-{timestamp}.md | [缺陷修复报告](../../templates/subchanges/{subchange}/fix-report.md) / [契约错误报告](../../templates/changes/{change}/integration/contract-error-report.md) | 🔶 条件 | 失败修复时输出 |
 | 架构评估报告 | test-reports/integration/fix-reports/arch-assessment-{timestamp}.md | [架构评估报告](../../templates/changes/{change}/integration/arch-assessment.md) | 🔶 条件 | 连续3轮同用例失败时 |
@@ -232,7 +232,7 @@ allowed-tools:
 | 规则 | 说明 |
 |------|------|
 | 计数粒度 | 按测试用例 ID 独立追踪 |
-| 记录位置 | 每轮测试轮次报告中记录各用例连续失败次数 |
+| 记录位置 | 测试执行报告中记录各用例连续失败次数 |
 | 跨轮保留 | 计数器跨测试轮次保留，不受其他用例通过/失败影响 |
 
 ### 失败计数重置
@@ -269,14 +269,14 @@ allowed-tools:
 
 ## 测试报告格式
 
-### 集成测试轮次报告
+### 集成测试执行报告
 
 ```markdown
-# 集成测试轮次报告：Round {n}
+# 集成测试执行报告：{change-name}
 
 ## 基本信息
 - **测试时间**: {YYYY-MM-DD HH:MM}
-- **测试轮次**: {n}
+- **执行阶段**: 单轮全面执行 / 定向重验（第 {n} 次）
 - **变更**: {change-name}
 - **项目类型**: {前后端 / 纯后端}
 - **测试用例数**: {总数}
@@ -347,7 +347,7 @@ allowed-tools:
 
 > 完整规范参见 `skills/kflow-integration-test/references/service-lifecycle.md`
 
-集成测试阶段由变更级 agent 独占服务管理，子变更 agent 为纯消费者。每轮测试前执行编译重启，服务不可用时走崩溃恢复流程。
+集成测试阶段由变更级 agent 独占服务管理，子变更 agent 为纯消费者。集成测试执行前执行编译重启，服务不可用时走崩溃恢复流程。
 
 ---
 
@@ -359,29 +359,29 @@ allowed-tools:
 
 ---
 
-## 重复制（执行类阶段）
+## 单轮全面执行 + 定向重验（执行类阶段）
 
-> ⚠ **子代理强制规则**（参见 skills/kflow-integration-test/references/repetition.md §12）：本阶段（集成测试）主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收，SHALL NOT 直接执行集成测试主工作（跨子变更测试/四分法修复/架构评估等），无例外。子代理崩溃时轮次级重试（≤3 次），全部失败标记 ⚠️ 阻塞。
+> ⚠ **子代理强制规则**（参见 skills/kflow-integration-test/references/repetition.md §12）：本阶段（集成测试）主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收，SHALL NOT 直接执行集成测试主工作（跨子变更测试/四分法修复/架构评估等），无例外。子代理崩溃时重试（≤3 次），全部失败标记 ⚠️ 阻塞。
 
-集成测试阶段属于执行类阶段，采用**收敛驱动**的重复制模式，轮次下限全局统一为 1 轮（无例外）、**不设轮数上限**（轮数由收敛实际发生在第几轮决定）：
+集成测试阶段属于执行类**单轮类阶段**，采用**单轮全面执行 + 定向重验**模式：
 
-- **轮次来源**：轮数 SHALL NOT 由变更档位决定——变更档位只决定**每轮审查形态与产出深度**。读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档确定审查形态与产出深度。
-- **回退重执行**：SHALL NOT 预置或提高轮数；「最近修订信息」的受影响项清单仅供验证门控的「受影响项 100% 覆盖」使用，SHALL NOT 用于推算轮次数值。
-- **审查范围冻结**：每轮审查对象集合由主 Agent 从阶段产物既有内容生成并冻结，审查维度限于本阶段固定枚举；冻结范围之外的发现降级为「范围外观察」——不改产物、不计入本轮新发现数、不阻断收敛；引入范围外新内容的轮次 SHALL NOT 判为见证轮。
-- **无 0 轮豁免**：审查循环 SHALL 执行不少于 1 轮。
-- **执行方式**：子代理每轮遍历全部集成场景，逐条多服务协作验证。
-- **终止条件（唯一成功终止条件）**：某轮同时满足见证轮四项判据——(a) 零新发现、(b) 零修复零修改、(c) 报告证明全部工作项与全部审查对象已完成全量遍历、(d) 累积未复核修复清单内全部条目逐项复核通过——时终止，终止结果 `收敛`。
-- **不收敛终止**：命中不收敛判定（无进展 / 振荡 / 安全丝）时终止，终止结果 `未收敛`，进入非收敛分支并升级用户。
-- **字段写入**：`执行轮次` 字段格式为 `{N} 轮`（无分母，下限 1 轮、无上限）；阶段终止时 SHALL 在 `.status.md` 写入**终止结果**字段（取值 `收敛` / `未收敛`），具体缘由写入 `docs/skill-suggestion.md`。终止模型与见证轮判据的权威定义见 `convergence-driven-repetition` 能力。
+- **单轮全面执行**：SHALL 在一轮内遍历 integration-tests/ 全部集成场景执行完整流程（逐条多服务协作验证），SHALL NOT 执行第二轮全量审查。单轮执行时 `执行轮次` 记为 1。
+- **定向重验**：单轮执行发现失败项时，主 Agent 修复后仅**重跑失败用例**、不重跑全量；属**有界**重试（连续 3 次仍未通过即终止），不构成收敛循环，SHALL NOT 使用任何轮次循环判据。`执行轮次` 随定向重验累计。
+- **定向重验 ≠ recheck-round**：`recheck-round` 指旧审查循环到达终止点后追加的复核轮（因依赖已废除的轮数上限而被移除）；定向重验触发于测试失败后的修复动作，二者触发时机、输入、输出均不同，SHALL NOT 混用命名。
+- **档位语义**：变更档位只决定**审查形态与产出深度**，SHALL NOT 决定轮数。读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档确定审查形态与产出深度。
+- **回退重执行**：SHALL NOT 预置或提高轮数；「最近修订信息」的受影响项清单仅供验证门控的「受影响项 100% 覆盖」使用。
+- **审查范围冻结**：审查对象集合由主 Agent 从阶段产物既有内容生成并冻结，审查维度限于本阶段固定枚举；冻结范围之外的发现降级为「范围外观察」——不改产物、不计入发现数。
+- **字段写入**：`执行轮次` 字段格式为 `{N} 轮`（无分母，下限 1 轮）；阶段终止时 SHALL 在 `.status.md` 写入**终止结果**字段（取值 `执行完成` / `定向重验失败`）。历史遗留的 `收敛` 取值读取侧归并为 `验证通过`，其余归并为 `验证发现问题`。
+- **主 Agent 验收判据**：以「执行报告完整（含全量遍历证明）+ 阶段产物齐全 + traceability 覆盖率达标 + 无 TODO/TBD/{待填写} 占位符 + 定向重验全部通过」为通过条件；SHALL NOT 以轮次数量作为通过或拒收依据。
 
-> **权威定义**：终止模型、见证轮判据、不收敛判定与审查范围冻结唯一定义于 `convergence-driven-repetition` 能力，本 Skill 仅引用，SHALL NOT 自行定义轮次数值或终止条件。
+> **权威定义**：执行类阶段的单轮执行与定向重验模型定义于 `agent-iteration-execution` 能力；审查范围冻结定义于 `convergence-driven-repetition` 能力。本 Skill 仅引用，SHALL NOT 自行定义轮次数值或终止条件。
 
-> 通用规范（复杂度公式、轮次执行细节、prompt 规范、审查范围冻结、验证门控）参见 `skills/kflow-integration-test/references/repetition.md`
+> 通用规范（复杂度公式、prompt 规范、审查范围冻结、验证门控）参见 `skills/kflow-integration-test/references/repetition.md`
 
 ### 阶段特定参数
 
 - **遍历项**：integration-tests/ 全部集成场景
-- **每轮工作**：逐条多服务协作验证 + 四分法根因分类处理失败 + 架构评估自动触发
+- **单轮工作**：逐条多服务协作验证 + 四分法根因分类处理失败 + 架构评估自动触发
 - **复杂度权重**：集成场景数 × 2 + 子变更数 × 1.5
 - **产物要求**：traceability.md「集成测试」列覆盖率 = 100%，round-{n}.md + summary.md 标记「集成测试通过」
 
@@ -396,9 +396,9 @@ allowed-tools:
 - **前置阶段**：所有子变更编码+审查+测试通过（测试阶段可标记 `⏭️ 不适用`，须有声明依据）+ 服务刷新
 - **后续阶段**：审计 → 归档
 - **内聚功能**：变更级缺陷修复（四分法），不跳转到 `kflow-bug-fix`
-- **服务管理**：变更级 agent 独占服务生命周期管理，每轮集成测试前编译重启
+- **服务管理**：变更级 agent 独占服务生命周期管理，集成测试执行前编译重启
 - **关系说明**：`kflow-bug-fix` 仅处理子变更级缺陷修复（二分法），变更级修复由本 Skill 内聚处理
-- **执行模式**：收敛驱动的重复制，轮次下限 1、轮数由收敛实际发生在第几轮决定（SHALL NOT 预设轮数上限；参见 skills/kflow-integration-test/references/repetition.md §14），见证轮四项判据收敛终止，终止结果二值（收敛 / 未收敛）；审查范围冻结 + 范围外观察降级 + 不收敛判定与升级；复杂度评估仅信息展示，主 Agent 验收闭环
+- **执行模式**：单轮全面执行 + 定向重验（仅重跑失败用例，有界重试，连续 3 次失败即终止；参见 skills/kflow-integration-test/references/repetition.md），终止结果取 `执行完成` / `定向重验失败`；审查范围冻结 + 范围外观察降级；复杂度评估仅信息展示，主 Agent 验收闭环
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: kflow-status
-version: 0.23.0
+version: 0.24.0
 description: Use when user needs status overview/状态查看、进度、任务总结、进度汇总.
 license: MIT
 triggers:
@@ -105,6 +105,7 @@ SCAN(扫描 docs/changes/) -> FILTER(排除 archive/) -> INDEX(读 index.md 如�
    ├── Read: docs/changes/{change}/.status.md
    │   ├── 提取: 变更描述、变更类型、项目类型、当前阶段
    │   ├── 提取: 阶段状态表（各阶段 ✅/🔄/⏳/⏭️/❌/⚠️ 状态）
+   │   ├── 提取: 各阶段「终止结果」字段（如有；读取与归并规则见下）
    │   └── 提取: 创建时间（如有）
    ├── 如有子变更:
    │   ├── Glob: docs/changes/{change}/subchanges/*/.status.md
@@ -112,6 +113,22 @@ SCAN(扫描 docs/changes/) -> FILTER(排除 archive/) -> INDEX(读 index.md 如�
    │   └── Read: 各子变更的 tasks.md（获取功能点数和依赖关系）
    └── 如无 .status.md -> 标记为"未初始化"
 ```
+
+### 终止结果字段读取规则
+
+各阶段 `.status.md` 的「终止结果」字段按阶段类型取值，读取侧 SHALL 覆盖下列三类取值，并按下表归并：
+
+| 取值 | 适用阶段 | 读取含义 |
+|------|---------|---------|
+| `验证通过` | 设计类与计划阶段（explore / prototype-design / design / plan） | 单轮验证零发现且无签署不成立项，正常终止 |
+| `验证发现问题({N})` | 设计类与计划阶段 | 存在发现项或签署不成立项，N 为发现总数；主 Agent 已统一修复 |
+| `执行完成` | 执行类阶段（code / code-review / api-test / e2e-test / integration-test / bug-fix） | 全部工作项完成全量遍历；单轮类阶段另须定向重验全部通过 |
+| `定向重验失败` | 单轮类执行阶段（api-test / e2e-test / integration-test） | 定向重验连续 3 次未通过（须有升级记录） |
+| `停滞` | 重复制类执行阶段（code / code-review / bug-fix） | 连续 3 轮无实质进展（须有升级记录） |
+
+**历史取值归并**：读取侧遇到历史变更遗留的 `收敛` 取值 SHALL 归并为 `验证通过`，其余历史取值（如 `未收敛`）SHALL 归并为 `验证发现问题`；SHALL NOT 要求迁移历史 `.status.md`。
+
+**自审报告存在性**：设计类与计划阶段的自审记录按 `self-reviews/{phase}/report.md` 是否存在判定（存在为正常形态，缺失判缺项）；历史变更遗留的多份时间戳报告（`{YYYYMMDD}-{HHMMSS}.md`）不做迁移，按「目录下至少一份报告存在」判定；SHALL NOT 因报告仅 1 份而判为缺项。
 
 ## 步骤 5：AGGREGATE — 汇总计算
 
@@ -313,6 +330,7 @@ docs/changes/index.md 的优先级：
 - **空目录（无 .status.md）标记为"未初始化"**，仍纳入列表
 - **子变更按依赖拓扑排序**：无依赖在前，有依赖在后
 - **HITL 类型子变更特别标注**，提醒需要人工介入
+- **终止结果按新取值判读**：`验证通过` / `验证发现问题({N})`（设计类与计划阶段）、`执行完成` / `定向重验失败` / `停滞`（执行类阶段）；历史 `收敛` 归并为 `验证通过`、其余历史取值归并为 `验证发现问题`
 - **加权进度取整到 1%**，避免虚假精度
 
 # 反馈机制

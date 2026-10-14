@@ -24,7 +24,7 @@
 | `kflow-integration-test` | 集成测试 | 变更级 | 必须 | 集成测试执行、内聚四分法修复循环、架构评估自动触发 | [kflow-integration-test.md](kflow-integration-test.md) |
 | `kflow-status` | 状态总结 | — | 按需 | 未归档变更汇总、子变更进度矩阵 | [kflow-status.md](kflow-status.md) |
 | `kflow-archive` | 归档 | 变更级 | 必须 | 变更归档、集成测试门控、索引更新、设计合并 | [kflow-archive.md](kflow-archive.md) |
-| `kflow-audit` | 使用评估 | — | 归档门控+按需 | 四维度评估、审计报告、审计回退路由 | [kflow-audit.md](kflow-audit.md) |
+| `kflow-audit` | 使用评估 | — | 归档门控+按需 | 四项记账职责、审计报告、审计回退路由 | [kflow-audit.md](kflow-audit.md) |
 | `kflow-init` | 环境初始化 | — | 按需 | 环境能力发现、工具推荐矩阵、toolchain.md 输出 | [kflow-init.md](kflow-init.md) |
 | `kflow-resume` | 中断恢复 | — | 按需 | 通过变更名定位断点、按优先级链读取状态、调度阶段 Skill | [kflow-resume.md](kflow-resume.md) |
 
@@ -173,7 +173,7 @@ kflow-explore (变更级) ──────────────────
 每个 Skill 在执行前会进行门控检查，确保前置阶段已完成。详细的门控规则定义在 [core-mechanisms/03-status-and-tasks.md](../core-mechanisms/03-status-and-tasks.md#34-门控规则) 章节，包括：
 
 - **正向门控规则**：7 条阶段进入门控检查
-- **审计门控**：归档前四维度审计，新增第 4 种回退触发来源
+- **审计门控**：归档前记账员审计（四项职责），新增第 4 种回退触发来源
 - **阶段回退门控**：回退条件、联动规则、回退完成条件
 - **代码审查门控**：两视角并行审查通过条件
 - **审查闭环验证**：分级重审规则

@@ -72,17 +72,16 @@ docs/
 │   │   │
 │   │   ├── self-reviews/               # 自循环审查记录目录
 │   │   │   ├── explore/                # explore 阶段自审记录
-│   │   │   │   └── {YYYYMMDD}-{HHMMSS}.md  # 自审轮次报告（时间戳命名）
+│   │   │   │   └── report.md           # 单轮验证报告（固定一份）
 │   │   │   ├── prototype/              # prototype 阶段自审与验证记录
-│   │   │   │   ├── {YYYYMMDD}-{HHMMSS}.md  # 自审轮次报告（时间戳命名）
-│   │   │   │   ├── nav-check/           # 导航合理性验证报告（5 轮）
-│   │   │   │   │   └── round-{1..5}.md
-│   │   │   │   ├── playwright-check/    # Playwright 全覆盖验证报告（5 轮）
-│   │   │   │   │   └── round-{1..5}.md
+│   │   │   │   ├── report.md           # SELFREV 单轮验证报告（固定一份）
+│   │   │   │   ├── verify-report.md    # VERIFY 单轮合并验证报告（导航/Playwright/UX/对比度四分区）
 │   │   │   │   └── cdn-crossref-check/  # CDN 扫描 + 交叉引用检查合并报告
 │   │   │   │       └── report.md
-│   │   │   └── design/                 # design 阶段自审记录
-│   │   │       └── {YYYYMMDD}-{HHMMSS}.md
+│   │   │   ├── design/                 # design 阶段自审记录
+│   │   │   │   └── report.md
+│   │   │   └── plan/                   # plan 阶段自审记录
+│   │   │       └── report.md
 │   │   │
 │   │   ├── cross-reviews/              # 四视角交叉审查报告目录
 │   │   │   └── {YYYYMMDD}-{HHMMSS}/    # 审查批次目录（时间戳命名）
@@ -187,7 +186,7 @@ docs/
 | 问题索引 | `index.md` | `docs/changes/{change}/bugs/index.md` |
 | 问题详情分页 | `bug-NNN-NNN.md` | `docs/changes/{change}/bugs/bug-001-020.md` |
 | 自审记录目录 | `self-reviews/{phase}/` | `docs/changes/{change}/self-reviews/explore/` |
-| 自审记录文件 | `{YYYYMMDD}-{HHMMSS}.md` | `docs/changes/{change}/self-reviews/explore/20260514-093000.md` |
+| 自审记录文件 | `report.md` | `docs/changes/{change}/self-reviews/explore/report.md` |
 | 交叉审查目录 | `cross-reviews/{YYYYMMDD}-{HHMMSS}/` | `docs/changes/{change}/cross-reviews/20260514-150000/` |
 | 归档目录 | `{YYYY-MM-DD}-{change}` | `docs/changes/archive/2026-05-15-product-init` |
 | 测试报告 | `round-{n}.md` | `round-1.md`, `round-2.md` |

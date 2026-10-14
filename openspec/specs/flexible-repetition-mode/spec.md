@@ -17,7 +17,7 @@ The system SHALL track phase execution history in .status.md to distinguish firs
   - Phase name
   - Execution count (1st, 2nd, etc.)
   - Last execution type (First Execution / REVISION / Rollback Re-execution)
-  - Rounds completed (e.g., 3/3, 2/5)
+  - Rounds completed (e.g., `1`, `2`)
   - Impact scope score (if applicable)
   - Notes
 
@@ -60,11 +60,11 @@ The system SHALL store recent revision information in .status.md for downstream 
 
 ### Requirement: Convergence-aligned flexible repetition verification gate
 
-When an execution phase terminates by convergence, the system SHALL enforce the following verification criteria: affected items 100% coverage (every affected functional point/interface fully checked) and product integrity (all required outputs exist and are format-compliant). All criteria MUST pass for acceptance. The system SHALL NOT require a fixed full-sweep floor round as a separate criterion, and SHALL NOT append a recheck round.
+When an execution phase completes, the system SHALL enforce the following verification criteria: affected items 100% coverage (every affected functional point/interface fully checked) and product integrity (all required outputs exist and are format-compliant). All criteria MUST pass for acceptance. The system SHALL NOT require a fixed full-sweep floor round as a separate criterion, and SHALL NOT make the number of rounds a criterion for acceptance or rejection.
 
 #### Scenario: Verification gate at convergence
 
-- **WHEN** an execution phase terminates by convergence
+- **WHEN** an execution phase completes
 - **THEN** the verification criteria SHALL include:
   - Affected items: 100% coverage verification
   - Product integrity: all required outputs exist and are format-compliant
@@ -83,3 +83,4 @@ When an execution phase terminates by convergence, the system SHALL enforce the 
 - **THEN** the system SHALL cross-reference the affected items list from .status.md "Recent Revision Info"
 - **AND** each affected item SHALL receive complete phase-specific verification (not abbreviated)
 - **AND** verification results SHALL be recorded in the phase output
+- **AND** the number of execution rounds SHALL NOT be an acceptance criterion

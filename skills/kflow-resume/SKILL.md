@@ -1,6 +1,6 @@
 ---
 name: kflow-resume
-version: 0.23.0
+version: 0.24.0
 description: Use when user needs to resume interrupted work/继续、恢复、resume {change-name}, or when kflow-guide routes to RESUME mode.
 license: MIT
 triggers:
@@ -82,7 +82,10 @@ VERIFY(存在性验证) -> STATE(优先级链读状态) -> LOCATE(断点定位) 
 │     ├── 检查前置阶段产物是否存在                                  │
 │     ├── 检查前置阶段状态是否为 ✅ 完成                            │
 │     ├── 产物完整性验证（对已完成阶段二次校验）                    │
-│     │   ├── 执行轮次 >= 1 且最近一轮为见证轮；终止结果 = 收敛                │
+│     │   ├── 执行报告完整 + 产物齐全 + 覆盖率达标 + 无占位符        │
+│     │   ├── 终止结果按新取值判读（验证通过/执行完成 合法；         │
+│     │   │   验证发现问题({N}) 须有处理记录；定向重验失败/停滞      │
+│     │   │   须有升级记录；历史 收敛 归并为 验证通过）              │
 │     │   ├── 产物文件存在性                                       │
 │     │   └── traceability 覆盖率达标                              │
 │     ├── 门控通过 -> 继续                                         │
@@ -189,15 +192,20 @@ Priority 5: tasks.md（兜底）
    └── (如适用) 用户评审已确认？
 
 3. 产物完整性验证（对标记为 ✅ 完成的阶段执行二次校验）:
-   ├── 3a. 执行轮次验证:
-   │   ├── 读取 .status.md 执行轮次计数器（格式 `{N} 轮`，历史 `{N} / {上限}` 形式取分子忽略分母）与终止结果字段（收敛 / 未收敛）
-   │   ├── 终止结果识别: 终止结果 = `收敛` 时该阶段以见证轮正常终止——恢复流程 SHALL 认定该阶段正常终止，SHALL NOT 判为轮次不足或缺项；终止结果 = `未收敛` 时该阶段已进入非收敛分支，恢复时 SHALL 核验存在对应的升级记录（skill-suggestion.md 条目 + 用户决策），无升级记录时按阻塞/需修订处理
-   │   ├── 执行类阶段（plan/code/code-review/api-test/e2e-test/integration-test/bug-fix）
-   │   │   └── 要求: 执行轮次 >= 1 且最近一轮为见证轮，终止结果 = `收敛`
-   │   ├── 自审类阶段（explore/prototype/design）
-   │   │   └── 要求: 执行轮次 >= 1 且最近一轮为见证轮，终止结果 = `收敛`；报告份数 >= 1
-   │   └── 验证类阶段（prototype VERIFY）
-   │       └── 要求: 导航验证与 Playwright 验证各执行不少于 1 轮且最近一轮为见证轮（轮数由收敛决定，无上限；报告为 `round-{N}.md`）
+   ├── 3a. 执行状态与终止结果验证:
+   │   ├── 读取 .status.md 执行轮次计数器（格式 `{N} 轮`，历史 `{N} / {上限}` 形式取分子忽略分母）与终止结果字段
+   │   ├── 验收前提（全部阶段）: 执行报告完整 + 产物齐全 + 覆盖率达标 + 无占位符
+   │   │   └── 验收判据 SHALL 仅依据执行报告完整性与产物门控，SHALL NOT 依据轮次数量
+   │   ├── 终止结果识别（按阶段类型）:
+   │   │   ├── 设计类与计划阶段（explore/prototype-design/design/plan）: 合法取值 {`验证通过`, `验证发现问题({N})`}
+   │   │   │   ├── `验证通过`: 该阶段正常终止，恢复流程 SHALL 认定其正常终止，SHALL NOT 判为轮次不足或缺项
+   │   │   │   └── `验证发现问题({N})`: 须核验存在对应的处理记录（主 Agent 统一修复 + 「本阶段修复清单」），无处理记录时按需修订处理
+   │   │   ├── 执行类阶段（code/code-review/api-test/e2e-test/integration-test/bug-fix）: 合法取值 {`执行完成`, `定向重验失败`, `停滞`}
+   │   │   │   ├── `执行完成`: 正常终止
+   │   │   │   └── `定向重验失败` / `停滞`: 须核验存在对应的升级记录（skill-suggestion.md 条目 + 用户决策），无升级记录时按阻塞/需修订处理
+   │   │   └── 历史取值归并: `收敛` 归并为 `验证通过`；其余历史取值（如 `未收敛`）归并为 `验证发现问题`
+   │   ├── 自审记录（explore/prototype-design/design/plan）: `self-reviews/{phase}/report.md` 存在，缺失判缺项；兼容历史多份时间戳报告（按「目录下至少一份报告存在」判定）
+   │   └── VERIFY 报告（prototype）: `self-reviews/prototype/verify-report.md` 存在（单轮合并报告）
    ├── 3b. 产物文件存在性:
    │   ├── 设计探索: functional-designs/index.md + part-NN.md + CONTEXT.md
    │   ├── 原型设计: docs/designs/prototypes/manifest.md + prototype-changes.md
@@ -393,7 +401,7 @@ DISPATCH 调度逻辑:
 - **❌ 阻塞时不调度**，仅输出阻碍信息
 - **✅ 完成时自动推进到下一阶段**，递归 DISPATCH 直到遇到非完成状态
 - **断点来源必须明确标注**（checkpoint / .status.md / tasks.md），让用户了解数据可信度
-- **产物完整性验证**：GATE 步骤对已完成阶段执行二次校验（执行轮次/产物文件/traceability 覆盖率），防止中断时跳过未完成阶段
+- **产物完整性验证**：GATE 步骤对已完成阶段执行二次校验（执行报告完整 + 产物齐全 + 覆盖率达标 + 无占位符 + 终止结果判读），防止中断时跳过未完成阶段
 
 # 反馈机制
 

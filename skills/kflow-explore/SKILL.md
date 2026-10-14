@@ -1,7 +1,7 @@
 ---
 name: kflow-explore
-version: 0.23.0
-description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces convergence-driven self-review (floor 1 round, rounds determined by convergence — no round cap; witness round with four conditions; score floor > 8 applies to 完整 tier only) and two-action save rule for external info gathering.
+version: 0.24.0
+description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces signed-checklist self-review (the agent signs off on 4 dimensions with in-artifact evidence anchors, then one independent verification round, then a unified fix — a single round, never a second) and two-action save rule for external info gathering.
 license: MIT
 triggers:
   - 开始新需求
@@ -34,7 +34,7 @@ allowed-tools:
   → 功能点原子级拆分 + 变更档位初判 + 用户覆盖确认 + 阶段集合提示
   → 关联关系分析
   → 输出 functional-designs/（index.md + part-NN.md 目录化结构）
-  → 自循环审查（收敛驱动：完整性/闭环性/必要性/清晰性全四维度，下限 1 轮、无轮数上限，见证轮四项判据收敛终止）
+  → 自审单轮验证（3 环节：主 Agent 签署自证零子代理 → 1 轮独立子代理打假 → 统一修复；完整性/闭环性/必要性/清晰性全四维度）
   → 原型设计决策门控（AskUserQuestion，仅前后端项目，prototype_decision 标记幂等）
   → 标记阶段完成
 ```
@@ -48,10 +48,10 @@ allowed-tools:
 - `functional-designs/index.md` **不再包含**子变更划分方案（子变更划分后置到 design 阶段）
 - `functional-designs/` 至少包含一个 `part-NN.md` 分册文件
 - `.status.md` 必须存在并标记设计探索阶段为 ✅ 完成，且基本信息含「变更档位」字段（`{轻量|标准|完整}`）
-- `self-reviews/explore/` 目录下自审报告文件份数 SHALL 满足「份数 ≥ 1」——份数 = 收敛实际发生的轮次，SHALL NOT 设份数上限、SHALL NOT 判「轮次超标」；份数为 0 判缺项（审查循环下限为 1 轮，无 0 轮豁免路径）
-- 全部档位均执行自审（下限 1 轮、无轮数上限，轮数由收敛决定），轻量档附加产物完整性门控：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符
-- 终止结果：阶段终止时 SHALL 在 `.status.md` 写入终止结果字段，取值 `收敛` / `未收敛`；`收敛` 当且仅当以见证轮终止，`未收敛` 须有对应的升级记录（`docs/skill-suggestion.md` 条目 + 用户决策）
-- 审查范围冻结：主 Agent 每轮从阶段产物既有内容生成审查对象集合并冻结，审查维度限于四维度枚举；冻结范围之外的发现降级为「范围外观察」，不改产物、不计入新发现数、不阻断收敛；越界轮 SHALL NOT 判为见证轮
+- `self-reviews/explore/report.md` 存在即为正常形态（固定路径，不按轮次编号）；缺失判缺项（自审固定单轮，无 0 轮豁免路径）
+- 全部档位均执行自审（固定单轮，SHALL NOT 执行第二轮），轻量档附加产物完整性门控：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符
+- 终止结果：阶段终止时 SHALL 在 `.status.md` 写入终止结果字段，取值 `验证通过` / `验证发现问题({N})`；`验证通过` 当且仅当单轮验证零发现且无签署不成立项，`验证发现问题({N})` 为存在发现项或签署不成立项时的取值（N 为该阶段发现总数）
+- 审查范围冻结：主 Agent 从阶段产物既有内容生成审查对象集合并冻结，审查维度限于四维度枚举；冻结范围之外的发现降级为「范围外观察」，不改产物、不计入发现数；子代理引入冻结范围外新内容时主 Agent SHALL 拒收并要求在冻结范围内重新验证
 
 # 输入要求
 
@@ -69,7 +69,7 @@ allowed-tools:
 | 功能设计文档 | `docs/changes/{change}/functional-designs/` | ✅ 必须 | 需求描述、项目类型、功能点清单（每功能点含：用户故事、所属页面与菜单、可执行操作、表单项定义、业务规则、业务流程上下文）、功能点关联关系、功能结构树（模块→功能点树状图，含FP-ID/优先级/简述）、核心业务流程图、变更类型判断、版本号+统一修订记录表（合并原需求变更记录与修订记录，格式：版本/日期/修订类型/修订内容/影响功能点/触发阶段） |
 | 领域词汇表 | `CONTEXT.md`（项目根目录） | ✅ 必须 | 项目级领域术语定义，首次构建或增补。每术语含：定义、别名、边界 |
 | 状态文件 | `docs/changes/{change}/.status.md` | ✅ 必须 | 标记设计探索阶段完成，含项目类型字段、**变更档位**字段、执行备注 |
-| 自审报告 | `docs/changes/{change}/self-reviews/explore/` | 🔶 条件 | 自审报告（份数 ≥ 1，份数 = 收敛实际发生的轮次，无上限；份数为 0 判缺项），文件名格式：`{YYYYMMDD}-{HHMMSS}.md` |
+| 自审报告 | `docs/changes/{change}/self-reviews/explore/report.md` | 🔶 条件 | 单轮验证报告（固定路径，不按轮次编号），含签署清单打假结果、独立发现问题清单、范围外观察、全量遍历证明、验证结论；缺失判缺项 |
 
 # 执行流程
 
@@ -108,15 +108,15 @@ allowed-tools:
 │  9. RELATE    → 分析功能点关联关系                                │
 │  10. OUTPUT   → 输出功能设计文档（含版本号+修订记录区+功能结构树）│
 │  │   轻量档: 产出压缩为单页（功能点清单+影响分析+修复/实现范围）  │
-│  11. SELFREV  → 按变更档位自审（子代理串行 + 重复制）           │
-│  │   每轮: 启动独立 Agent(subagent) 子代理                       │
-│  │   子代理全四维度独立检查（完整性/闭环性/必要性/清晰性）         │
-│  │   子代理发现问题 → 直接修复 + 生成自审报告                     │
-│  │   主 Agent 读报告 + 确认修复 + 更新「累积未复核修复清单」      │
-│  │   → 启动下一轮子代理                                          │
-│  │   报告路径: self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md       │
-│  │   下限 1 轮 / 轮数由收敛决定，无上限（见证轮四项判据收敛终止） │
-│  │   评分底线 > 8 且收敛 仅完整档适用                            │
+│  11. SELFREV  → 按变更档位自审（签署清单 + 单轮验证）           │
+│  │   主 Agent 签署自证（零子代理，3 列签署清单）                 │
+│  │   启动 1 个独立 Agent(subagent) 验证子代理                    │
+│  │   先独立遍历产物形成自身 4 维度结论（不读签署清单）           │
+│  │   再逐项对照签署清单打假；只报告，不修改产物                 │
+│  │   主 Agent 统一修复 + 生成「本阶段修复清单」                  │
+│  │   报告路径: self-reviews/explore/report.md                    │
+│  │   轮数恒为 1，SHALL NOT 执行第二轮，无 0 轮豁免路径           │
+│  │   完整档附加各维度评分 > 8 与评分不达标问题项清单（报告深度）  │
 │  12. PROTO_GATE → 原型设计决策门控（仅前后端项目）             │
 │  │   ├── 轻量档 → 不主动询问，跳过本门控（用户显式要求时仍可执行）│
 │  │   ├── 检查 .status.md 中是否存在 prototype_decision 标记     │
@@ -138,7 +138,7 @@ allowed-tools:
    └── 产品需求: {platform-name}
 2. 创建目录 docs/changes/{change}/:
    └── functional-designs/ 目录
-   ⚠️ 不在此创建 self-reviews/explore/ —— 该目录在 SELFREV 步骤（步骤 11）执行时创建（全部档位均执行自审，下限 1 轮）
+   ⚠️ 不在此创建 self-reviews/explore/ —— 该目录在 SELFREV 步骤（步骤 11）执行时创建（全部档位均执行自审，固定单轮）
 3. 创建 docs/changes/{change}/.status.md（变更级状态文件）:
    └── 填写基本信息: 创建时间、变更类型（初始标记）、变更档位（待 TIER 判定）、
        项目类型（待 TYPEDET 写入：继承项目级记录 / 降级检测，并标注来源）、变更描述、当前阶段=设计探索
@@ -329,14 +329,17 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 
 | 变更类型 | 功能点数 | 初判档位 |
 |---------|---------|---------|
-| 产品需求 | 任意 | 完整 |
 | 功能缺陷 | FP ≤ 3 | 轻量 |
 | 功能缺陷 | FP > 3 | 标准 |
 | 功能需求 | FP ≤ 2 | 轻量 |
 | 功能需求 | 3 ≤ FP ≤ 10 | 标准 |
 | 功能需求 | FP > 10 | 完整 |
+| 产品需求 | 按功能点数比照功能需求规则 | 与功能需求同规则分档 |
 
 > 阈值保守取值：功能需求需 FP ≤ 2 才判轻量，避免初判偏低导致 design 阶段频繁升档。
+>
+> `产品需求` SHALL 按功能点数比照 `功能需求` 的分档规则判定（如 FP = 5 → `标准`），SHALL NOT 设独立于该规则的档位下限。
+> SHALL NOT 无条件判定为 `完整`（功能点数 > 10 时才按 `完整` 处理）；初判结果 SHALL 标注为「初判」，由 kflow-design 的复核环节用完整影响范围分数公式校正；SHALL NOT 存在任何独立于该映射规则的变更类型档位分支。
 
 ### 8b. 用户覆盖确认
 
@@ -373,9 +376,9 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 
 | 档位 | explore 自身影响 |
 |------|----------------|
-| 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 下限 1 轮、轮数由收敛决定（不因档位限制为 1 轮）；PROTO_GATE 不主动询问 |
-| 标准 | 标准产出；SELFREV 下限 1 轮、轮数由收敛决定（见证轮收敛即止） |
-| 完整 | 完整产出；SELFREV 下限 1 轮、轮数由收敛决定（含评分底线：各维度评分均 > 8 且该轮构成见证轮方为收敛） |
+| 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 固定单轮（产物完整性门控为附加硬门）；PROTO_GATE 不主动询问 |
+| 标准 | 标准产出；SELFREV 固定单轮，报告逐维度给出结论 |
+| 完整 | 完整产出；SELFREV 固定单轮，附加各维度评分 > 8 与评分不达标时的具体问题项清单（报告输出深度要求，不参与终止判定） |
 
 > 档位判定公式、单向升档安全阀与缺省回退规则详见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.1.1 与 `docs/designs/skills/kflow-explore.md`。
 
@@ -461,96 +464,112 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 
 > 配置项影响矩阵用于在功能设计阶段识别配置变更的波及范围，为后续详细设计、测试用例设计提供输入。每行记录一个配置项及其影响的全部功能点。
 
-## 步骤 11：SELFREV — 按变更档位自审（子代理串行 + 重复制）
+## 步骤 11：SELFREV — 按变更档位自审（签署清单 + 单轮验证）
 
 ### 子代理上下文文件加载（基础层 + 创意层）
 
-自审子代理 prompt 中 SHALL 包含以下分层加载文件（基础层 + 创意层）：
+自审验证子代理 prompt 中 SHALL 包含以下分层加载文件（基础层 + 创意层）：
 
 - skills/kflow-explore/references/state-values.md（摘要）
 - skills/kflow-explore/references/gates.md（当前阶段相关门控）
 - skills/kflow-explore/references/self-review.md
 - skills/kflow-explore/references/clarify-convergence.md（创意层，explore 专属：CLARIFY 收敛门规则）
 
-> **子代理隔离规则**：自审子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管自审执行。同一任务最多重试 3 次（1 次初始 + 3 次重试），全部失败后标记 ⚠️ 阻塞并提示用户。重新创建的子代理是全新 Agent，不依赖前上下文。
+> **子代理隔离规则**：验证子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管验证执行。同一任务最多重试 3 次（1 次初始 + 3 次重试），全部失败后标记 ⚠️ 阻塞并提示用户。重新创建的子代理是全新 Agent，不依赖前上下文。
 
-### 自审模式：子代理串行 + 重复制
+### 自审模型：签署自证 → 单轮独立验证 → 统一修复
 
-> **v2.2.0 变更**: 自审执行方式从"当前 Agent 自身执行"改为"子代理（Agent subagent）串行执行"。每轮启动独立子代理，子代理拥有独立上下文避免"作者盲点"。
+> **v3.0.0 变更（BREAKING）**：自审终止模型由「多轮收敛循环」改为**固定单轮**——删除多轮收敛判据、失败终止判定、跨轮摘要注入与跨轮修复清单。验证子代理改为**只报告不修改产物**（审查者与修复者分离，消除「边审边修又改出新问题」的振荡源）。自审由三个环节构成：
 
-> **v2.1.0 变更**: 从"分工制"（每轮只审查部分维度）改为"重复制"——每轮独立执行全部四个维度（完整性+闭环性+必要性+清晰性），多轮形成自然收敛。
+```
+1. 主 Agent 签署自证（零子代理）→ 写作时按 4 维度逐项填写「维度 / 自证结论 / 证据锚点」
+2. 单轮独立子代理验证         → 先独立遍历产物（不读签署清单）→ 再逐项打假 → 只报告不修改
+3. 主 Agent 统一修复          → 修复全部发现项，产出「本阶段修复清单」随产物交付下游
+```
 
-| 对比 | 分工制（旧） | 重复制（新） |
-|------|------------|------------|
-| 每轮范围 | 部分维度 | **全部四个维度** |
-| 发现节奏 | 后期才暴露其他维度问题 | 早期就暴露各类问题 |
-| 收敛趋势 | 不明显 | 自然收敛（后期问题越来越少） |
+系统 SHALL NOT 预置任何审查轮数、SHALL NOT 执行第二轮、SHALL NOT 存在 0 轮豁免路径。终止结果 SHALL 为 `验证通过` 或 `验证发现问题({N})`，写入变更级 `.status.md`。
 
-### 收敛驱动的自审轮次与审查范围冻结
+> **档位语义**：变更档位只决定**审查形态与产出深度**，SHALL NOT 决定自审轮数（轮数恒为 1）。自审启动前 SHALL 读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档处理。
 
-轮次取值、审查范围冻结、评分底线与轻量档产物门控详见 [references/self-review.md](references/self-review.md) §4。要点：
+> **独立验证的归属**：本机制只承担「写作质量控制 + 单轮打假」。**真正的独立验证留给交叉审查（REVIEW）环节**——主 Agent 统一修复后生成的「本阶段修复清单」随产物一并交给交叉审查，使下游验证者掌握已知修复清单。
 
-- **档位读取**：读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档处理。档位只决定**每轮审查形态与产出深度**，SHALL NOT 决定轮数。
-- **轮次取值**：下限恒为 1 轮（无例外）；轮数 SHALL NOT 被预置或限制为任何数值，由收敛实际发生在第几轮决定。
-- **终止条件（唯一成功终止条件）**：某轮同时满足见证轮四项判据——(a) 零新发现、(b) 零修改、(c) 报告证明全维全量遍历、(d) 累积未复核修复清单内全部条目逐项复核通过——时 SHALL 终止，终止结果 `收敛`。
-- **不收敛终止**：命中不收敛判定（无进展 / 振荡 / 安全丝）时 SHALL 终止，终止结果 `未收敛` → 记录 `skill-suggestion.md` + AskUserQuestion → 可标记 ⚠️ 阻塞。
-- **审查范围冻结**：主 Agent 每轮从阶段产物既有内容生成审查对象集合并冻结，审查维度限于四维度枚举；子代理 SHALL NOT 扩大范围、SHALL NOT 新增维度。冻结范围之外的发现降级为「范围外观察」——不改产物、不计入本轮新发现数、不阻断收敛；引入范围外新内容的轮次 SHALL NOT 判为见证轮，主 Agent SHALL 拒收该轮并要求在冻结范围内重审。
-- **评分底线**：仅完整档适用——各维度评分均 > 8 **且**该轮构成见证轮方为收敛；任一维度评分 ≤ 8 时该轮须列出对应具体问题项（故不构成见证轮）。
-- **轻量档**：执行至少 1 轮 SELFREV，SHALL NOT 豁免自审——启动自审子代理、创建 `self-reviews/explore/` 目录并产出自审报告；轮数 SHALL NOT 因档位限制为 1 轮；产物完整性门控保留为附加硬门（产物全部存在且无 TODO/TBD/未填充占位符，否则阻塞）。
-- **轮间摘要**：第 2 轮起的子代理 prompt SHALL 注入前轮摘要（见 `references/self-review.md` §11，含「累积未复核修复清单」与「范围外观察」字段）；见证轮候选须逐项复核清单中的全部条目。
+### 签署清单
+
+签署清单 SHALL 按本阶段专属的 4 个维度（完整性 / 闭环性 / 必要性 / 清晰性）组织，每个维度 SHALL 包含「维度」「自证结论」「证据锚点」三列：
+
+| 维度 | 自证结论 | 证据锚点 |
+|------|---------|---------|
+| {维度名} | 通过 / 不通过 | {产物内的具体位置} |
+
+- **证据锚点 SHALL 指向产物内的具体位置**——章节号、功能点 ID（`FP-00N`）、接口 ID、用例 ID 或表名之一；SHALL NOT 为「全文」「多处」「见上文」之类的模糊指向
+- **签署不成立判定**：锚点为空，或锚点指向的位置在产物中不存在、内容不匹配 → 该维度签署判定为**不成立**；任一维度签署不成立时该阶段 SHALL NOT 判定为签署通过
+- 签署区 SHALL 作为阶段产物模板的组成部分存在于产物中（`functional-designs/part-NN.md`），SHALL NOT 以独立文件形式产出
+- 产物初稿完成后主 Agent SHALL 逐个 4 维度完成签署自证，**SHALL NOT 启动子代理**；自证中发现某维度不通过时 SHALL 先修复该产物并重新完成该维度自证
+
+### 单轮验证
+
+主 Agent SHALL 启动**一个**验证子代理（`Agent(subagent_type="claude")`，独立上下文、不共享主 Agent 对话历史），其执行顺序强制为：
+
+```
+1. 独立遍历产物 → 形成自己的 4 维度结论      ← 此阶段 SHALL NOT 读取签署清单
+2. 逐项对照签署清单 → 打假                   ← 锚点为空 / 指向不存在内容 = 签署不成立
+3. 输出 { 独立发现问题 | 签署打假结果 | 全量遍历证明 | 范围外观察 | 验证结论 }
+4. SHALL NOT 修改任何产物（只报告）
+```
+
+- **步骤 1 前置的理由**：验证子代理若先读签署清单，会被一份已写好结论的文档锚定，退化为「回填证据」而非独立审查；把独立遍历前置，单轮才能兼具独立发现能力。执行顺序反转时该轮验证结果 SHALL NOT 被接受，主 Agent SHALL 重新启动验证子代理
+- **子代理异常处置**：意外停止、报错退出或返回不完整结果时，主代理 MUST 分析原因后重新创建新的子代理，SHALL NOT 在主 Agent 上下文中接管其未完成的工作；最多重试 3 次，全部失败后标记 ⚠️ 阻塞并提示用户
+
+**审查范围冻结与范围外观察**：主 Agent SHALL 在单轮验证启动前从阶段产物**既有内容**生成**审查对象集合**并冻结，审查维度 SHALL 限于本阶段固定 4 个维度枚举；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度、SHALL NOT 借审查之名新增功能点/字段/章节/分支。冻结范围之外的发现降级为「范围外观察」——不改产物、不计入发现数，写入报告的「范围外观察」小节（为空时记「（空）」）。子代理引入冻结范围外新内容时主 Agent SHALL 拒收并要求在冻结范围内重新验证，越界事实记录到 `docs/skill-suggestion.md`。主 Agent SHALL 在阶段终止时汇总范围外观察条目并向用户提示。
+
+**验证发现分级与终止结果**：
+
+| 终止结果 | 判定口径 |
+|---------|---------|
+| `验证通过` | 单轮验证零发现 **且** 无签署不成立项 |
+| `验证发现问题({N})` | 存在发现项 **或** 存在签署不成立项；N 为该阶段发现总数 |
+
+- 仅存在范围外观察而无范围内发现时，发现数记为 0（其余条件同时满足时终止结果 MAY 为 `验证通过`）
+- 读取兼容：读取侧遇到历史变更遗留的 `收敛` 取值 SHALL 归并为 `验证通过`，其余历史取值 SHALL 归并为 `验证发现问题`；SHALL NOT 要求迁移历史 `.status.md`
 
 ### 审查维度与检查规则
 
 详见 [references/self-review-dimensions.md](references/self-review-dimensions.md) — 四维度检查规则（完整性/闭环性/必要性/清晰性）及子代理执行说明。
 
-### 自审执行流程（子代理串行 + 重复制）
+### 轻量档产物完整性门控
 
-```
-自审执行流程（子代理串行，每轮全维度，收敛驱动）:
+轻量档 SHALL 执行单轮自审，SHALL NOT 跳过自审。产物完整性门控保留为附加硬门：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符，`self-reviews/explore/report.md` SHALL 存在；门控不通过 → 标记 ⚠️ 阻塞并修复后重跑。
 
-1. 读取变更级 .status.md「变更档位」字段（缺失按 完整 档处理）
-   └── 档位只决定每轮审查形态与产出深度，SHALL NOT 决定轮数
-2. 主 Agent 从 functional-designs/ 既有产物生成本轮**审查对象清单**并冻结，
-   审查维度限于完整性、闭环性、必要性、清晰性四个枚举
-3. 创建 self-reviews/explore/ 目录，启动第一轮子代理:
-   Agent(
-     subagent_type="claude",
-     description="Explore 自审 Round 1",
-     prompt="读取 functional-designs/ 下的所有产物文件，按完整性、闭环性、必要性、清晰性全部四个维度独立检查。审查对象集合已冻结——SHALL NOT 审查清单之外的产物或文件、SHALL NOT 新增审查维度、SHALL NOT 借审查之名新增功能点/字段/章节/分支。发现问题直接修复产物文件，生成审查报告到 self-reviews/explore/{YYYYMMDD}-{HHMMSS}.md。仅修复确认的问题，不做重构或额外改进。冻结范围之外发现的问题 SHALL 记为『范围外观察』写入报告的『范围外观察』小节，不在本轮修复、不计入本轮新发现数。"
-   )
-   └── 第 2 轮起：prompt 注入前轮摘要（见 references/self-review.md §11），并加入「见证轮候选须逐项复核累积未复核修复清单中的全部条目」要求
-4. 子代理返回审查报告路径
-5. 主 Agent 读取报告，确认修复内容，更新「累积未复核修复清单」，判定本轮是否为见证轮（四项判据），并校验本轮是否越界
-6. 修复不合理 → 主 Agent 补充修复；越界轮 → 拒收并要求在冻结范围内重审
-7. 本轮为见证轮 → 终止（终止结果 收敛）；命中不收敛判定 → 终止（终止结果 未收敛）→ 非收敛分支；
-   其余情形 → 递增计数器，启动下一轮子代理（Round N+1），步骤同 Round 3
-8. SHALL NOT 并行启动多个子代理（串行执行）
-9. 轮次控制：
-   ├── 全部档位 → 至少执行 1 轮，无 0 轮豁免路径
-   ├── 轮数 SHALL NOT 被预置或限制为任何数值；达成见证轮即终止
-   ├── 完整档 → 各维度评分均 > 8 且该轮构成见证轮方为收敛；评分 ≤ 8 时须列出具体问题项
-   ├── 命中不收敛判定 → 终止并升级用户
-   └── SHALL NOT 为凑轮数而继续执行无增量价值的轮次
-10. 终止时写入 .status.md 终止结果（收敛 / 未收敛）；未收敛 → 非收敛分支
-11. 终止后标记阶段完成
-```
+### 验证报告内容
+
+单轮验证子代理 SHALL 生成一份验证报告到 `self-reviews/explore/report.md`（固定路径，SHALL NOT 按轮次编号、SHALL NOT 产出多份时间戳文件），且 SHALL 足以判定验证结果与签署是否属实。报告 SHALL 包含：
+
+| 小节 | 内容 |
+|------|------|
+| 签署清单打假结果 | 逐维度列出：维度名、自证结论、证据锚点、打假结论（属实 / 不成立）、不成立原因 |
+| 独立发现问题清单 | 序号、问题描述、严重度、所属维度（此清单 SHALL 来自独立遍历，与签署清单对照结果分开呈现） |
+| 范围外观察 | 冻结审查对象集合之外发现的条目；无条目时记「（空）」 |
+| 全量遍历证明 | 显式声明全部 4 个审查维度与全部审查对象均已完成遍历 |
+| 验证结论 | 发现总数 N；终止结果 `验证通过` 或 `验证发现问题({N})` |
+
+> **反空转条款**：未证明全量遍历的报告 SHALL 判定为不完整，主 Agent SHALL 要求子代理补齐后重新提交。
+
+### 统一修复与流转
+
+验证完成后，主 Agent SHALL 统一修复全部发现项：SHALL 仅修复验证报告确认的问题，不做重构或额外改进；SHALL NOT 新增冻结审查对象集合之外的产物内容（功能点、字段、章节、分支）。主 Agent SHALL NOT 追加确认轮，SHALL 生成「本阶段修复清单」随产物交付下游。修复完成后 SHALL 将终止结果写入 `.status.md` 并标记阶段完成，释放 prototype 或 design 阶段门控。
 
 ### 强制执行规则
 
-- 全部档位 SHALL 至少执行 1 轮自审，SHALL NOT 存在 0 轮豁免路径
-- 轻量档 SHALL 执行至少 1 轮自审（启动子代理、创建 `self-reviews/explore/` 目录并产出自审报告），轮数 SHALL NOT 因档位限制为 1 轮；产物完整性门控保留为附加硬门
-- 轮数 SHALL NOT 被预置或限制为任何数值；达成见证轮即终止
-- 完整档各维度评分均 > 8 且该轮构成见证轮方为收敛；任一维度评分 ≤ 8 时该轮须列出对应具体问题项（不构成见证轮）
-- 审查对象集合 SHALL 由主 Agent 每轮从阶段产物既有内容生成并冻结，审查维度限于四维度枚举；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度
-- 冻结范围之外的发现 SHALL 记为「范围外观察」，SHALL NOT 在本轮修复、SHALL NOT 计入本轮新发现数、SHALL NOT 阻断收敛；引入范围外新内容的轮次 SHALL NOT 被判定为见证轮，主 Agent SHALL 拒收该轮并要求在冻结范围内重审
-- 见证轮候选 SHALL 逐项复核「累积未复核修复清单」内**全部**条目（不限于最后一轮），并证明 4 维度全量遍历；任一条目复核不通过或未证明全量遍历时 SHALL NOT 判定为见证轮
-- 命中不收敛判定（无进展 / 振荡 / 安全丝）时 SHALL 终止并升级用户，终止结果 `未收敛`
-- SHALL NOT 为凑轮数而继续执行无增量价值的轮次
-- SHALL 每轮启动独立子代理（Agent subagent），不允许主 Agent 自身执行自审，子代理异常时 MUST 重新创建
-- SHALL NOT 并行启动多个子代理（串行执行，前一轮完成后再启动下一轮）
-- 终止时 SHALL 写入 .status.md 终止结果（收敛 / 未收敛）；未收敛时 SHALL 进入非收敛分支
+- 全部档位 SHALL 执行单轮自审，SHALL NOT 存在 0 轮豁免路径；轮数恒为 1，SHALL NOT 执行第二轮
+- 签署自证 SHALL 由主 Agent 执行（零子代理），逐维度填写自证结论与证据锚点；锚点 SHALL 指向产物内具体位置，锚点为空或指向不存在内容判该维度签署不成立
+- 验证 SHALL 由 1 个独立子代理执行，先独立遍历（不读签署清单）后逐项打假；子代理 SHALL NOT 修改任何产物，全部修复由主 Agent 统一执行
+- 审查对象集合 SHALL 由主 Agent 从阶段产物既有内容生成并冻结，审查维度限于完整性/闭环性/必要性/清晰性四维枚举；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度
+- 冻结范围之外的发现 SHALL 记为「范围外观察」，SHALL NOT 修改产物、SHALL NOT 计入发现数；引入范围外新内容的验证 SHALL 被拒收并要求在冻结范围内重新验证，越界事实记录 `docs/skill-suggestion.md`
+- 统一修复 SHALL 仅修复报告确认的问题，SHALL NOT 追加确认轮；「本阶段修复清单」SHALL 随产物交付下游交叉审查
+- 完整档各维度评分 > 8 与评分不达标时的具体问题项清单为**报告输出深度要求**，SHALL NOT 参与终止判定（单轮验证无论评分高低均在单轮结束时终止）
+- 终止结果 SHALL 写入 `.status.md`，取值 `验证通过` / `验证发现问题({N})`
+- 子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管验证执行；最多重试 3 次，全部失败后标记 ⚠️ 阻塞并提示用户
 - 主 Agent SHALL 在阶段终止时汇总「范围外观察」条目并向用户提示
-- 自审终止后标记阶段完成，释放 prototype 或 design 阶段门控
 
 ## 步骤 12：PROTO_GATE — 原型设计决策门控（仅前后端项目）
 
@@ -660,7 +679,7 @@ CONTEXT.md 消费链:
 - **FP 类型标记**：每个功能点 SHALL 标记为「后端」或「前端」，无法归类的 FP 必须继续拆分，类型作为后续子变更划分类型校验的依据
 - **项目类型继承**：三级回落读取项目级记录（CLAUDE.md 项目画像 → `docs/toolchain.md` 头部 → 就地检测），项目级记录可用时 SHALL NOT 重新扫描判定；静默一致性校验一致即静默继承（不询问用户），仅记录缺失或校验冲突时才 AskUserQuestion；校验失败不阻塞；降级补写落在 `docs/toolchain.md` 头部且 SHALL NOT 写入 CLAUDE.md 项目画像区块；变更级快照在变更生命周期内冻结
 - **子变更划分不在此阶段执行**：后置到详细设计阶段完成后基于完整设计认知划分
-- **自审强制执行（子代理串行 + 重复制 + 收敛驱动）**：轮次下限 1 轮、轮数由收敛决定（SHALL NOT 预设或限制为任何数值）；完整档各维度评分均 > 8 且该轮构成见证轮方为收敛，评分 ≤ 8 时须列出具体问题项。每轮启动独立子代理执行全部四个维度（完整性+闭环性+必要性+清晰性），审查对象集合由主 Agent 冻结、维度集合封闭，子代理边审边修，串行不可并行，达成见证轮（四项判据）即终止，终止结果 `收敛`；命中不收敛判定时终止结果 `未收敛` 并进入非收敛分支。SHALL NOT 为凑轮数而空转
+- **自审强制执行（签署清单 + 单轮验证）**：固定单轮，SHALL NOT 执行第二轮、SHALL NOT 存在 0 轮豁免路径。三环节：主 Agent 签署自证（零子代理，`维度 / 自证结论 / 证据锚点` 三列，锚点 SHALL 指向产物内具体位置）→ 1 个独立子代理单轮验证（先独立遍历产物形成自身 4 维度结论且不读签署清单，再逐项对照签署清单打假，只报告不修改产物）→ 主 Agent 统一修复并生成「本阶段修复清单」随产物交付下游，不追加确认轮。审查对象集合由主 Agent 冻结、维度集合封闭为完整性/闭环性/必要性/清晰性四维，范围外发现降级为「范围外观察」；引入范围外新内容的验证 SHALL 被拒收。终止结果取值 `验证通过` / `验证发现问题({N})`，写入变更级 `.status.md`
 - **两动作规则**：每 2 次外部信息收集操作后立即保存关键发现到 functional-designs/
 - **CONTEXT.md**：项目级领域词汇表，首次构建后持续增补，后续阶段只引用不修改
 - **functional-designs/ 结构**：index.md（含版本号、需求变更记录表、配置项影响矩阵）+ part-NN.md 目录化结构

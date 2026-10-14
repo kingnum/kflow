@@ -1,29 +1,30 @@
 # round-counter Specification
 
 ## Purpose
-Defines the execution round counter mechanism that tracks agent iteration progress in change-level and subchange-level .status.md files. The counter format is `{N} 轮` with no denominator and no upper bound; the number of rounds is determined by when convergence actually occurs.
+Defines the execution round counter mechanism that tracks agent iteration progress in change-level and subchange-level .status.md files. The counter format is `{N} 轮` with no denominator; it counts the rounds actually completed by the current execution phase (1 for single-round phases, the real round count for repetition-mode phases), and the number of rounds SHALL NOT be an acceptance criterion.
 
 ## Requirements
 ### Requirement: 执行轮次计数器格式与维护（无上限）
 
-系统 SHALL 在变更级和子变更级 .status.md 的 `## 基本信息` 区维护 `**执行轮次**: {N} 轮` 字段，用于追踪当前执行类阶段的迭代轮次进度。`{N}` SHALL 为自阶段启动以来实际完成的审查轮数，SHALL NOT 设分母、SHALL NOT 受任何轮数上限约束。（本需求取代原「执行轮次计数器格式与维护」的旧口径。）
+系统 SHALL 在变更级和子变更级 .status.md 的 `## 基本信息` 区维护 `**执行轮次**: {N} 轮` 字段，用于追踪当前执行类阶段的执行轮次进度。字段格式 SHALL 无分母。（本需求取代原「执行轮次计数器格式与维护」的旧口径。）
 
 #### Scenario: 子变更级阶段开始时初始化计数器
 
 - **WHEN** 子变更进入新的执行类阶段（计划/编码/代码审查/接口单元测试/E2E测试/缺陷修复）
-- **THEN** 主 Agent 在调度 Agent 迭代子代理前，将 `执行轮次` 字段写入 `1 轮`
+- **THEN** 主 Agent 在调度子代理前，将 `执行轮次` 字段写入 `1 轮`
 - **AND** 该字段位于 `## 基本信息` 区，与 `**当前阶段**`、`**执行类型**` 同级
 
 #### Scenario: 变更级阶段开始时初始化计数器
 
 - **WHEN** 变更进入执行类阶段（集成测试/缺陷修复）
-- **THEN** 主 Agent 在调度 Agent 迭代子代理前，将变更级 .status.md 中 `执行轮次` 字段写入 `1 轮`
+- **THEN** 主 Agent 在调度子代理前，将变更级 .status.md 中 `执行轮次` 字段写入 `1 轮`
 - **AND** 该字段位于变更级 `## 基本信息` 区，与 `**当前阶段**` 同级
 
 #### Scenario: Agent 每轮迭代后递增计数器
 
-- **WHEN** Agent 迭代子代理完成一轮迭代
-- **THEN** Agent MUST 更新对应级别 .status.md 中 `执行轮次` 字段为当前轮次号（如 `2 轮`、`3 轮`）
+- **WHEN** 单轮类阶段（接口单元测试/E2E测试/集成测试）完成一轮定向重验
+- **THEN** 主 Agent MUST 更新对应级别 .status.md 中 `执行轮次` 字段为当前轮次号（如 `2 轮`、`3 轮`）
+- **AND** 重复制类阶段（编码/代码审查/缺陷修复）每完成一轮重复制时同样递增
 - **AND** 递增 MUST 在进入下一轮之前完成
 
 #### Scenario: 阶段切换时重置计数器
@@ -53,32 +54,32 @@ Defines the execution round counter mechanism that tracks agent iteration progre
 
 ### Requirement: 轮次验收判据（收敛制）
 
-系统 SHALL 在 Agent 迭代子代理返回后进行轮次验收。验收通过条件 SHALL 为：`执行轮次 >= 1` **且**最近一轮为见证轮。系统 SHALL NOT 存在以轮次数量达标替代见证轮的通过路径。（本需求取代原「轮次验收判据」的上限达标口径。）
+系统 SHALL 在子代理返回后执行验收。验收通过条件 SHALL 为：执行报告完整（含全量遍历证明）、阶段产物齐全、覆盖率达标、无占位符；单轮类阶段另须定向重验全部通过。系统 SHALL NOT 以轮次数量作为通过或拒收依据。
 
 #### Scenario: 收敛终止验收
 
-- **WHEN** 主 Agent 读取 .status.md 发现 `执行轮次 >= 1` 且最近一轮为见证轮
-- **AND** 其他验收条件满足（产物齐全、覆盖率达标、无占位符）
+- **WHEN** 主 Agent 检查执行报告完整、阶段产物齐全、覆盖率 = 100%、无占位符
+- **AND** 单轮类阶段的定向重验全部通过
 - **THEN** 验收通过
-- **AND** 终止结果 SHALL 记录为 `收敛`
+- **AND** 执行结果 SHALL 记录为 `执行完成`
 - **AND** 更新阶段状态为 ✅ 完成
 
 #### Scenario: 无见证轮时拒收
 
-- **WHEN** 主 Agent 读取 .status.md 发现无任何一轮为见证轮，且子代理未报告命中不收敛判定
+- **WHEN** 主 Agent 检查发现执行报告缺失或不完整，或覆盖率未达标，或存在占位符
 - **THEN** 验收不通过，拒收
-- **AND** 主 Agent 要求 Agent 子代理继续迭代（不接受无理由的提前返回）
-- **AND** 不进入 AskUserQuestion 流程——直接重新启动 Agent 子代理
+- **AND** 主 Agent 直接重新启动子代理执行剩余工作（不接受无理由的提前返回）
+- **AND** 不进入 AskUserQuestion 流程
 
 #### Scenario: 未收敛时进入非收敛分支
 
-- **WHEN** 子代理报告命中不收敛判定（无进展 / 振荡 / 安全丝）
-- **THEN** 终止结果 SHALL 记录为 `未收敛`
-- **AND** 系统 SHALL 记录到 skill-suggestion.md（含不收敛缘由）
+- **WHEN** 单轮类阶段的定向重验连续 3 次仍未通过
+- **THEN** 执行结果 SHALL 记录为 `定向重验失败`
+- **AND** 系统 SHALL 记录到 `docs/skill-suggestion.md`（含失败用例清单与轮次）
 - **AND** SHALL 使用 AskUserQuestion 询问用户
 
 #### Scenario: 不因轮次数量拒收或放行
 
 - **WHEN** 主 Agent 验收某阶段
-- **THEN** 验收判据 SHALL 仅依据「最近一轮是否为见证轮」
+- **THEN** 验收判据 SHALL 仅依据执行报告完整性与产物门控
 - **AND** SHALL NOT 因轮次少于或超出任何数值而拒收、放行或缺项

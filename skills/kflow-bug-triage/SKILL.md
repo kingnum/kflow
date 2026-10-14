@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-triage
-version: 0.23.0
+version: 0.24.0
 description: Use when user needs bug triage/问题分诊、反馈、报告问题、报bug、提bug、问题诊断, or user reports an issue through kflow-guide. Independent diagnostic Skill (not a workflow phase). 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、问题登记（bugs/目录）、路由决策（REVISION模式或kflow-bug-fix）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md, bugs/）。
 license: MIT
 triggers:
@@ -190,7 +190,7 @@ REGISTER 步骤 SHALL 按以下规则执行：
 
 # 影响范围评估
 
-四层诊断完成后，SHALL 一并执行影响范围评估，为回退后的档位驱动弹性重复制轮次决策提供依据（推荐轮次引用统一映射，见「推荐轮次」节）。
+四层诊断完成后，SHALL 一并执行影响范围评估，为回退后的受影响项清单与回退判定提供依据。**影响范围分数 SHALL NOT 用于推算轮次**——执行类阶段的轮次由实际执行的重复制循环决定。
 
 ## 评估步骤
 
@@ -213,13 +213,13 @@ REGISTER 步骤 SHALL 按以下规则执行：
 
 ## 影响范围分数的用途
 
-影响范围分数 SHALL NOT 映射为重复制轮次——审查轮数由收敛实际发生在第几轮决定（下限 1 轮，无轮数上限）。分数仅用于下游阶段的**受影响项清单**与**回退判定**：
+影响范围分数 SHALL NOT 映射为重复制轮次——执行类阶段的轮次由实际执行的重复制循环决定（下限 1 轮，无上限）。分数仅用于下游阶段的**受影响项清单**与**回退判定**：
 
 - **受影响项清单**（`Affected Functional Points` + `Affected Interfaces`）SHALL 经 `.status.md`「Recent Revision Info」节传递给目标阶段，供其验证门控的「受影响项 100% 覆盖」使用。
 - **影响范围分数本身**作为回退影响范围的记录性信息一并传递，SHALL NOT 用于推算轮次数值。
 - 本 Skill 仅诊断与路由，不执行修复，SHALL NOT 自行追加审查轮次。
 
-> 收敛终止模型（见证轮四项判据、不收敛判定与升级、审查范围冻结）的权威定义见 `convergence-driven-repetition` 能力；执行类阶段的落地表述见被路由 Skill 的 `references/repetition.md` §14。kflow-bug-triage 亦随附该规范（`skills/kflow-bug-triage/references/repetition.md`）。
+> 执行类阶段的终止模型（自然终止 / 停滞升级、审查范围冻结）的权威定义见 `agent-iteration-execution` 能力；落地表述见被路由 Skill 的 `references/repetition.md` §13（轮间摘要）、§14.3（重复制类阶段循环终止）与 §14.4（终止结果写入）。kflow-bug-triage 亦随附该规范（`skills/kflow-bug-triage/references/repetition.md`）。
 
 ---
 
@@ -286,7 +286,7 @@ docs/changes/{change}/bugs/
 - 路由前必须获得用户确认
 - 问题登记到 bugs/ 目录，使用模板格式
 - 🔴 阻塞级问题未关闭时阻断归档
-- **审查轮次**：被路由的执行类 Skill 的审查轮数由**收敛**决定（下限恒为 1 轮，SHALL NOT 预置或受限于任何轮数上限），达成见证轮（四项判据）即收敛终止，终止结果 `收敛`；命中不收敛判定（无进展 / 振荡 / 安全丝）时终止结果 `未收敛` 并升级用户。本 Skill 不执行修复，SHALL NOT 自行追加审查轮次。**审查轮次与影响范围分数无关**——分数只供下游的受影响项清单与回退判定使用
+- **执行轮次**：被路由的执行类 Skill 的轮数由实际执行的重复制循环决定（下限恒为 1 轮，SHALL NOT 预置或受限于任何数值）；某轮无新发现且无可执行工作即自然终止，终止结果 `执行完成`；连续 3 轮无实质进展时终止结果 `停滞` 并升级用户。本 Skill 不执行修复，SHALL NOT 自行追加轮次。**执行轮次与影响范围分数无关**——分数只供下游的受影响项清单与回退判定使用
 
 # 反馈机制
 
