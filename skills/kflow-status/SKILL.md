@@ -1,6 +1,6 @@
 ---
 name: kflow-status
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs status overview/状态查看、进度、任务总结、进度汇总.
 license: MIT
 triggers:
@@ -283,7 +283,7 @@ SCAN(扫描 docs/changes/) -> FILTER(排除 archive/) -> INDEX(读 index.md 如�
 
 当前没有未归档的变更。
 
-> 使用「做/添加/实现/搭建 + 功能描述」创建新变更，或使用 `/kflow-guide` 获取流程指引。
+> 创建新变更请使用「开始新需求 + 功能描述」或直接调用 `kflow-explore`（变更类型分类、变更命名、档位初判均在 explore 阶段完成）；推进用「继续 {change-name}」（轻量推进），中断恢复用「恢复 {change-name}」（路由到 `kflow-resume`）。
 ```
 
 # 子变更 5 阶段进度展示说明

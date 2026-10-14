@@ -609,7 +609,7 @@ git init 失败不阻塞 init 流程，提示失败原因。
 - **输出给**：所有后续阶段 Skill 可参考 toolchain.md 中的工具推荐
 - **前置阶段**：无
 - **后续阶段**：`kflow-guide`（流程指引）、`kflow-explore`（设计探索）
-- **CLAUDE.md 注入**：注入项目画像、变更流程强制规则（跨 skill 路由约束与用户接口约定）与 Skill 改进建议自动捕获，并为项目创建不受管的「项目自定义规则」区块，引导后续所有变更通过 `kflow-guide` 流转
+- **CLAUDE.md 注入**：注入项目画像、变更流程强制规则（跨 skill 路由约束与用户接口约定）与 Skill 改进建议自动捕获，并为项目创建不受管的「项目自定义规则」区块；流程规则以「新变更由 `kflow-explore` 承接 + 阶段自动衔接 + 恢复/推进双入口 + 变更名模式禁止 Plan Mode 拦截」为骨架，SHALL NOT 要求变更先经 `kflow-guide`，亦 SHALL NOT 禁止直接调用阶段 Skill
 
 ---
 
@@ -688,17 +688,20 @@ CLAUDE.md 结构（init 注入后）:
 
 本项目使用 KFlow Skills 体系管理所有变更。以下为强制规则：
 
-1. **所有用户变更必须首先通过 `kflow-guide` 进行流程指引**，禁止跳过 guide 直接调用阶段 Skill
-2. **新变更由 guide 引导后进入 `kflow-explore`**，变更初始化（目录创建、状态文件）在 explore 阶段完成
-3. **中断恢复时使用「继续 {change-name}」**，guide 将路由到 `kflow-resume` 进行精确断点恢复
-4. **禁止直接调用** `kflow-code`、`kflow-plan`、`kflow-explore`、`kflow-design` 等阶段 Skill 跳过 guide 指引
-5. **流程阶段**: 设计探索 → 原型设计(可选) → 详细设计 → 计划 → 编码 → 代码审查 → 接口单元测试 → E2E测试(前后端) → 集成测试 → 审计 → 归档
-6. **查看状态**: 使用「状态」「进度」关键词触发 `kflow-status` 查看变更状态
+1. **新变更由 `kflow-explore` 承接**：变更类型分类、变更命名、档位初判与冲突预检均在该阶段完成，无需先经 `kflow-guide` 做创建前指引
+2. **阶段完成后自动衔接下一阶段**：阶段 Skill 的 COMPLETE 步骤完成后直接调度下一阶段 Skill，SHALL NOT 提示用户输入推进指令（如「继续 {change-name}」）；阶段自有的人工评审门控照常执行
+3. **中断恢复使用「恢复 {change-name}」**：由 `kflow-resume` 执行完整断点恢复流程
+4. **「继续 {change-name}」为轻量推进**：读取变更状态后直接调度当前/下一阶段 Skill，不执行重恢复流程
+5. **变更名模式禁止 Plan Mode 拦截**：用户输入匹配「恢复/resume + 变更名」或「继续 + 变更名」时，SHALL NOT 进入 Plan Mode，直接进入 Skill 路由链；此规则优先级高于 Plan Mode 自动触发
+6. **流程阶段**: 设计探索 -> 原型设计(可选) -> 详细设计 -> 计划 -> 编码 -> 代码审查 -> 接口单元测试 -> E2E测试(前后端) -> 集成测试 -> 审计 -> 归档
+7. **查看状态**: 使用「状态」「进度」关键词触发 `kflow-status` 查看变更状态
 ```
+
+> **规则条目契约**：条目 1 与 `kflow-explore` 的能力边界一致（变更类型分类、命名、档位初判、冲突预检均在其 INIT/CLASSIFY/TIER/CONTEXT 步骤内完成）；条目 2 与 `phase-auto-transition` 能力一致（自动衔接免除的仅为「提示用户输入推进指令」，阶段自有的人工评审门控照常执行）；条目 3、4 与 `intent-priority-rules` 的推进/恢复分流一致；条目 5 与 `resume-plan-mode-bypass` 能力一致（两条变更名路径均不进入 Plan Mode）。该 section SHALL NOT 出现要求所有变更先经 `kflow-guide` 的规则，亦 SHALL NOT 出现禁止直接调用阶段 Skill 的规则。
 
 **模板版本取值**：`{kflow-init 的 version 值}` 取自本 Skill front matter 的 `version` 字段（消费方为 `.claude/skills/kflow-init/SKILL.md`），该字段由本仓库在归档后运行 `scripts/sync-version.sh` 统一同步；SHALL NOT 引用消费方项目中可能不存在的文件（如仓库根 `VERSION` 文件）。
 
-**作用域边界**：该 section 只承载跨 skill 的路由约束、用户接口约定与流程概览。归档后的 git commit 询问由 `kflow-archive` 的归档流程承载，非 git 仓库时的 git init 询问由本 Skill 的 GIT INIT 步骤承载——二者均为 skill 在自身执行流程中完成的步骤，SHALL NOT 写入该 section。该 section 中 SHALL NOT 出现技能开发仓库特有的脚本、产物目录与文件。
+**作用域边界**：该 section 只承载跨 skill 的路由约束、用户接口约定与流程概览，包括变更名模式的 Plan Mode 绕过禁令（`resume-plan-mode-bypass` 能力要求由 kflow-init 注入）。归档后的 git commit 询问由 `kflow-archive` 的归档流程承载，非 git 仓库时的 git init 询问由本 Skill 的 GIT INIT 步骤承载——二者均为 skill 在自身执行流程中完成的步骤，SHALL NOT 写入该 section。该 section 中 SHALL NOT 出现技能开发仓库特有的脚本、产物目录与文件。
 
 ### 注入内容格式 — Skill 改进建议自动捕获
 

@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-fix
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs bug fixing/缺陷修复、Bug 修复、测试失败, or a subchange test round has failures, or kflow-bug-triage routes an L4 implementation issue to the bugfix fast lane. 二分法根因分类路由（实现错误/测试错误），系统化诊断，多Agent并行分析。两种执行模式——测试阶段上下文下的既有模式（子变更级 / 变更级，出口返回测试阶段）与无测试阶段上下文下的**快车道模式**（由 kflow-bug-triage 的 L4 路由触发，状态写入缺陷级 bugfix-status.md，出口进入定向验证）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（同触发阶段的钩子配置）。
 license: MIT
 triggers:

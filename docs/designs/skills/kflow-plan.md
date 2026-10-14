@@ -96,7 +96,7 @@ allowed-tools:
 │  │   3) 主 Agent 统一修复，生成「本阶段修复清单」随产物交付       │
 │  │   报告路径: self-reviews/plan/report.md（固定一份）           │
 │  │   终止结果: 验证通过 / 验证发现问题({N})                      │
-│  9. COMPLETE  → 更新状态文件                                  │
+│  9. COMPLETE  → 更新状态文件 → 阶段衔接决策                   │
 │ 10. POST_HOOK → 引用 `skills/kflow-plan/references/hooks.md` plan 阶段 POST_HOOK (轻量) │
 │  │   └── UPDATE_STATE → 更新 .status.md                       │
 └─────────────────────────────────────────────────────────────┘
@@ -474,6 +474,7 @@ SELFREV 自审（单轮验证）:
 - **输出给**：`kflow-code`（编码阶段，子变更级）
 - **前置阶段**：详细设计（变更级）
 - **后续阶段**：编码（子变更级）
+- **阶段衔接**：COMPLETE 步骤（步骤 9）完成后按阶段衔接决策表自动调度目标阶段 Skill——规则单一真源为 [core-mechanisms/04-gates-and-transitions.md](../core-mechanisms/04-gates-and-transitions.md) §6.1，各阶段 Skill 以其自身 `references/phase-transition.md` 副本引用之。本阶段为子变更级，衔接分两层：子变更内推进至编码（`kflow-code`）；当前子变更的全部子变更级阶段完成后，按 `auto-subchange-traversal` 规则跨子变更遍历推进至下一个子变更的首个未完成阶段（遍历 `🔄 进行中` / `⏳ 待开始` 的子变更、仅遍历依赖已满足的子变更，轻量档单子变更时退化为直接进入变更级衔接），最后一个子变更完成后交回变更级。SHALL NOT 提示用户输入推进指令
 - **执行模式**：主工作由子代理执行（子代理强制规则），产物自审固定单轮验证，回退重执行 SHALL NOT 预置或提高轮数（参见 skills/kflow-plan/references/repetition.md），复杂度评估仅信息展示，主 Agent 验收闭环
 - **自审轮次**：固定单轮（签署自证 + 1 轮独立子代理验证，终止结果 `验证通过` / `验证发现问题({N})`），参见本文件 §SELFREV 自审
 

@@ -1116,6 +1116,18 @@ Update `docs/changes/{change}/.status.md`:
 
 当原型设计阶段被跳过（⏭️ 跳过）时，系统不生成 `docs/designs/prototypes/design-tokens.css` 和 `element-coverage-tree.md`。后续 code 和 code-review 阶段不执行原型对账。后续 design 阶段按路径 B（playwright-cli 探索）生成元素覆盖树。
 
+### 12.3 阶段衔接决策
+
+状态文件、产品级清单与提取产物更新完成后，本阶段 SHALL 执行**阶段衔接决策**，规则权威定义见 `skills/kflow-prototype-design/references/phase-transition.md`（决策表与调度映射表的单一真源，本文件 SHALL NOT 内联）。
+
+| 要点 | 说明 |
+|------|------|
+| 门控先于衔接 | §11 原型用户评审门控 SHALL 先于衔接决策完成——评审「确认通过」后进入本步骤；评审「需要修订」时按 §11 既有规则回到 DESIGN 修订，不进入衔接决策 |
+| 跳过分支同样衔接 | 本阶段因纯后端项目 / 无 UI 功能点 / 用户拒绝而标记 `⏭️ 跳过` 时，SHALL 同样执行衔接决策，按决策表处理目标阶段 |
+| 目标阶段确定 | 按决策表判定下一阶段（详细设计）状态后直接调度 `kflow-design`（`Skill(skill="kflow-design", args="{change-name}")`） |
+| 免除范围 | 自动衔接免除的**仅为**「提示用户输入推进指令」一步——系统 SHALL NOT 将「提示用户输入推进指令（如「继续 {change-name}」）」作为进入下一阶段的必要条件；原型用户评审门控照常执行 |
+| 停止衔接 | 衔接决策停止（目标阶段 `❌ 阻塞` 等）时 SHALL 向用户说明停止原因与可执行的下一步操作 |
+
 ---
 
 ## 13. POST_HOOK — 浏览器清理与状态更新

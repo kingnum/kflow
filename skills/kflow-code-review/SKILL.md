@@ -1,6 +1,6 @@
 ---
 name: kflow-code-review
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs code review/代码审查、审查代码、code review, or subchange coding is complete and ready for review. 按变更档位分级审查（轻量档单 Agent 串行覆盖两视角全部检查项 / 标准档与完整档两视角并行），修复后验证按档位分支（轻量单轮复检 / 标准与完整分级重审闭环）。独立于编码阶段，子变更级必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，纯静态分析）。
 license: MIT
 triggers:
@@ -99,7 +99,7 @@ allowed-tools:
 │  │       └── 修复完成后重新触发 kflow-code-review                     │
 │  6. REPORT   → 输出 code-review.md（含问题追踪矩阵）                   │
 │  7. RE-REVIEW→ 修复后验证（轻量档单轮复检；标准/完整档分级重审闭环）   │
-│  8. COMPLETE → 更新子变更状态（编码+审查完成）                          │
+│  8. COMPLETE → 更新子变更状态（编码+审查完成）→ 阶段衔接决策            │
 │  9. POST_HOOK→ 引用 skills/kflow-code-review/references/hooks.md code-review 阶段 POST_HOOK │
 └───────────────────────────────────────────────────────────────────────┘
 ```
@@ -377,6 +377,13 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 - 阶段完成时 SHALL 更新变更级 `.status.md` 的「阶段耗时与轮次统计」区（阶段 / 开始时间 / 结束时间 / 耗时 / 子代理轮次 / 执行方式）。本阶段为重复制类，子代理轮次记实际轮次数，执行方式记「重复制循环」。
 - 同时写入 `终止结果`（`执行完成` / `停滞`）与 `执行轮次`（`{N} 轮`）。
 
+状态更新完成后 SHALL 执行**阶段衔接决策**：按 [references/phase-transition.md](references/phase-transition.md) 的决策表判定目标阶段在 `.status.md` 中的状态，并据判定结果直接调度目标阶段 Skill。目标阶段为接口单元测试、E2E 测试或交回变更级的集成测试，SHALL 以 `.status.md` 的实际状态与轻量档阶段适用性声明为准；本步骤 SHALL NOT 硬编码分支逻辑去覆盖该判定。本阶段为子变更级，衔接分两层执行（规则见该文件 §4）：
+
+- **子变更内推进**：在当前子变更内推进至下一阶段（代码审查 → 接口单元测试；前后端项目按阶段适用性声明可推进至 E2E 测试）；
+- **跨子变更遍历推进**：当前子变更的全部子变更级阶段完成后，按子变更遍历顺序推进至下一个子变更的首个未完成阶段；遍历顺序 SHALL 与 `auto-subchange-traversal` 规则一致（遍历 `🔄 进行中` / `⏳ 待开始` 的子变更，仅遍历依赖已满足的子变更；轻量档单子变更时退化为无操作，直接进入变更级阶段衔接），最后一个子变更的全部子变更级阶段完成后交回变更级（集成测试）。
+
+系统 SHALL NOT 提示用户输入推进指令（如「继续 {change-name}」）作为进入下一阶段的必要条件。
+
 ## 步骤 9：POST_HOOK — 阶段后置钩子
 
 引用 `skills/kflow-code-review/references/hooks.md` code-review 阶段 POST_HOOK（❌ 不需要服务：UPDATE_STATE）。
@@ -463,7 +470,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 | 情况 | 处理方式 |
 |------|---------|
-| 通过 | 更新 .status.md → 释放接口单元测试阶段门控 |
+| 通过 | 更新 .status.md → 释放接口单元测试阶段门控 → 按 [references/phase-transition.md](references/phase-transition.md) 执行阶段衔接决策（子变更内推进至接口单元测试/E2E 测试、跨子变更遍历推进、最后一个子变更完成后交回变更级集成测试），SHALL NOT 提示用户输入推进指令 |
 | 执行报告不完整或无理由提前返回 | 拒收，直接重新启动 Agent 子代理继续迭代，不进入 AskUserQuestion |
 | 引入范围外新内容（越界轮） | 拒收该轮，要求子代理在冻结范围内重新审查，不进入 AskUserQuestion |
 | 停滞（连续 3 轮无实质进展）；或产物条件不满足 | 进入升级分支：记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑；用户选「否」→ 标记 ⚠️ 阻塞 |
@@ -481,6 +488,7 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 | 前置阶段 | 编码 | 门控依赖 |
 | 后续阶段 | 接口单元测试（子变更级）→ E2E 测试（前后端项目） | 阶段链 |
 | 关系说明 | 从 `kflow-code` 拆分出的独立 Skill | 原 `kflow-code` 不再包含代码审查子阶段 |
+| 阶段衔接 | 见步骤 8 与 [references/phase-transition.md](references/phase-transition.md) | COMPLETE 后自动衔接：子变更内推进至接口单元测试（前后端项目按适用性声明可至 E2E 测试），子变更级阶段全部完成后按 `auto-subchange-traversal` 规则跨子变更遍历推进，最后一个子变更完成后交回变更级（集成测试）；目标阶段以 `.status.md` 实际状态判定；SHALL NOT 提示用户输入推进指令 |
 | 执行模式 | 重复制（内嵌按档位的审查形态） | 重复制循环（轮次下限 1、轮数由实际执行的重复制循环决定，无上限；参见 skills/kflow-code-review/references/repetition.md §14.3 / §14.4），自然终止记 `执行完成` / 停滞升级记 `停滞`；审查范围冻结 + 范围外观察降级；复杂度评估仅信息展示，主 Agent 验收闭环 |
 
 # 核心提醒

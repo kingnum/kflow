@@ -1,6 +1,6 @@
 ---
 name: kflow-code
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs coding implementation/编码实现、TDD、功能实现, or subchange task plan is ready for execution. 子变更级TDD编码——编译验证、数据库迁移管理、多Agent并行编码、跨变更冲突检测。必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:
@@ -639,6 +639,13 @@ migrations/
 - 阶段完成时 SHALL 更新变更级 `.status.md` 的「阶段耗时与轮次统计」区（阶段 / 开始时间 / 结束时间 / 耗时 / 子代理轮次 / 执行方式）。本阶段为重复制类，子代理轮次记实际轮次数，执行方式记「重复制循环」。
 - 同时写入 `终止结果`（`执行完成` / `停滞`）与 `执行轮次`（`{N} 轮`）。
 
+状态更新完成后 SHALL 执行**阶段衔接决策**：按 [references/phase-transition.md](references/phase-transition.md) 的决策表判定目标阶段在 `.status.md` 中的状态，并据判定结果直接调度目标阶段 Skill。本阶段为子变更级，衔接分两层执行（规则见该文件 §4）：
+
+- **子变更内推进**：在当前子变更内推进至下一阶段（编码 → 代码审查），交回点为 `kflow-code-review`；
+- **跨子变更遍历推进**：当前子变更的全部子变更级阶段完成后，按子变更遍历顺序推进至下一个子变更的首个未完成阶段；遍历顺序 SHALL 与 `auto-subchange-traversal` 规则一致（遍历 `🔄 进行中` / `⏳ 待开始` 的子变更，仅遍历依赖已满足的子变更；轻量档单子变更时退化为无操作，直接进入变更级阶段衔接），最后一个子变更的全部子变更级阶段完成后交回变更级阶段。
+
+系统 SHALL NOT 提示用户输入推进指令（如「继续 {change-name}」）作为进入下一阶段的必要条件。
+
 ---
 
 # 重复制（执行类阶段）
@@ -723,7 +730,7 @@ migrations/
 
 | 情况 | 处理方式 |
 |------|---------|
-| 通过 | 更新 .status.md + 填写 traceability.md 对应列 → 释放代码审查阶段门控 |
+| 通过 | 更新 .status.md + 填写 traceability.md 对应列 → 释放代码审查阶段门控 → 按 [references/phase-transition.md](references/phase-transition.md) 执行阶段衔接决策（子变更内推进至代码审查 / 跨子变更遍历推进），SHALL NOT 提示用户输入推进指令 |
 | 执行报告不完整或无理由提前返回 | 拒收，直接重新启动 Agent 子代理继续迭代，不进入 AskUserQuestion |
 | 引入范围外新内容（越界轮） | 拒收该轮，要求子代理在冻结范围内重新审查，不进入 AskUserQuestion |
 | 停滞（连续 3 轮无实质进展）；或产物条件不满足 | 进入升级分支：记录 `docs/skill-suggestion.md` → AskUserQuestion 询问重跑；用户选「否」→ 标记 ⚠️ 阻塞 |
@@ -741,6 +748,7 @@ migrations/
 | 前置阶段 | 计划 | 门控依赖 |
 | 后续阶段 | 代码审查 → 接口单元测试 → E2E测试（前后端）/ 接口单元测试（纯后端） | 阶段链 |
 | 关系说明 | 代码审查拆分为独立 Skill | 本 Skill 不再包含审查子阶段 |
+| 阶段衔接 | 见步骤 9 与 [references/phase-transition.md](references/phase-transition.md) | COMPLETE 后自动衔接：子变更内推进至代码审查（交回点 `kflow-code-review`），子变更级阶段全部完成后按 `auto-subchange-traversal` 规则跨子变更遍历推进，最后一个子变更完成后交回变更级；SHALL NOT 提示用户输入推进指令 |
 | 执行模式 | 重复制（内嵌多 Agent 并行编码） | 重复制循环（轮次下限 1、轮数由实际执行的重复制循环决定，无上限；参见 references/repetition.md §14.3 / §14.4），自然终止记 `执行完成` / 停滞升级记 `停滞`；审查范围冻结 + 范围外观察降级；复杂度评估仅信息展示，主 Agent 验收闭环 |
 
 # 核心提醒

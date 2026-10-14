@@ -162,6 +162,9 @@ allowed-tools:
 │  9. POST_HOOK → 引用 `skills/kflow-audit/references/hooks.md` audit 阶段 POST_HOOK (轻量) │
 │  │   └── UPDATE_STATE → 更新 .status.md                       │
 │ 10. COMPLETE  → 审计通过（无阻塞级问题）或触发回退               │
+│  │   └── 阶段衔接决策 → 引用 references/phase-transition.md      │
+│  │       └── 归档闸口：停止自动衔接，SHALL NOT 自动调度          │
+│  │           kflow-archive；MAY 提示用户可发起归档               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -328,13 +331,27 @@ allowed-tools:
 
 ---
 
+## 阶段衔接与归档闸口
+
+审计通过（无阻塞级问题）并完成 `.status.md` 更新后，SHALL 执行**阶段衔接决策**（见 `skills/kflow-audit/references/phase-transition.md` §2 决策表）。审计为变更级最后阶段，其后仅剩归档阶段，衔接决策 SHALL 应用**归档闸口**（见该文件 §5）：
+
+- 归档闸口生效：系统 SHALL 停止自动衔接，SHALL NOT 自动调度 `kflow-archive`。
+- MAY 提示用户「变更已具备归档条件」及发起归档的方式；该提示 SHALL NOT 构成自动流转。
+- 决策表、调度映射与归档闸口的唯一真源为 `skills/kflow-audit/references/phase-transition.md`，本 Skill SHALL NOT 内联其内容。
+
+审计未通过（存在阻塞级问题）时，按「审计回退路由」处理，不进入上述衔接决策。
+
+> 若审计阶段定义了用户验收门控（AskUserQuestion 验收询问），该门控 SHALL 照常执行，SHALL NOT 被归档闸口跳过；自动衔接免除的仅为「提示用户输入推进指令」这一步。
+
+---
+
 ## 与其他 Skill 的关系
 
 - **触发来源**：归档流程自动触发（集成测试通过后）、用户手动调用
 - **执行者**：审计由单一子代理执行（全部档位同一路径），主 Agent 负责调度与验收，SHALL NOT 接管审计执行
 - **回退路由**：按问题归属阶段回退到 `kflow-explore`、`kflow-design`、`kflow-code`、`kflow-api-test`、`kflow-e2e-test`
 - **门控关系**：归档门控（`kflow-archive` 的前置条件）
-- **输出给**：`kflow-archive`（审计通过后）
+- **输出给**：`kflow-archive`（审计通过后，由用户显式发起归档；本 Skill SHALL NOT 自动调度归档）
 - **第 4 种回退来源**：与缺陷修复（`kflow-bug-fix`）、代码审查（`kflow-code-review`）、用户需求变更并列
 
 ---
@@ -342,6 +359,7 @@ allowed-tools:
 ## 核心提醒
 
 - 审计是归档门控，未通过不能归档
+- 审计通过后应用归档闸口：停止自动衔接，SHALL NOT 自动调度 `kflow-archive`，MAY 提示用户变更已具备归档条件及发起归档的方式（见 `skills/kflow-audit/references/phase-transition.md` §5）
 - 审计由单一子代理执行：SHALL NOT 由主 Agent 直接执行，SHALL NOT 拆分为多个并行子代理；该约束适用于全部变更档位
 - 审计 SHALL 以四项记账职责执行：`(a)` 门控校验 / `(b)` 覆盖率与产物存在性校验 / `(c)` 阶段耗时汇总 / `(d)` 阻塞级问题兜底。SHALL NOT 因变更档位而改变执行方式、职责集合或报告形态——不存在按档位分化的简化审计路径
 - 记账员式审计 SHALL NOT 计算总分或任何维度得分，SHALL NOT 输出评分表，SHALL NOT 对阶段产物质量作独立评审——产物质量评审由签署清单自证、单轮验证与交叉审查承担

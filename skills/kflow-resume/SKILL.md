@@ -1,10 +1,9 @@
 ---
 name: kflow-resume
-version: 0.25.0
-description: Use when user needs to resume interrupted work/继续、恢复、resume {change-name}, or when kflow-guide routes to RESUME mode.
+version: 0.26.0
+description: Use when user needs to resume interrupted work/恢复、resume {change-name}, or when kflow-guide routes to RESUME mode. 仅承接中断恢复（7 步重流程：优先级链读状态 → 断点定位 → 完整门控与产物完整性二次校验 → 五问题摘要 → 服务恢复检测 → 调度）；轻量推进（「继续 {change-name}」）由 kflow-guide 直接调度阶段 Skill，SHALL NOT 经过本 Skill。
 license: MIT
 triggers:
-  - 继续 {change-name}
   - 恢复 {change-name}
   - resume {change-name}
 allowed-tools:
@@ -98,10 +97,8 @@ VERIFY(存在性验证) -> STATE(优先级链读状态) -> LOCATE(断点定位) 
 │     ├── 服务不可用 -> 变更级 agent 执行编译重启                   │
 │     ├── 跳过已在 migration-log.md 标记为「已执行」的迁移         │
 │     └── 健康检查通过后继续                                        │
-│  7. DISPATCH   直接调度阶段 Skill                                │
-│     ├── 阶段 = ❌ 阻塞 -> 输出阻碍信息，不调度                   │
-│     ├── 阶段 = ⚠️ 需修订 -> 按调度映射调度回退目标阶段          │
-│     └── 正常 -> 按调度映射表调度对应阶段 Skill                    │
+│  7. DISPATCH   直接调度阶段 Skill（按共享衔接决策表）            │
+│     └── 决策与映射见 references/phase-transition.md §2 §3       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -358,7 +355,7 @@ Priority 5: tasks.md（兜底）
 | 计划 | `kflow-plan` | 子变更级 |
 | 编码 | `kflow-code` | 子变更级 |
 | 代码审查 | `kflow-code-review` | 子变更级 |
-| 接口单元测试 | `kflow-e2e-test` | 子变更级 |
+| 接口单元测试 | `kflow-api-test` | 子变更级 |
 | E2E测试 | `kflow-e2e-test` | 子变更级 |
 | 集成测试 | `kflow-integration-test` | 变更级 |
 | 审计 | `kflow-audit` | 变更级 |
@@ -366,29 +363,31 @@ Priority 5: tasks.md（兜底）
 
 ### 调度逻辑
 
+调度决策 SHALL 依据共享规则 [references/phase-transition.md](references/phase-transition.md) 的 §2「阶段衔接决策表」，本 Skill SHALL NOT 维护该决策表的私有副本。要点：
+
 ```
 DISPATCH 调度逻辑:
 
-1. 判断当前阶段状态:
-   ├── ✅ 完成 -> 自动推进到下一阶段，递归 DISPATCH
-   ├── 🔄 进行中 -> 调度当前阶段 Skill
+1. 判定当前阶段状态 → 按 references/phase-transition.md §2 决策表取动作
+   ├── ✅ 完成 -> 递归推进（同一决策表，直到遇到非完成状态）
+   ├── 🔄 进行中 / ⏳ 待开始 -> 调度该阶段 Skill
    ├── ⚠️ 需修订 -> 调度回退目标阶段 Skill
    ├── ❌ 阻塞 -> 输出阻碍信息，不调度
-   └── ⏳ 待开始 -> 调度当前阶段 Skill
-
+   └── ⏭️ 跳过 -> 视为已通过，对下一阶段重新执行决策表
 2. 传递上下文:
    ├── 变更名: 传递给目标 Skill
    ├── 子变更名（如适用）: 传递给目标 Skill
    └── 断点信息: 在调度消息中说明恢复位置
-
 3. 调度方式:
    └── Skill(skill="{target-skill}", args="{change-name}")
 ```
 
+> 子变更级阶段（计划/编码/代码审查/接口单元测试/E2E测试）的衔接，包括子变更内推进与跨子变更遍历推进，见 `references/phase-transition.md` §4。
+
 # 与其他 Skill 的关系
 
-- **由 `kflow-guide` 调用**：guide 识别 RESUME 模式后路由到 resume
-- **调用阶段 Skill**：resume 定位断点后直接调度对应阶段 Skill
+- **由 `kflow-guide` 调用**：guide 识别 RESUME 模式（「恢复/resume + 变更名」）后路由到 resume；「继续 + 变更名」为轻量推进，由 guide 直接调度阶段 Skill，SHALL NOT 进入本 Skill
+- **调用阶段 Skill**：resume 定位断点后按 `references/phase-transition.md` 的共享决策表调度对应阶段 Skill
 - **不创建文件**：resume 是纯恢复路由层，不产生持久化产物
 - **与 checkpoint 机制协作**：优先使用 checkpoint 定位精确断点，回退到 .status.md 或 tasks.md
 
@@ -397,9 +396,7 @@ DISPATCH 调度逻辑:
 - **优先级链不可跳过**：checkpoint > .status.md > tasks.md，按顺序读取，一旦命中即停止
 - **五问题摘要必须在详细恢复信息之前输出**，控制在 15 行以内
 - **E2E/集成测试阶段恢复时检测服务状态**：服务不可用时自动编译重启
-- **⚠️ 需修订时调度回退目标阶段**，而非当前标注需修订的阶段
-- **❌ 阻塞时不调度**，仅输出阻碍信息
-- **✅ 完成时自动推进到下一阶段**，递归 DISPATCH 直到遇到非完成状态
+- **DISPATCH 依据共享决策表**：五分支判定（✅ 递归推进 / 🔄 调度当前 / ⚠️ 回退目标 / ❌ 不调度 / ⏳ 调度当前）与阶段→Skill 映射的统一规则见 `references/phase-transition.md` §2、§3，本 Skill SHALL NOT 维护私有副本
 - **断点来源必须明确标注**（checkpoint / .status.md / tasks.md），让用户了解数据可信度
 - **产物完整性验证**：GATE 步骤对已完成阶段执行二次校验（执行报告完整 + 产物齐全 + 覆盖率达标 + 无占位符 + 终止结果判读），防止中断时跳过未完成阶段
 

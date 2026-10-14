@@ -1,6 +1,6 @@
 ---
 name: kflow-explore
-version: 0.25.0
+version: 0.26.0
 description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces signed-checklist self-review (the agent signs off on 4 dimensions with in-artifact evidence anchors, then one independent verification round, then a unified fix — a single round, never a second) and two-action save rule for external info gathering.
 license: MIT
 triggers:
@@ -610,6 +610,16 @@ prototype_decision: 已选择原型设计 | 已跳过
 1. 标记设计探索阶段为 `✅ 完成`
 2. 记录完成时间和执行备注
 3. 设置当前阶段为下一阶段（原型设计或详细设计）
+
+### 阶段衔接决策
+
+状态文件更新完成后 SHALL 执行阶段衔接决策，规则见 [references/phase-transition.md](references/phase-transition.md)（决策表与调度映射表的单一真源；本步骤只引用，SHALL NOT 内联决策表或调度映射表）。
+
+- **门控先于衔接**：步骤 12 的原型设计决策门控 SHALL 在衔接决策之前完成；门控未通过时按该步骤既有规则处理，不进入衔接决策
+- **按 `prototype_decision` 确定目标阶段**：衔接决策按 `.status.md` 中 `prototype_decision` 标记确定的阶段顺序推进——标记为 `已选择原型设计` → 调动 `kflow-prototype-design`；标记为 `已跳过` → 调动 `kflow-design`
+- **调度方式**：按决策表判定目标阶段状态后直接调度目标阶段 Skill（`Skill(skill="{target-skill}", args="{change-name}")`）
+- **SHALL NOT 提示推进指令**：系统 SHALL NOT 将「提示用户输入推进指令（如「继续 {change-name}」）」作为进入下一阶段的必要条件
+- **停止衔接时说明原因**：衔接决策停止（目标阶段 `❌ 阻塞` 等）时 SHALL 向用户说明停止原因与可执行的下一步操作
 
 ---
 

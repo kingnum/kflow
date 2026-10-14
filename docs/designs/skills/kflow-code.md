@@ -621,6 +621,7 @@ Slice 3: ...
 - **前置阶段**：计划
 - **后续阶段**：代码审查（kflow-code-review）→ 接口单元测试（kflow-api-test）→ E2E测试（kflow-e2e-test，前后端项目）/ 接口单元测试（kflow-api-test，纯后端项目）
 - **关系说明**：代码审查已拆分为独立 Skill `kflow-code-review`，编码完成后自动进入代码审查阶段
+- **阶段衔接**：编码完成并更新状态后，按阶段衔接决策表自动调度目标阶段 Skill（规则单一真源为 [core-mechanisms/04-gates-and-transitions.md](../core-mechanisms/04-gates-and-transitions.md) §6.1，各阶段 Skill 以其自身 `references/phase-transition.md` 副本引用之），交回点为 `kflow-code-review`。本阶段为子变更级，衔接分两层：子变更内推进至代码审查；当前子变更的全部子变更级阶段完成后，按 `auto-subchange-traversal` 规则跨子变更遍历推进至下一个子变更的首个未完成阶段（遍历 `🔄 进行中` / `⏳ 待开始` 的子变更、仅遍历依赖已满足的子变更，轻量档单子变更时退化为直接进入变更级衔接），最后一个子变更完成后交回变更级。SHALL NOT 提示用户输入推进指令
 - **执行模式**：重复制循环（内嵌多 Agent 并行编码），轮次下限 1、轮次由实际执行的循环决定（SHALL NOT 预设轮数；参见 skills/kflow-code/references/repetition.md §14.3），当前轮无新发现且无可执行工作时终止，终止结果 `执行完成`；连续 3 轮无实质进展记 `停滞` 并升级；审查范围冻结 + 范围外观察降级 + 轮间摘要；复杂度评估仅信息展示，主 Agent 验收闭环
 
 ---

@@ -139,6 +139,14 @@ kflow-resume 恢复流程:
 
 ## 5. 触发方式
 
-- 用户输入「继续 {change-name}」→ `kflow-guide` 识别 RESUME 模式 → 路由到 `kflow-resume`
-- 用户输入「恢复 {change-name}」→ 同上
-- 用户输入「继续」（无变更名）→ guide 按活跃变更数量判断后路由
+推进与恢复是两个语义独立的入口，由触发词区分，SHALL NOT 互相干扰：
+
+| 用户输入 | 语义 | 路由与执行深度 |
+|---------|------|--------------|
+| 「恢复 {change-name}」/ `resume {change-name}` | 中断恢复 | `kflow-guide` 识别 RESUME 模式 → 路由到 `kflow-resume`，执行本文件的完整 7 步重流程（含产物完整性二次校验、五问题摘要、服务恢复检测） |
+| 「恢复」/ `resume`（无变更名） | 中断恢复 | guide 按活跃变更数量判断后路由到 `kflow-resume`（0 个提示无可恢复变更、1 个自动选择、多个列出供选择） |
+| 「继续 {change-name}」/「继续」（无变更名） | 轻量推进 | **SHALL NOT 经过 `kflow-resume`**——guide 读取 `docs/changes/{change}/.status.md` 后，按 `references/phase-transition.md` 的阶段衔接决策表直接调度目标阶段 Skill |
+
+轻量推进 SHALL NOT 执行本文件的产物完整性二次校验、五问题摘要与服务恢复检测；其安全性由目标阶段 Skill 自有的入口门控兜底（见各阶段 `references/gates.md`）。
+
+其余输入不触发恢复路由，按 `kflow-guide` 的关键词意图映射处理。

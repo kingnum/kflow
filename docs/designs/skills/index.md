@@ -35,8 +35,9 @@
 | 触发场景 | 推荐 Skill | 项目类型 |
 |---------|-----------|---------|
 | 新功能、开始、创建、开发 | `kflow-explore` | 所有项目 |
-| 继续、下一步 | 继续活跃变更（单活跃变更自动 resume） | 所有项目 |
-| 继续 {change}、恢复 {change}、resume {change} | `kflow-resume` | 所有项目 |
+| 继续、下一步 | 轻量推进活跃变更（单活跃变更自动推进） | 所有项目 |
+| 继续 {change} | 轻量推进：`kflow-guide` 读取 `.status.md` 后按阶段衔接决策直接调度目标阶段 Skill | 所有项目 |
+| 恢复 {change}、resume {change} | `kflow-resume` | 所有项目 |
 | 接口测试、API测试、接口单元测试 | `kflow-api-test` | 所有项目 |
 | 测试、QA、验收、E2E | `kflow-e2e-test` | 仅前后端项目 |
 | 修复/Bug/缺陷 | `kflow-bug-fix`（有活跃 bug-fix 时）/ `kflow-bug-triage`（无活跃 bug-fix 时） | 所有项目 |
@@ -186,8 +187,8 @@ kflow-explore (变更级) ──────────────────
 
 ## 使用建议
 
-1. **新需求启动**：使用 `kflow-guide` 获取流程指引（含跨变更冲突检测），或直接使用 `kflow-explore` 开始设计探索
-2. **中断恢复**：使用「继续 {change-name}」通过 `kflow-guide` 路由到 `kflow-resume` 恢复中断的变更
+1. **新需求启动**：使用「开始新需求 + 功能描述」或直接调用 `kflow-explore` 创建变更；变更类型分类、变更命名、档位初判均在 `kflow-explore` 阶段完成
+2. **推进与恢复**：轻量推进用「继续 {change-name}」，由 `kflow-guide` 读取 `.status.md` 后按阶段衔接决策直接调度目标阶段 Skill；中断恢复用「恢复 {change-name}」（或 `resume {change-name}`），由 `kflow-guide` 路由到 `kflow-resume`
 3. **详细设计**：使用 `kflow-design` 在变更级统一设计所有功能点，设计完成后划分子变更
 4. **查看进度**：使用 `kflow-status` 查看所有未归档变更状态（含子变更进度矩阵）
 5. **执行子变更**：按依赖顺序，依次执行 `kflow-plan` → `kflow-code` → `kflow-code-review` → 接口单元测试 → E2E测试

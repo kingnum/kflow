@@ -108,7 +108,7 @@ allowed-tools:
 │  6. REPORT   → 输出 code-review.md                          │
 │  7. POST_HOOK → 引用 `skills/kflow-code-review/references/hooks.md` code-review 阶段 POST_HOOK (轻量) │
 │  │   └── UPDATE_STATE → 更新 .status.md                      │
-│  8. COMPLETE → 更新子变更状态（编码+审查完成）               │
+│  8. COMPLETE → 更新子变更状态（编码+审查完成）→ 阶段衔接决策 │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -305,6 +305,7 @@ allowed-tools:
 - **前置阶段**：编码
 - **后续阶段**：接口单元测试（`kflow-api-test`，子变更级）
 - **关系说明**：从 `kflow-code` 拆分出的独立 Skill，原 `kflow-code` 不再包含代码审查子阶段
+- **阶段衔接**：COMPLETE 步骤（步骤 8）完成后按阶段衔接决策表自动调度目标阶段 Skill（规则单一真源为 [core-mechanisms/04-gates-and-transitions.md](../core-mechanisms/04-gates-and-transitions.md) §6.1，各阶段 Skill 以其自身 `references/phase-transition.md` 副本引用之）。本阶段为子变更级，衔接分两层：子变更内推进至接口单元测试（前后端项目按轻量档阶段适用性声明可推进至 E2E 测试）；当前子变更的全部子变更级阶段完成后，按 `auto-subchange-traversal` 规则跨子变更遍历推进至下一个子变更的首个未完成阶段（遍历 `🔄 进行中` / `⏳ 待开始` 的子变更、仅遍历依赖已满足的子变更，轻量档单子变更时退化为直接进入变更级衔接），最后一个子变更完成后交回变更级（集成测试）。目标阶段 SHALL 以 `.status.md` 实际状态经决策表判定，SHALL NOT 硬编码分支逻辑覆盖之；SHALL NOT 提示用户输入推进指令
 - **执行模式**：重复制循环（轻量档内嵌单 Agent 串行审查，标准/完整档内嵌两视角并行审查），轮次下限 1、轮次由实际执行的循环决定（SHALL NOT 预设轮数；参见 skills/kflow-code-review/references/repetition.md §14.3），当前轮无新发现且无可执行工作时终止，终止结果 `执行完成`；连续 3 轮无实质进展记 `停滞` 并升级；审查范围冻结 + 范围外观察降级 + 轮间摘要；复杂度评估仅信息展示，主 Agent 验收闭环
 
 ---

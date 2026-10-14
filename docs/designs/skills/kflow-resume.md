@@ -9,10 +9,9 @@
 
 ```yaml
 name: kflow-resume
-description: 中断恢复 - 通过变更标识名称精确恢复中断的变更执行。读取状态文件和 checkpoint 定位断点，输出恢复摘要后直接调度对应阶段 Skill 继续执行。
+description: 中断恢复 - 通过变更标识名称精确恢复中断的变更执行。读取状态文件和 checkpoint 定位断点，输出恢复摘要后直接调度对应阶段 Skill 继续执行。仅承接中断恢复（「恢复/resume + 变更名」）；轻量推进（「继续 + 变更名」）由 kflow-guide 直接调度阶段 Skill，SHALL NOT 经过本 Skill。
 license: MIT
 triggers:
-  - 继续 {change-name}
   - 恢复 {change-name}
   - resume {change-name}
 allowed-tools:
@@ -76,13 +75,15 @@ allowed-tools:
 │  │   ├── 服务不可用 → 变更级 agent 执行编译重启                │
 │  │   ├── 跳过已在 migration-log.md 标记为「已执行」的迁移     │
 │  │   └── 健康检查通过后继续                                    │
-│  7. DISPATCH  → 直接调度阶段 Skill                            │
+│  7. DISPATCH  → 直接调度阶段 Skill（按共享衔接决策表）        │
 │      ├── 阶段 = ❌ 阻塞 → 输出阻碍信息，不调度                │
 │      ├── 阶段 = ⚠️ 需修订 → 按调度映射调度回退目标阶段       │
 │      ├── 产物验证不通过 → 调度回退到对应阶段重新执行          │
 │      └── 正常 → 按调度映射表调度对应阶段 Skill                 │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+> DISPATCH 的五分支判定与阶段→Skill 映射的统一规则见 `skills/kflow-resume/references/phase-transition.md`（各阶段 Skill 各持一份内容相同的副本，由 `scripts/sync-references.sh` 保障一致性），本 Skill SHALL NOT 维护该决策表的私有副本。
 
 > VERIFY/STATE/LOCATE/GATE/SUMMARIZE/DISPATCH 步骤的详细逻辑参见 `skills/kflow-resume/references/recovery-protocol.md`。SERVICE 步骤为本 Skill 特有（测试阶段服务恢复检测）。
 
@@ -163,7 +164,7 @@ allowed-tools:
 
 ## 调度映射表
 
-> 完整规范参见 `skills/kflow-resume/references/recovery-protocol.md` §4
+> 完整规范参见 `skills/kflow-resume/references/recovery-protocol.md` §4；五分支衔接决策与同一份映射表的共享定义参见 `skills/kflow-resume/references/phase-transition.md` §2、§3
 
 | 当前阶段 | 调度 Skill | 上下文 |
 |---------|-----------|--------|
@@ -276,10 +277,26 @@ allowed-tools:
 
 ## 与其他 Skill 的关系
 
-- **由 `kflow-guide` 调用**：guide 识别 RESUME 模式后路由到 resume
-- **调用阶段 Skill**：resume 定位断点后直接调度对应阶段 Skill
+- **由 `kflow-guide` 调用**：guide 识别 RESUME 模式（「恢复/resume + 变更名」）后路由到 resume；「继续 + 变更名」属轻量推进，由 guide 直接调度阶段 Skill，SHALL NOT 进入本 Skill
+- **调用阶段 Skill**：resume 定位断点后按 `skills/kflow-resume/references/phase-transition.md` 的共享决策表调度对应阶段 Skill
 - **不创建文件**：resume 是纯恢复路由层，不产生持久化产物
 - **与 checkpoint 机制协作**：优先使用 checkpoint 定位精确断点，回退到 .status.md 或 tasks.md
+
+---
+
+## 触发方式
+
+推进与恢复是两个语义独立的入口，由触发词区分，SHALL NOT 互相干扰：
+
+| 用户输入 | 语义 | 路由与执行深度 |
+|---------|------|--------------|
+| 「恢复 {change-name}」/ `resume {change-name}` | 中断恢复 | `kflow-guide` 识别 RESUME 模式 → 路由到 `kflow-resume`，执行完整 7 步重流程 |
+| 「恢复」/ `resume`（无变更名） | 中断恢复 | guide 按活跃变更数量判断后路由到 `kflow-resume` |
+| 「继续 {change-name}」/「继续」（无变更名） | 轻量推进 | **SHALL NOT 经过 `kflow-resume`**——guide 读取 `.status.md` 后按阶段衔接决策表直接调度目标阶段 Skill |
+
+轻量推进 SHALL NOT 执行产物完整性二次校验、五问题摘要与服务恢复检测；其安全性由目标阶段 Skill 自有的入口门控兜底。
+
+> 完整触发方式规范参见 `skills/kflow-resume/references/recovery-protocol.md` §5。
 
 ---
 

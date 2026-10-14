@@ -2,7 +2,7 @@
 
 一套**文档驱动的阶段门控开发流程体系**，将软件开发从设计到交付的全流程标准化为一系列 Claude Code Skills，确保每个阶段产物可追溯、可验证。
 
-> **版本**: 0.25.0 | **更新时间**: 2026-10-14 | **适用版本**: KFlow Skills 体系 2.0.0+
+> **版本**: 0.26.0 | **更新时间**: 2026-10-14 | **适用版本**: KFlow Skills 体系 2.0.0+
 
 ---
 
@@ -43,7 +43,7 @@ kflow-init
 ### 前后端项目（11 阶段，含审计门控）
 
 ```
-kflow-guide → kflow-explore → kflow-prototype-design(可选) → kflow-design
+kflow-explore → kflow-prototype-design(可选) → kflow-design
     → kflow-plan → kflow-code → kflow-code-review → kflow-api-test
     → kflow-e2e-test → kflow-bug-fix(按需) → kflow-integration-test
     → kflow-verify(可选诊断) → kflow-audit → kflow-archive
@@ -52,7 +52,7 @@ kflow-guide → kflow-explore → kflow-prototype-design(可选) → kflow-desig
 ### 纯后端项目（9 阶段，含审计门控）
 
 ```
-kflow-guide → kflow-explore → kflow-design
+kflow-explore → kflow-design
     → kflow-plan → kflow-code → kflow-code-review → kflow-api-test
     → kflow-bug-fix(按需) → kflow-integration-test
     → kflow-verify(可选诊断) → kflow-audit → kflow-archive
@@ -63,13 +63,19 @@ kflow-guide → kflow-explore → kflow-design
 `变更档位 = 轻量` 时，`接口单元测试`、`E2E测试`、`集成测试` 三个阶段为**条件适用**，由 kflow-design 在详细设计阶段产出的「阶段适用性声明」判定是否执行；被裁剪的阶段标注为 `⏭️ 不适用`，不产出对应产物。轻量档恒为单一子变更（跳过子变更划分），审计由单一子代理执行（全部档位同一形态：四项记账职责）。
 
 ```
-kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
+kflow-explore → kflow-design（含阶段适用性声明）
     → kflow-plan → kflow-code → kflow-code-review
     → kflow-api-test(条件适用) → kflow-e2e-test(条件适用)
     → kflow-integration-test(条件适用) → kflow-audit(记账员审计) → kflow-archive
 ```
 
 > `标准` 与 `完整` 档不受影响，阶段集合维持上方两节所列；纯后端项目跳过 E2E 测试的既有规则亦不变。
+
+### 阶段衔接
+
+阶段之间**自动衔接**：每个阶段 Skill 的 COMPLETE 步骤完成后，按变更级 `.status.md` 的阶段状态直接调度下一阶段 Skill，无需用户输入推进指令。阶段自有的人工评审门控（原型设计决策、原型/详细设计用户评审、审计用户验收）照常执行。**归档是唯一例外**——审计完成后停止自动衔接，须由用户显式发起归档。
+
+需要人工介入时有两种入口：`继续 {change-name}` 为轻量推进（读状态后直接调度目标阶段 Skill）；`恢复 {change-name}` 为中断恢复（定位断点、二次校验产物完整性、输出五问题摘要后调度）。
 
 ---
 
@@ -165,10 +171,10 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 
 | Skill | 说明 | 触发词 |
 |-------|------|--------|
-| `kflow-guide` | 意图识别、项目类型判断、变更检测、RESUME 路由 | 流程指引、帮助、如何开始、继续、恢复 |
+| `kflow-guide` | 意图识别、项目类型判断、变更检测、中断恢复路由（RESUME）、轻量推进路由（「继续 + 变更名」直接调度阶段 Skill） | 流程指引、帮助、如何开始、继续 {change}、恢复 {change} |
 | `kflow-init` | 环境初始化、MCP/Skills 能力扫描、工具链推荐、老项目逆向分析、CLAUDE.md 注入、skill-suggestion 自动捕获规则注入 | 初始化、环境配置、工具推荐 |
 | `kflow-status` | 未归档变更汇总 + 子变更进度矩阵 + 加权整体进度 | 状态、进度、任务总结 |
-| `kflow-resume` | 断点定位（优先级链：checkpoint > .status.md > tasks.md）→ 产物完整性验证 → 五问题摘要 → 调度对应阶段 Skill | 继续 {change}、恢复 {change} |
+| `kflow-resume` | 中断恢复专用：断点定位（优先级链：checkpoint > .status.md > tasks.md）→ 产物完整性验证 → 五问题摘要 → 按共享阶段衔接决策表调度对应阶段 Skill | 恢复 {change} |
 | `kflow-verify` | 独立诊断工具（非流程阶段）——七维度产物完整性诊断（文件存在/内容完整/输入源正确/交叉引用一致/设计决策完整/门控合规/审查闭环）+ 三级严重度分级（阻塞/警告/建议）+ 修复路由 + 诊断报告 | 诊断、验证产物、检查产物、verify |
 
 ### 设计阶段（变更级）
@@ -205,8 +211,8 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 ### 新功能开发
 
 ```
-1. "我想添加用户认证功能"       → kflow-guide 识别意图
-2. kflow-explore               → 创建变更目录，原子级拆分功能点，构建领域词汇表
+1. "我想添加用户认证功能"       → 直接进入 kflow-explore（新变更入口）
+2. kflow-explore               → 判定变更类型、确定变更名称、变更档位初判、冲突预检、创建变更目录、原子级拆分功能点、构建领域词汇表
 3. kflow-prototype-design      → (可选) HTML 交互原型（直写产品级）+ 元素覆盖树 Path A + BUILD 门控 + 可选自动验证
 4. kflow-design                → 系统架构 + 分级设计审查 + 划分子变更 + ADR 记录 + 元素覆盖树 Path B + 100% 覆盖率门控
 5. kflow-plan                  → 子变更 TDD 任务清单 + DoD 验收标准
@@ -232,10 +238,18 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 ### 中断恢复
 
 ```
-用户: 继续 add-user-auth
+用户: 恢复 add-user-auth
 → kflow-guide PARSE 正则匹配 → RESUME 路由到 kflow-resume
 → 优先级链读取状态（checkpoint > .status.md > tasks.md）
-→ 定位断点 → 五问题快速摘要 → 调度阶段 Skill
+→ 定位断点 → 产物完整性二次校验 → 五问题快速摘要 → 调度阶段 Skill
+```
+
+### 轻量推进
+
+```
+用户: 继续 add-user-auth
+→ kflow-guide PARSE 正则匹配 → 读取 .status.md
+→ 按阶段衔接决策表直接调度目标阶段 Skill（不经过 kflow-resume）
 ```
 
 ---
@@ -246,7 +260,8 @@ kflow-guide → kflow-explore → kflow-design（含阶段适用性声明）
 |-----------|--------|
 | 开始新功能 | "开始新需求" / "添加 XX 功能" / "开发 XX" |
 | 获取流程指引 | "流程指引" / "帮助" / "如何开始" |
-| 继续中断的工作 | "继续 {change-name}" / "恢复 {change-name}" |
+| 继续推进（轻量） | "继续 {change-name}" |
+| 中断后恢复（完整） | "恢复 {change-name}" / "resume {change-name}" |
 | 查看进度 | "状态" / "进度" / "查看进度" |
 | 原型/UI 设计 | "原型设计" / "UI 设计" / "交互设计" |
 | 详细设计 | "详细设计" / "技术设计" / "架构设计" |
@@ -383,7 +398,7 @@ docs/
 
 **服务管理**：通过 `with_server.py` 统一管理——`--daemon` 持久化模式保持服务运行、`--status/--health` 状态查询、`--stop-all` 批量停止、端口冲突自动检测
 
-**中断恢复**：使用 `继续 {change-name}` 即可精确定位断点，无需记忆当前阶段；恢复时自动验证产物完整性
+**推进与恢复**：`继续 {change-name}` 为轻量推进——读取状态后直接调度当前/下一阶段 Skill，不执行重恢复流程；`恢复 {change-name}` 为中断恢复——精确定位断点并自动验证产物完整性。日常推进无需输入任何指令：阶段 Skill 的 COMPLETE 步骤完成后会自动衔接下一阶段，仅在归档前停止并提示用户显式发起
 
 ---
 
@@ -438,6 +453,24 @@ docs/
 ---
 
 ## 版本更新说明
+
+### v0.26.0 (2026-10-14)
+**消除流程中途回 guide 的往返：阶段自动衔接、推进与恢复语义分离、guide 职责收敛为新变更外的四项**
+
+> **本次升级需重跑 `/kflow-init`**：消费方 CLAUDE.md 中的「变更流程强制规则」section 不会自动更新，须由 `kflow-init` 依 marker 版本判据替换。未重跑的消费方行为保持原样（旧规则继续生效），升级本身不产生破坏。
+
+- **移除流程中回 guide 的强制（BREAKING）**：删除 CLAUDE.md 注入的「所有用户变更必须首先通过 `kflow-guide` 进行流程指引」与「禁止直接调用阶段 Skill 跳过 guide 指引」两条规则。正常变更执行期间不再被弹回 guide，阶段 Skill 可直接调用
+- **新变更入口改由 `kflow-explore` 承接（BREAKING）**：变更类型分类、变更命名、档位初判与冲突预检均在 explore 阶段完成（其 INIT/CLASSIFY/TIER/CONTEXT 步骤已自足），guide 侧的「NEW CHANGE 创建前指引」因完全重复而删除
+- **新增阶段自动衔接**：阶段 Skill 的 COMPLETE 步骤完成后 SHALL 直接调度下一阶段 Skill，SHALL NOT 提示用户输入推进指令（如「继续 {change-name}」）。衔接决策表（`✅ 完成` 递归推进 / `🔄`、`⏳` 调度该阶段 / `⚠️ 需修订` 调度回退目标 / `❌` 阻塞不调度 / `⏭️` 视为已通过）从 `kflow-resume` 的私有实现提升为跨 skill 通用规则，落于各阶段 Skill 自带的 `references/phase-transition.md`（含 `kflow-resume` 共 11 份副本，由 `scripts/sync-references.sh` 保障一致）
+- **推进与恢复语义分离（BREAKING）**：「继续 {change-name}」为**轻量推进**——读 `.status.md` 后按衔接决策表直接调度目标阶段 Skill，SHALL NOT 经过 `kflow-resume`、SHALL NOT 执行产物完整性二次校验与五问题摘要；「恢复 {change-name}」/`resume {change-name}` 为**中断恢复**，保留完整 7 步重流程。用户日常推进不再需要输入任何指令
+- **归档闸口与人工门控边界**：归档阶段 SHALL NOT 纳入自动衔接的推进目标——审计完成后停止自动衔接并提示用户可显式发起归档，SHALL NOT 自动调度 `kflow-archive`；自动衔接免除的**仅为**「提示用户输入推进指令」一步，原型设计决策门控、原型/详细设计用户评审、审计用户验收门控照常执行
+- **`kflow-guide` 职责收缩（BREAKING）**：移除 NEW CHANGE 创建前指引、变更类型分类、变更名称建议三项能力，保留状态查看路由、断点恢复路由、轻量推进路由、流程概览、设计修订分流；PARSE 正则由一条合并分支拆为「恢复/resume + 变更名」→ `kflow-resume` 与「继续 + 变更名」→ 轻量推进两条独立分支
+- **`kflow-guide` 触发面收敛**：description 移除「做、添加、实现、搭建」等宽泛新工作意图触发词，保留「修复、Bug、缺陷」及其上下文判断（该判断仍是 guide 职责，且 `kflow-bug-triage` 的 description 未覆盖「修复」这一动词）
+- **修正既有的 spec 与实现偏差**：`intent-priority-rules` 早已规定「继续类关键词 → 直接路由到活跃变更的当前阶段」，但实现中该词组被优先级 0 的 RESUME 正则先吃掉。本次拆分后该能力的行为首次与实现对齐，无迁移成本
+- **`kflow-resume` 定位调整**：DISPATCH 步骤改为引用共享决策表（不再内联私有副本），triggers 与 description 移除 `继续 {change-name}`
+- **注入模板同步**：「变更流程强制规则」section 改写为 7 条——新变更由 `kflow-explore` 承接、阶段自动衔接、恢复入口「恢复 {change-name}」、轻量推进入口「继续 {change-name}」、变更名模式禁止 Plan Mode 拦截、流程阶段列表、查看状态关键词
+- **能力变更**：新增 `phase-auto-transition`；`init-claude-md-injection`、`devflow-guide`、`intent-priority-rules`、`resume-plan-mode-bypass` 四份既有能力同步 delta
+- **实现层同步**：10 个阶段 Skill 的 COMPLETE 步骤与 `kflow-resume` 的 DISPATCH 步骤接入共享衔接决策；新增 11 份 `references/phase-transition.md`；`kflow-init`、`kflow-guide`、`kflow-status`、`kflow-resume` 的 SKILL.md 及其设计文档同步；核心机制 `04-gates-and-transitions.md` §6.1 新增「阶段自动衔接」并与 §6.7 协调
 
 ### v0.25.0 (2026-10-14)
 **新增缺陷修复快车道：L4 实现层缺陷脱离变更级阶段门控独立闭环，以定向验证替代全量重跑**

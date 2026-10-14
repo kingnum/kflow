@@ -1,6 +1,6 @@
 ---
 name: kflow-integration-test
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs integration testing/集成测试、跨子变更测试、integration test, or all subchanges complete and ready for cross-subchange verification. 变更级集成测试，内聚四分法修复循环，架构评估自动触发。必须阶段（轻量档下按阶段适用性声明条件适用），变更级。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:
@@ -173,6 +173,9 @@ allowed-tools:
 │                                                             │
 │  8. RECHECK   → 定向重验：修复后仅重跑失败用例（不重跑全量）  │
 │  9. COMPLETE  → 输出 summary.md，更新 .status.md          │
+│  │   └── 阶段衔接决策 → 引用 references/phase-transition.md    │
+│  │       (变更级；交回审计阶段 kflow-audit，无子变更遍历)      │
+│  │       SHALL NOT 提示用户输入推进指令                       │
 │  10. POST_HOOK → 引用 skills/kflow-integration-test/references/hooks.md                │
 │                  integration-test 阶段 POST_HOOK                    │
 │                  额外: playwright-cli kill-all（仅前后端项目）       │
@@ -447,6 +450,14 @@ allowed-tools:
 
 > **终止结果**：阶段终止时 SHALL 在 .status.md 写入终止结果，取值 `执行完成` / `定向重验失败`；`执行轮次` 字段格式为 `{N} 轮`（无分母；单轮全量为 1，定向重验后累计）；`定向重验失败` 须在 `docs/skill-suggestion.md` 留有对应的升级记录。
 
+## 阶段衔接
+
+验收通过并更新 `.status.md`（终止结果 `执行完成`）与 traceability.md「集成测试」列之后，SHALL 执行**阶段衔接决策**并直接调度目标阶段 Skill：按 `skills/kflow-integration-test/references/phase-transition.md` 的决策表判定目标阶段状态，按调度映射表定位目标 Skill。系统 SHALL NOT 提示用户输入推进指令（如「继续 {change-name}」）作为进入下一阶段的条件；决策表、调度映射与停止条件的唯一真源为该文件，本 Skill SHALL NOT 内联其内容。
+
+本阶段为**变更级**，衔接不涉及子变更遍历：变更内本阶段完成后，衔接决策对下一变更级阶段（审计 → `kflow-audit`）执行决策表。轻量档本阶段被判为 `⏭️ 不适用` 时直接进入审计阶段的既有规则不变，仍由本次衔接决策交回审计。
+
+阶段自身的人工门控 SHALL 照常执行，SHALL NOT 被衔接决策跳过；自动衔接免除的仅为「提示用户输入推进指令」这一步。
+
 ---
 
 # 与其他 Skill 的关系
@@ -458,6 +469,7 @@ allowed-tools:
 - **前置阶段**：所有子变更编码 + 审查 + 测试通过（测试阶段可标记 `⏭️ 不适用`，须有声明依据）+ 服务刷新
 - **阶段裁剪**：仅轻量档可被阶段适用性声明裁剪，裁剪时本 Skill SHALL NOT 启动；`标准` 与 `完整` 档 SHALL NOT 应用
 - **后续阶段**：审计 → 归档
+- **阶段衔接**：验收通过后执行阶段衔接决策（见 `skills/kflow-integration-test/references/phase-transition.md`），直接调度审计阶段 `kflow-audit`，SHALL NOT 提示用户输入推进指令；本阶段为变更级，不涉及子变更遍历
 - **内聚功能**：变更级缺陷修复（四分法），不跳转到 `kflow-bug-fix`
 - **服务管理**：变更级 agent 独占服务生命周期管理，集成测试执行前编译重启
 - **关系说明**：`kflow-bug-fix` 仅处理子变更级缺陷修复（二分法），变更级修复由本 Skill 内聚处理

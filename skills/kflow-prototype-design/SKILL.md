@@ -1,6 +1,6 @@
 ---
 name: kflow-prototype-design
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs prototype design/原型设计、UI 设计、交互设计、HTML 原型 for frontend changes. 编排层，默认复用 docs/toolchain.md 已锁定的设计工具链，委托子代理生成 HTML 原型并直写产品级 docs/designs/prototypes/。BUILD 四项静态门控必做，通过后由用户选择人工审查或子代理自动审查验证。含用户评审循环、变更级改动追踪（哈希并发检测）、CDN 离线扫描、多文件交叉引用检查。含 PRE_HOOK/POST_HOOK 阶段钩子引用。
 license: MIT
 triggers:
@@ -1048,6 +1048,16 @@ REVIEW
 **原型迭代后重新生成**: 修订模式用户确认通过后，重新执行上述提取，覆盖旧版本。若 design 阶段已填充 TC-ID，通过 AskUserQuestion 确认是否保留已有映射。同时 SHALL 重新扫描产品级目录，更新 `manifest.md` 中的文件清单和版本号。
 
 **跳过时不生成**: 原型设计阶段被跳过（⏭️ 跳过）时，不生成 `docs/designs/prototypes/design-tokens.css` 和 `element-coverage-tree.md`。后续 code 和 code-review 阶段不执行原型对账。
+
+### 12.3 阶段衔接决策
+
+状态文件、产品级清单与提取产物更新完成后 SHALL 执行阶段衔接决策，规则见 [references/phase-transition.md](references/phase-transition.md)（决策表与调度映射表的单一真源；本步骤只引用，SHALL NOT 内联决策表或调度映射表）。
+
+- **门控先于衔接**：步骤 11 的原型用户评审门控 SHALL 在衔接决策之前完成——评审「确认通过」后进入本步骤；评审「需要修订」时按步骤 11 既有规则回到 DESIGN 修订，不进入衔接决策
+- **跳过分支同样衔接**：本阶段因纯后端项目 / 无 UI 功能点 / 用户拒绝而标记 `⏭️ 跳过` 时，SHALL 同样执行衔接决策，按决策表处理目标阶段
+- **调度方式**：按决策表判定下一阶段（详细设计）的状态后直接调度 `kflow-design`（`Skill(skill="kflow-design", args="{change-name}")`）
+- **SHALL NOT 提示推进指令**：系统 SHALL NOT 将「提示用户输入推进指令（如「继续 {change-name}」）」作为进入下一阶段的必要条件
+- **停止衔接时说明原因**：衔接决策停止（目标阶段 `❌ 阻塞` 等）时 SHALL 向用户说明停止原因与可执行的下一步操作
 
 ## 步骤 13：POST_HOOK — 阶段后置钩子
 

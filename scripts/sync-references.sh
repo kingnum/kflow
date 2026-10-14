@@ -3,7 +3,8 @@
 # 用法: ./scripts/sync-references.sh
 #
 # 检查的 references 文件列表:
-#   repetition.md, hooks.md, gates.md, state-values.md, service-lifecycle.md, self-review.md
+#   repetition.md, hooks.md, gates.md, state-values.md, service-lifecycle.md, self-review.md,
+#   phase-transition.md
 #
 # skill 路径归一化:
 #   各 skill 的副本中会引用 skill 目录路径，且引用的是「本副本对应的 skill」——
@@ -25,6 +26,7 @@ REF_FILES=(
   "state-values.md"
   "service-lifecycle.md"
   "self-review.md"
+  "phase-transition.md"
 )
 
 # 归一化文件内容中的 skill 目录路径段

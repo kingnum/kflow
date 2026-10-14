@@ -1,6 +1,6 @@
 ---
 name: kflow-design
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs detailed design/详细设计、技术设计、架构设计、设计审查. 变更级统一详细设计——系统架构、数据模型、接口设计、NFR定义、按变更档位分级审查（轻量单 Agent 综合 / 标准两视角 / 完整四视角并行）、变更档位复核、子变更划分（含HITL/AFK分类）、ADR架构决策记录。必须阶段，依赖 kflow-explore 输出。
 license: MIT
 triggers:
@@ -960,6 +960,16 @@ DIVIDE（含 9.5 TIER_RECHECK）之后、SELFREV 之前执行。变更档位为 
 2. 记录用户评审结果到「用户评审记录」表
 3. 设置当前阶段为「计划」
 4. 记录完成时间和执行备注
+
+### 阶段衔接决策
+
+状态文件更新完成后 SHALL 执行阶段衔接决策，规则见 [references/phase-transition.md](references/phase-transition.md)（决策表与调度映射表的单一真源；本步骤只引用，SHALL NOT 内联决策表或调度映射表）。
+
+- **门控先于衔接**：步骤 14 的详细设计用户评审门控 SHALL 在衔接决策之前完成——评审「确认通过」后进入本步骤；评审「需要修订」时按步骤 14 既有规则处理，不进入衔接决策
+- **交回子变更级阶段**：本阶段的下一阶段为子变更级阶段（计划），衔接决策 SHALL 交回子变更级——按变更级 `.status.md` 的子变更进度矩阵确定首个目标子变更，并调度该子变更的计划阶段 `kflow-plan`（子变更遍历顺序见 [references/phase-transition.md](references/phase-transition.md) §4）
+- **传递上下文**：向目标阶段传递变更名与目标子变更名
+- **SHALL NOT 提示推进指令**：系统 SHALL NOT 将「提示用户输入推进指令（如「继续 {change-name}」）」作为进入下一阶段的必要条件
+- **停止衔接时说明原因**：衔接决策停止（目标阶段 `❌ 阻塞` 等）时 SHALL 向用户说明停止原因与可执行的下一步操作
 
 ## 步骤 16：POST_HOOK — 阶段后置钩子
 

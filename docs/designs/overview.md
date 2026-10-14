@@ -187,7 +187,7 @@
 
 | 序号 | Skill | 原因 |
 |------|-------|------|
-| 1 | kflow-guide | 入口 Skill，意图识别和流程引导（含 RESUME 路由、NEW CHANGE 指引） |
+| 1 | kflow-guide | 路由 Skill，意图识别与流程引导（含中断恢复路由、轻量推进路由、设计修订分流） |
 | 2 | kflow-explore | 设计探索入口，项目类型继承（读取项目级记录，不再划分子变更） |
 | 3 | kflow-design | 核心 Skill，变更级统一设计 + 审查（依赖 kflow-explore） |
 | 4 | kflow-plan | 子变更级任务计划，依赖变更级 detailed-design.md |
@@ -219,9 +219,9 @@
 ```
 Skill 实现依赖:
 
-kflow-guide ───────────────────────────────────────────────────────────
+KFlow 阶段链（阶段完成自动衔接下一阶段）:
     │
-    ├─▶ kflow-explore ──────────────────────────────────────────────────
+    ├─▶ kflow-explore (变更入口) ───────────────────────────────────────
     │       │
     │       ├─▶ kflow-prototype-design (可选，仅前后端项目) ──▶ 👤用户评审
     │       │       │
@@ -251,7 +251,9 @@ kflow-guide ──────────────────────�
     │
     ├─▶ kflow-init (独立，项目启动时调用)
     │
-    ├─▶ kflow-resume (独立，通过 kflow-guide 路由，中断恢复)
+    ├─▶ kflow-resume (独立，通过 kflow-guide 的 RESUME 路由触发，中断恢复)
     │
-    └─▶ kflow-archive (归档阶段，集成测试通过后，含设计合并)
+    ├─▶ kflow-guide (独立入口，意图识别与路由：状态查看 / 中断恢复 / 轻量推进 / 设计修订分流)
+    │
+    └─▶ kflow-archive (归档阶段，审计通过后由用户显式发起，含设计合并)
 ```

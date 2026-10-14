@@ -2,7 +2,7 @@
 
 ## Purpose
 
-定义流程指引 Skill 的职责范围：用户意图识别与优先级裁决、活跃变更检测与变更名定位、项目类型判断、流程概览展示、变更创建前指引与命名建议，以及指引错误记录。
+定义流程指引 Skill 的职责范围：用户意图识别与优先级裁决、活跃变更检测与变更名定位、项目类型判断、流程概览展示、断点恢复与轻量推进的路由分流，以及指引错误记录。
 
 ## Requirements
 ### Requirement: 用户意图识别
@@ -34,8 +34,17 @@
 
 #### Scenario: RESUME 模式识别（新增）
 
-- **WHEN** 用户输入匹配「继续/恢复/resume + 变更名称」（如"继续 add-user-auth"）
+- **WHEN** 用户输入匹配「恢复/resume + 变更名称」（如"恢复 add-user-auth"、"resume add-user-auth"）
 - **THEN** 系统提取变更名称并调用 `kflow-resume` Skill
+- **AND** 「继续 + 变更名称」SHALL NOT 触发本路由，其由轻量推进路径处理
+
+#### Scenario: 轻量推进模式识别
+
+- **WHEN** 用户输入匹配「继续 + 变更名称」（如"继续 add-user-auth"）
+- **THEN** 系统提取变更名称，读取 `docs/changes/{change-name}/.status.md`
+- **AND** 按阶段衔接决策表直接调度目标阶段 Skill
+- **AND** SHALL NOT 调用 `kflow-resume`
+- **AND** SHALL NOT 执行产物完整性二次校验、五问题摘要与服务恢复检测
 
 #### Scenario: 定向指引模式识别（新增）
 
@@ -44,9 +53,15 @@
 
 #### Scenario: 无变更名 RESUME（新增）
 
-- **WHEN** 用户输入"继续"且存在单个活跃变更
-- **THEN** 系统自动选择该变更并调用 `kflow-resume`
+- **WHEN** 用户输入为"恢复"或"resume"（无变更名）
+- **THEN** 系统自动选择活跃变更并调用 `kflow-resume`
 - **AND** 当存在多个活跃变更时，列出所有活跃变更供用户选择
+
+#### Scenario: 无变更名持续推进
+
+- **WHEN** 用户输入为"继续"（无变更名）且存在活跃变更
+- **THEN** 存在单个活跃变更时，系统自动选择该变更并执行轻量推进
+- **AND** 存在多个活跃变更时，列出所有活跃变更供用户选择
 
 ### Requirement: 活跃变更检测
 
@@ -131,83 +146,6 @@
 #### Scenario: 用户纠正指引
 - **WHEN** 用户指出指引方向错误或纠正意图识别结果
 - **THEN** 系统记录错误场景、用户反馈、改进建议到 docs/skill-suggestion.md
-
-### Requirement: NEW CHANGE 创建前指引
-
-kflow-guide SHALL 在用户表达新变更意图时提供创建前指引，包含类型分类、命名建议、冲突预检和下一步建议，不创建任何文件。
-
-#### Scenario: 新功能变更指引
-
-- **WHEN** 用户输入新功能意图（如"做一个用户认证功能"）
-- **THEN** 系统自动判断变更类型为「功能需求」
-- **AND** 自动检测项目类型
-- **AND** 自动建议 kebab-case 变更名称（如 `add-user-auth`）
-- **AND** 执行跨变更冲突预检
-- **AND** 输出下一步建议指向 `kflow-explore`
-
-#### Scenario: 缺陷修复变更指引
-
-- **WHEN** 用户输入修复意图（如"修复登录 Bug"）
-- **THEN** 系统自动判断变更类型为「功能缺陷」
-- **AND** 自动建议 kebab-case 变更名称（如 `fix-login-bug`）
-- **AND** 执行跨变更冲突预检
-- **AND** 输出下一步建议指向 `kflow-explore`
-
-#### Scenario: 产品需求变更指引
-
-- **WHEN** 用户输入平台级意图（如"搭建电商平台"）
-- **THEN** 系统自动判断变更类型为「产品需求」
-- **AND** 自动建议变更名称
-- **AND** 提醒产品需求可能需要拆分为多个变更
-- **AND** 输出下一步建议指向 `kflow-explore`
-
-#### Scenario: 跨变更冲突预检有重叠
-
-- **WHEN** 新变更的功能意图与已有活跃变更的功能点存在语义重叠
-- **THEN** 系统提示可能的功能冲突
-- **AND** 列出冲突的活跃变更名称和功能点
-- **AND** 询问用户是否仍要继续
-
-### Requirement: 变更类型分类
-
-kflow-guide SHALL 根据用户需求描述的语义自动判断变更类型。
-
-#### Scenario: 功能需求分类
-
-- **WHEN** 用户输入包含「添加/新增/实现/开发/做/增加」等关键词
-- **THEN** 系统分类为「功能需求」
-- **AND** 后续流程为标准流程（渐进式流程中的功能需求级）
-
-#### Scenario: 功能缺陷分类
-
-- **WHEN** 用户输入包含「修复/Bug/问题/报错/异常/修」等关键词
-- **THEN** 系统分类为「功能缺陷」
-- **AND** 后续流程为简化流程（渐进式流程中的功能缺陷级）
-
-#### Scenario: 产品需求分类
-
-- **WHEN** 用户输入包含「搭建/创建平台/系统/完整/产品」等关键词
-- **THEN** 系统分类为「产品需求」
-- **AND** 后续流程为完整流程（渐进式流程中的产品级）
-
-### Requirement: 变更名称建议
-
-kflow-guide SHALL 基于用户需求描述自动生成 kebab-case 格式的变更名称建议。
-
-#### Scenario: 新功能命名
-
-- **WHEN** 变更类型为功能需求且用户描述为"添加用户认证功能"
-- **THEN** 系统建议变更名称 `add-user-auth`
-
-#### Scenario: 缺陷修复命名
-
-- **WHEN** 变更类型为功能缺陷且用户描述为"修复登录页面报错"
-- **THEN** 系统建议变更名称 `fix-login-error`
-
-#### Scenario: 产品需求命名
-
-- **WHEN** 变更类型为产品需求且用户描述为"搭建电商平台"
-- **THEN** 系统建议变更名称 `ecommerce-platform`
 
 ### Requirement: kflow-verify 路由入口
 

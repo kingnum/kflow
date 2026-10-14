@@ -1,6 +1,6 @@
 ---
 name: kflow-api-test
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs API testing/接口测试、API测试、接口单元测试, or subchange code review passes and ready for interface testing. curl/HTTP 方式对 api-tests/ 逐条测试，单轮全面执行 + 定向重验模式（一轮内遍历全部接口用例执行完整流程，发现失败项时仅重跑失败用例；终止结果取值 执行完成 / 定向重验失败），健康评分（功能完整性/响应时间/HTTP状态码/错误处理/契约一致性）。适用于所有项目类型（前后端+纯后端）；轻量档下按阶段适用性声明条件适用（无新增或修改接口时标 ⏭️ 不适用）。含 PRE_HOOK/POST_HOOK 阶段钩子。/接口测试/API测试/接口单元测试
 license: MIT
 triggers:
@@ -333,6 +333,18 @@ API 测试阶段流程 (curl/HTTP 驱动):
 
 > **终止结果**：阶段终止时 SHALL 在 .status.md 写入终止结果，取值 `执行完成` / `定向重验失败`；`执行轮次` 字段格式为 `{N} 轮`（无分母；单轮全量为 1，定向重验后累计）；`定向重验失败` 须在 `docs/skill-suggestion.md` 留有对应的升级记录。
 
+## 阶段衔接
+
+验收通过并更新 `.status.md`（终止结果 `执行完成`）与 traceability.md「接口测试」列之后，SHALL 执行**阶段衔接决策**并直接调度目标阶段 Skill：按 `skills/kflow-api-test/references/phase-transition.md` 的决策表判定目标阶段状态，按调度映射表定位目标 Skill。系统 SHALL NOT 提示用户输入推进指令（如「继续 {change-name}」）作为进入下一阶段的条件；决策表、调度映射与停止条件的唯一真源为该文件，本 Skill SHALL NOT 内联其内容。
+
+本阶段为**子变更级**，衔接分两层（参见 `skills/kflow-api-test/references/phase-transition.md` §4）：
+
+- **子变更内推进**：先在当前子变更内按决策表推进至下一子变更级阶段。
+- **跨子变更遍历推进**：当前子变更的全部子变更级阶段完成后，按 `auto-subchange-traversal` 顺序遍历状态为 `🔄 进行中` / `⏳ 待开始` 的子变更，推进至下一个子变更的首个未完成阶段；仅遍历依赖已满足的子变更——被依赖子变更未完成编码与接口单元测试前，依赖子变更保持 `⏳ 待开始` 不参与遍历；轻量档单子变更时退化为直接进入变更级衔接。
+- **交回变更级**：最后一个子变更的全部子变更级阶段完成后，衔接决策交回变更级，对下一变更级阶段（集成测试）执行决策表。
+
+阶段自身的人工门控 SHALL 照常执行，SHALL NOT 被衔接决策跳过；自动衔接免除的仅为「提示用户输入推进指令」这一步。
+
 ---
 
 # 常见陷阱
@@ -361,6 +373,7 @@ API 测试阶段流程 (curl/HTTP 驱动):
 - **输出给**：`kflow-e2e-test`（前后端项目，子变更级）、`kflow-bug-fix`（测试失败时）、`kflow-integration-test`（纯后端项目所有子变更通过时）
 - **前置阶段**：编码 → 代码审查（`kflow-code-review`）
 - **后续阶段**：E2E 测试（前后端项目）或集成测试（纯后端项目）
+- **阶段衔接**：验收通过后执行阶段衔接决策（见 `skills/kflow-api-test/references/phase-transition.md`），直接调度后续阶段 Skill，SHALL NOT 提示用户输入推进指令；子变更内推进与跨子变更遍历推进规则见该文件 §4
 - **服务管理**：服务生命周期由变更级 agent 独占管理，子变更 agent 为纯消费者
 - **项目类型**：所有项目类型必须执行
 - **执行模式**：单轮全面执行 + 定向重验（一轮内遍历全部接口用例，失败项仅重跑失败用例；参见 references/repetition.md §14.2），终止结果取值 `执行完成` / `定向重验失败`；审查范围冻结 + 范围外观察降级 + 定向重验失败升级；复杂度评估仅信息展示，主 Agent 验收闭环

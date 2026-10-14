@@ -1,6 +1,6 @@
 ---
 name: kflow-plan
-version: 0.25.0
+version: 0.26.0
 description: Use when user needs task planning/任务计划、任务清单、实现计划, or detailed-design.md is ready for subchange breakdown. 子变更级checkbox任务清单（含DoD四维验收标准），功能点级全展开TDD循环，区分后端SC/前端SC输入源。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务）。
 license: MIT
 triggers:
@@ -101,7 +101,7 @@ allowed-tools:
 │  │   主 Agent 统一修复 + 生成「本阶段修复清单」，不追加确认轮           │
 │  │   报告路径: self-reviews/plan/report.md（固定，不按轮次编号）        │
 │  │   终止结果: 验证通过 / 验证发现问题({N})                             │
-│  9. COMPLETE  → 更新状态文件                                           │
+│  9. COMPLETE  → 更新状态文件 → 阶段衔接决策                            │
 │ 10. POST_HOOK → 引用 skills/kflow-plan/references/hooks.md plan 阶段 POST_HOOK  │
 └───────────────────────────────────────────────────────────────────────┘
 ```
@@ -531,6 +531,13 @@ allowed-tools:
 
 更新子变更 `.status.md`：标记计划阶段为 ✅ 完成，记录完成时间（含终止结果字段）。
 
+状态更新完成后 SHALL 执行**阶段衔接决策**：按 [references/phase-transition.md](references/phase-transition.md) 的决策表判定目标阶段在 `.status.md` 中的状态，并据判定结果直接调度目标阶段 Skill。本阶段为子变更级，衔接分两层执行（规则见该文件 §4）：
+
+- **子变更内推进**：在当前子变更内推进至下一阶段（计划 → 编码，调度 `kflow-code`）；
+- **跨子变更遍历推进**：当前子变更的全部子变更级阶段完成后，按子变更遍历顺序推进至下一个子变更的首个未完成阶段；遍历顺序 SHALL 与 `auto-subchange-traversal` 规则一致（遍历 `🔄 进行中` / `⏳ 待开始` 的子变更，仅遍历依赖已满足的子变更；轻量档单子变更时退化为无操作，直接进入变更级阶段衔接），最后一个子变更的全部子变更级阶段完成后交回变更级阶段。
+
+系统 SHALL NOT 提示用户输入推进指令（如「继续 {change-name}」）作为进入下一阶段的必要条件。
+
 ## 步骤 10：POST_HOOK — 阶段后置钩子
 
 引用 `skills/kflow-plan/references/hooks.md` plan 阶段 POST_HOOK（❌ 不需要服务：UPDATE_STATE）。
@@ -685,6 +692,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 | 输出给 | `kflow-code` | 编码阶段（子变更级） |
 | 前置阶段 | 详细设计（变更级） | 门控依赖 |
 | 后续阶段 | 编码（子变更级） | 任务清单作为编码输入 |
+| 阶段衔接 | 见步骤 9 与 [references/phase-transition.md](references/phase-transition.md) | COMPLETE 后自动衔接：子变更内推进至编码，子变更级阶段全部完成后按 `auto-subchange-traversal` 规则跨子变更遍历推进；SHALL NOT 提示用户输入推进指令 |
 | 执行模式 | 子代理执行主工作 + 单轮验证自审 | 计划主工作 MUST 通过子代理执行（主 Agent SHALL NOT 直接执行）；SELFREV 为单轮验证（主 Agent 签署自证 → 1 轮独立子代理验证 → 统一修复，轮数恒为 1；参见步骤 8.5 与 `skills/kflow-plan/references/repetition.md`），终止结果 `验证通过` / `验证发现问题({N})`；审查范围冻结 + 范围外观察降级；复杂度评估仅信息展示，主 Agent 验收闭环 |
 
 # 核心提醒
