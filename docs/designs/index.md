@@ -148,6 +148,7 @@ docs/designs/
 - [examples/index.md](examples/index.md) - 示例导航
 - [examples/change-status.md](examples/change-status.md) - 变更级状态文件示例（子变更进度矩阵）
 - [examples/subchange-status.md](examples/subchange-status.md) - 子变更状态文件示例（5 阶段表格）
+- [examples/bugfix-status.md](examples/bugfix-status.md) - 缺陷级状态文件示例（L4 快车道缺陷，含定向验证记录与收口结论）
 - [examples/rollback-status.md](examples/rollback-status.md) - 回退前状态文件示例（⚠️ 需修订）
 - [examples/subchange-tasks.md](examples/subchange-tasks.md) - 子变更任务清单示例（含 DoD 验收标准）
 - [examples/design-level-restructure.md](examples/design-level-restructure.md) - 变更级统一详细设计示例（含 NFR 章节）
@@ -216,3 +217,4 @@ docs/designs/
 | 子变更类型自动校验 | design 阶段自动推断 | 基于 FP 类型一致性自动推断子变更类型（后端子变更/前端子变更），混合 FP 拒绝划分，禁止人工手动填写 |
 | 共享关切归属 | 按归属规则分配 | 错误码→后端SC / 错误码提示→前端SC / 配置项→后端SC / 共享DTO→变更级 shared-types/ / Schema变更→后端SC+关联标注 |
 | 跨层越界检测 | verify D3.2 + code-review 步骤 3.3 | Grep 模式检测后端SC中的前端文件/样式，前端SC中的后端代码/数据库操作，严重度🟡警告不阻塞 |
+| 缺陷修复快车道 | L4 独立生命周期 + 定向验证 + 快速收口 | 仅由 `kflow-bug-triage` 的四层溯源 L4 结论进入；缺陷级状态文件 `bugfix-status.md` 独立承载生命周期，不进入变更级阶段状态矩阵与 11 阶段门控；验证为**定向验证**——仅执行受影响项清单覆盖的测试用例，不重跑全量；终点为**快速收口**（更新 `bugs/index.md`、写入收口结论、标记「已解决」），不触发阶段回退；L1/L2/L3 的 REVISION 路径零改动 |

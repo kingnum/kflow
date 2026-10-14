@@ -1,7 +1,7 @@
 ---
 name: kflow-bug-fix
-version: 0.24.0
-description: Use when user needs bug fixing/缺陷修复、Bug 修复、测试失败, or a subchange test round has failures. Subchange-level only; integration test failures are handled by kflow-integration-test. 子变更级二分法根因分类路由（实现错误/测试错误），系统化诊断，多Agent并行分析。入口仅限测试阶段自动发现（B路径），用户反馈统一由 kflow-bug-triage 处理。含 PRE_HOOK/POST_HOOK 阶段钩子引用（同触发阶段的钩子配置）。
+version: 0.25.0
+description: Use when user needs bug fixing/缺陷修复、Bug 修复、测试失败, or a subchange test round has failures, or kflow-bug-triage routes an L4 implementation issue to the bugfix fast lane. 二分法根因分类路由（实现错误/测试错误），系统化诊断，多Agent并行分析。两种执行模式——测试阶段上下文下的既有模式（子变更级 / 变更级，出口返回测试阶段）与无测试阶段上下文下的**快车道模式**（由 kflow-bug-triage 的 L4 路由触发，状态写入缺陷级 bugfix-status.md，出口进入定向验证）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（同触发阶段的钩子配置）。
 license: MIT
 triggers:
   - 缺陷修复
@@ -19,7 +19,7 @@ allowed-tools:
 
 # 角色
 
-子变更级缺陷修复执行器。对测试失败执行系统化诊断，按二分法根因分类路由修复（实现错误/测试错误）。按需阶段，仅处理子变更级缺陷修复。入口仅限测试阶段自动发现（B路径），用户反馈统一由 `kflow-bug-triage` 处理。变更级集成测试缺陷修复由 `kflow-integration-test` Skill 内聚处理。
+子变更级缺陷修复执行器。对测试失败执行系统化诊断，按二分法根因分类路由修复（实现错误/测试错误）。支持两种执行模式：**既有模式**（存在触发测试阶段上下文时按原有流程执行，出口为返回测试阶段）与**快车道模式**（无触发测试阶段上下文时由 `kflow-bug-triage` 的 L4 路由触发，状态写入缺陷级 `bugfix-status.md`，出口为进入定向验证）。既有模式下入口仅限测试阶段自动发现（B路径），用户反馈统一由 `kflow-bug-triage` 处理；快车道模式入口由 `kflow-bug-triage` 的 L4 结论独占，SHALL NOT 提供其他入口。
 
 > ⚠ **子代理强制规则**（参见 skills/kflow-bug-fix/references/repetition.md §12）:
 > 1. 本阶段主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收
@@ -30,41 +30,69 @@ allowed-tools:
 
 # 任务
 
-系统化诊断（Build Loop → Reproduce → Hypothesis）→ 多 Agent 并行分析（根因分析 + 影响范围 + 回归影响）→ 根因二分法分类 → 尝试次数检查 → Regression Test at Correct Seam → 对应路由修复（修复代码 / 修正测试）→ 自动标记修复状态 → 输出修复报告 → Post-mortem 复盘 → 返回测试阶段。
+系统化诊断（Build Loop → Reproduce → Hypothesis）→ 多 Agent 并行分析（根因分析 + 影响范围 + 回归影响）→ 根因二分法分类 → 尝试次数检查 → Regression Test at Correct Seam → 对应路由修复（修复代码 / 修正测试）→ 自动标记修复状态 → 输出修复报告 → Post-mortem 复盘 → **既有模式**出口为返回测试阶段；**快车道模式**出口为进入定向验证。
 
 # 门控检查
 
-进入缺陷修复阶段前检查：
+**入口模式判定（主 Agent 第一步执行，SHALL NOT 省略）**：
+
+| 条件 | 模式 | 入口门控 |
+|------|------|---------|
+| 存在测试失败轮次报告，且当前阶段为接口单元测试或 E2E 测试 | 既有模式（子变更级） | 该测试轮次报告存在 |
+| 存在测试失败轮次报告，且当前阶段为集成测试 | 既有模式（变更级） | 该集成测试失败轮次报告存在 |
+| **无**触发测试阶段上下文，且调用来源为 `kflow-bug-triage` 的 L4 路由 | **快车道模式** | 缺陷级状态文件 `bugs/fix/{BUG-ID}/bugfix-status.md` 存在且「受影响项清单」区已填写 |
+| 无触发测试阶段上下文，且调用来源**不是** `kflow-bug-triage` 的 L4 路由 | ❌ 阻塞 | 使用 AskUserQuestion 询问用户确认调用上下文；SHALL NOT 在未确认来源的情况下进入快车道模式 |
+
+> **注意**：用户反馈统一由 `kflow-bug-triage` 处理（A路径），既有模式的入口仅限测试阶段自动发现（B路径）；快车道模式的入口仅由 `kflow-bug-triage` 的 L4 结论独占，SHALL NOT 提供其他入口。
+
+**既有模式**的进入门控：
 - 存在测试失败的测试轮次报告（子变更级：接口单元测试或 E2E 测试）
 
-> **注意**：用户反馈统一由 `kflow-bug-triage` 处理（A路径），本 Skill 入口仅限测试阶段自动发现（B路径）。
+**快车道模式**的进入门控：
+- 缺陷级状态文件 `bugs/fix/{BUG-ID}/bugfix-status.md` 存在，且「受影响项清单」区含受影响功能点 / 接口 / 测试用例
+- SHALL NOT 读取变更级 `.status.md` 的「变更档位」字段与阶段状态字段
 
 缺陷修复完成后：
 - 本地验证通过
 - 输出缺陷修复报告（含根因分类）
-- 实现错误/测试错误 → 返回测试阶段
+- 既有模式：实现错误/测试错误 → 返回测试阶段
+- 快车道模式：→ 进入定向验证，通过后完成快速收口
 
 自动跳过规则：
-- 测试阶段一轮通过 → 自动跳过缺陷修复阶段
+- 测试阶段一轮通过 → 自动跳过缺陷修复阶段（快车道模式不适用本规则）
 
-> **注意**：本 Skill 仅处理子变更级缺陷修复。集成测试失败时使用 `kflow-integration-test` Skill 内置的四分法修复循环。
+> **注意**：既有模式下本 Skill 处理子变更级缺陷修复；集成测试失败时使用 `kflow-integration-test` Skill 内置的四分法修复循环。快车道模式见 `# 快车道模式` 章节。
 
 # 输入要求
 
 | 产物 | 图例 | 说明 |
 |------|------|------|
-| 测试轮次报告（子变更级） | ✅ 必须 | `subchanges/{subchange}/test-reports/*/round-{n}.md` |
-| 变更级 detailed-design.md | ✅ 必须 | 用于设计错误根因分析参考 |
-| 变更级 functional-designs/ | ✅ 必须 | 用于功能设计参考 |
+| 测试轮次报告（子变更级） | ✅ 必须（既有模式） | `subchanges/{subchange}/test-reports/*/round-{n}.md` |
+| 变更级 detailed-design.md | ✅ 必须（既有模式） | 用于设计错误根因分析参考 |
+| 变更级 functional-designs/ | ✅ 必须（既有模式） | 用于功能设计参考 |
+| 缺陷级状态文件 `bugfix-status.md` | ✅ 必须（快车道模式） | `bugs/fix/{BUG-ID}/bugfix-status.md`——读取分诊结论与受影响项清单（定向验证的唯一验证范围） |
+| 问题详情 `bugs/bug-NNN-NNN.md` | ✅ 必须（快车道模式） | 四层溯源诊断结论与证据 |
+| 变更级 detailed-design.md / functional-designs/ | 🔶 条件（快车道模式） | 仅用于根因分析参考与影响面判定；SHALL NOT 读取变更级 `.status.md`「变更档位」与阶段状态字段 |
 
 # 输出产物
 
 | 产物 | 文件 | 图例 | 内容要求 |
 |------|------|------|---------|
-| 缺陷修复报告 | `subchanges/{subchange}/test-reports/fix-reports/fix-{timestamp}.md` | ✅ 必须 | 含根因分类（实现错误/测试错误）、修复方案、验证结果 |
+| 缺陷修复报告 | `subchanges/{subchange}/test-reports/fix-reports/fix-{timestamp}.md` | ✅ 必须（既有模式） | 含根因分类（实现错误/测试错误）、修复方案、验证结果 |
 | A 路径回写 | `bugs/bug-NNN-NNN.md` 修复记录节 | 🔶 A路径必须 | A 路径修复验证通过后 SHALL 回写修复记录节、更新 index.md 状态为「已解决」 |
+| 缺陷级状态文件（修复记录区） | `bugs/fix/{BUG-ID}/bugfix-status.md` | ✅ 必须（快车道模式） | 回写「修复记录」区：修复阶段状态、耗时、轮次、根因分类。轮次 SHALL 写入本区，SHALL NOT 写入变更级 `.status.md` 的 `执行轮次` 字段 |
+| 定向验证报告 | `bugs/fix/{BUG-ID}/verify-report.md` | ✅ 必须（快车道模式） | 仅覆盖受影响项清单的验证结果；同时回写至 `bugfix-status.md` 的「定向验证」区 |
+| 快速收口回写 | `bugfix-status.md` 收口结论区 + `bugs/index.md` + 问题详情 | ✅ 必须（快车道模式） | 定向验证通过后回写收口时间与校验项结论、更新 `bugs/index.md` 状态为「已解决」、在问题详情标记快车道收口完成 |
 
 # 执行流程
+
+**第一步：模式判定**
+
+| 判定结果 | 后续流程 |
+|---------|---------|
+| 存在触发测试阶段上下文（接口单元测试 / E2E 测试 / 集成测试失败报告） | **既有模式** → 下方「子变更级缺陷修复流程」，轮次与门控不变，出口为返回测试阶段 |
+| 无测试阶段上下文，且调用来源为 `kflow-bug-triage` 的 L4 路由 | **快车道模式** → 下方「快车道修复流程」，状态写入 `bugfix-status.md`，出口为进入定向验证 |
+| 无测试阶段上下文，且调用来源不是 L4 路由 | ❌ 阻塞：使用 AskUserQuestion 确认调用上下文，SHALL NOT 直接进入快车道模式 |
 
 ```
 子变更级缺陷修复流程（含根因二分法）:
@@ -142,6 +170,45 @@ allowed-tools:
 │  │   └── B 路径跳过（fix-report 留在子变更目录）              │
 │  9. REQA      → 返回测试阶段执行新一轮测试                    │
 │ 10. POST_HOOK → 引用 skills/kflow-bug-fix/references/hooks.md bug-fix 阶段 POST_HOOK       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+```
+快车道修复流程（L4 实现层缺陷 / 无触发测试阶段上下文）:
+
+┌─────────────────────────────────────────────────────────────┐
+│                   FAST-LANE FIX WORKFLOW                     │
+├─────────────────────────────────────────────────────────────┤
+│  1. PRE_HOOK  → references/hooks.md bug-fix 阶段 PRE_HOOK     │
+│  │              （快车道分支：不依赖服务，RELOAD 缺陷级产物）  │
+│  │   ├── CHECK_STATE → bugfix-status.md 存在且受影响项清单已填 │
+│  │   └── RELOAD → bugfix-status.md, bug-NNN-NNN.md, 相关代码   │
+│  2. DISCOVER  → 系统化诊断（BUILD LOOP → REPRODUCE → HYPOTHESISE）│
+│  3. ANALYSE   → 多 Agent 并行分析（根因 / 影响范围 / 回归影响）│
+│  4. CLASSIFY  → 根因分类（二分法：实现错误 / 测试错误）        │
+│  4.5 CHECK    → 尝试次数检查（每用例上限 3 次，复用既有模型）  │
+│  4.6 SEAM     → Regression Test at Correct Seam              │
+│  5a. ROUTE    → 实现错误：修复代码 → 本地验证                  │
+│  5b. ROUTE    → 测试错误：修正测试 → 本地验证                  │
+│  6. AUTOMARK  → 自动标记修复状态                              │
+│  7. REPORT    → 输出缺陷修复报告                               │
+│  8. POSTMORTEM → Post-mortem 复盘检查点（含架构建议）          │
+│  8.5 WRITEBACK → 回写 bugfix-status.md「修复记录」区          │
+│  │   （修复阶段状态 / 耗时 / 轮次 / 根因分类写入本区；         │
+│  │    SHALL NOT 写入变更级 .status.md 的 `执行轮次` 字段）     │
+│  9. VERIFY    → 进入定向验证 ★ 流程出口（非返回测试阶段）      │
+│  │   ├── 仅执行受影响项清单覆盖的测试用例，SHALL NOT 重跑全量  │
+│  │   ├── 全部通过 → 进入快速收口                               │
+│  │   ├── 未通过 → 复用三次修复尝试上限重试（有界，无收敛循环） │
+│  │   └── 影响面超出清单 → 判定分诊失效 → 退回 kflow-bug-triage │
+│ 10. CLOSEOUT  → 快速收口（校验项全部通过后）                   │
+│  │   ├── 更新 bugs/index.md 对应行状态为「已解决」             │
+│  │   ├── 写入 bugfix-status.md「收口结论」区（时间+校验项结论）│
+│  │   ├── 在问题详情文件中标记快车道收口完成                    │
+│  │   └── SHALL NOT 触发阶段回退，SHALL NOT 阻塞变更级阶段流转  │
+│ 11. POST_HOOK → references/hooks.md bug-fix 阶段 POST_HOOK     │
+│  │   └── UPDATE_STATE → 更新缺陷级 bugfix-status.md            │
+│  │       （SHALL NOT 更新变更级 .status.md 阶段矩阵字段）      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -342,6 +409,8 @@ post-mortem 未发现架构改进机会时，简要记录"无架构改进建议"
 
 # 重复制（执行类阶段）
 
+> **适用范围**：本节描述**既有模式**（存在触发测试阶段上下文）的重复制口径。**快车道模式**（见 `# 快车道模式`）SHALL NOT 读取变更级「变更档位」字段、SHALL NOT 读写变更级 `执行轮次`；其重复制口径复用「三次修复尝试上限」，出口为定向验证，SHALL NOT 使用收敛驱动循环。
+
 缺陷修复阶段属于执行类阶段，采用**重复制循环**——子代理每轮全量遍历全部失败用例，每个独立分析+修复+验证，内层 3 次修复上限独立共存于外层轮次迭代中。**轮次下限恒为 1 轮**，轮数由实际执行的重复制循环决定（参见 `skills/kflow-bug-fix/references/repetition.md` §13 轮间摘要 / §14.3 重复制类阶段循环终止 / §14.4 终止结果写入）：
 
 - **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段（缺失按 `完整` 档处理）。变更档位 SHALL 只决定**每轮审查形态与产出深度**，SHALL NOT 决定轮数。
@@ -455,22 +524,114 @@ post-mortem 未发现架构改进机会时，简要记录"无架构改进建议"
 
 ---
 
+# 快车道模式
+
+缺陷修复快车道承载 L4 实现层缺陷的独立闭环：**分诊 → 修复 → 定向验证 → 快速收口**。机制权威定义见 `bugfix-fast-lane` 能力，状态文件结构见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.5。
+
+## 入口条件
+
+- 无触发测试阶段上下文（不存在待处理的接口单元测试 / E2E 测试 / 集成测试失败轮次报告）
+- 调用来源为 `kflow-bug-triage` 的 L4 实现执行结论
+- 缺陷级状态文件 `bugs/fix/{BUG-ID}/bugfix-status.md` 存在且「受影响项清单」区已填写
+
+三项同时满足时进入快车道模式；任一不满足时按 `# 门控检查` 的处理分支执行。
+
+## 状态写入位置
+
+| 状态项 | 写入位置 | SHALL NOT 写入 |
+|-------|---------|---------------|
+| 修复阶段状态 / 耗时 / 轮次 / 根因分类 | `bugfix-status.md` 的「修复记录」区 | 变更级 `.status.md` 的 `执行轮次` 字段 |
+| 定向验证结果 | `bugfix-status.md` 的「定向验证」区 + `verify-report.md` | — |
+| 收口结论 | `bugfix-status.md` 的「收口结论」区 | — |
+| 缺陷状态 | `bugs/index.md` 对应行 + 问题详情文件 | — |
+
+## 与变更级状态的解耦
+
+快车道执行期间：
+
+- SHALL NOT 读取变更级 `.status.md` 的「变更档位」字段与阶段状态字段
+- SHALL NOT 读写变更级 `.status.md` 的 `执行轮次`、`终止结果`、阶段状态矩阵、阶段耗时与轮次统计
+- SHALL NOT 要求任何变更级阶段的门控通过，SHALL NOT 阻塞变更级阶段流转
+- SHALL NOT 触发阶段回退
+
+> 快车道不进入变更级阶段集合，故变更档位（决定审查形态与产出深度的字段）对快车道无意义——快车道不执行阶段审查。轮次计数以缺陷为独立单位，写入缺陷级状态文件。
+
+## 复用既有修复能力
+
+快车道模式 SHALL 复用本 Skill 既有的修复能力，SHALL NOT 定义第二套修复流程：
+
+- 根因二分法（实现错误 / 测试错误）
+- 子代理强制与主 Agent 验收隔离（`references/repetition.md` §12）
+- 三次修复尝试上限与递进策略
+- Regression Test at Correct Seam
+- Post-mortem 复盘检查点
+
+## 定向验证
+
+- 验证范围 SHALL 严格限定为 `bugfix-status.md`「受影响项清单」区列出的测试用例
+- SHALL NOT 重跑全量测试套件，SHALL NOT 触发集成测试轮次
+- 受影响项清单覆盖率 SHALL 达 100%，未达 100% 时定向验证判定为不通过
+- 未通过时复用三次修复尝试上限处理：SHALL NOT 引入新的轮次模型，SHALL NOT 使用收敛驱动循环或见证轮判据；达到上限时使用 AskUserQuestion 升级用户
+- 每次验证 SHALL 在「定向验证」区**追加**新的验证记录（不覆盖之前的记录），追加顺序按验证时间排列
+- 定向验证失败时 SHALL NOT 更新 `bugs/index.md` 状态，SHALL 在「定向验证」区记录失败信息（验证时间、失败用例、失败原因）
+
+> **命名区分**: 「定向验证」与仓库中已移除的 `recheck-round`（审查循环终止前的复核轮）**语义不同**——前者重跑受影响项用例，后者复核审查循环内的修复。规范中 SHALL 显式区分。
+
+## 快速收口
+
+定向验证通过且校验项全部满足后执行快速收口：
+
+| 校验项 | 判定 |
+|-------|------|
+| 受影响项清单 100% 覆盖且全部通过 | 必须满足 |
+| 定向验证报告存在 | 必须满足 |
+| `bugfix-status.md` 全部必填区已填写且无占位符 | 必须满足 |
+
+任一条件不满足时收口判定为不通过：缺陷状态保持「处理中」，在「定向验证」区记录未通过原因，SHALL NOT 标记为「已解决」。
+
+收口完成动作：更新 `bugs/index.md` 对应行状态为「已解决」、写入 `bugfix-status.md`「收口结论」区、在问题详情文件中标记快车道收口完成。快速收口 SHALL NOT 触发阶段回退、SHALL NOT 阻塞变更级阶段流转。
+
+> **术语边界**: 本机制命名为「**快速收口**」而非「快速归档」——仓库中的「归档」是变更级元工作流（`/opsx:archive` + 版本自增 + 打包），缺陷级闭环复用该词会造成歧义。
+
+## 分诊失效与诊断层级错误的处理
+
+| 情形 | 判定 | 处理 |
+|------|------|------|
+| 修复过程中发现实际影响面**超出**受影响项清单覆盖范围 | 分诊失效 | SHALL 退回 `kflow-bug-triage` 重新评估影响范围；SHALL NOT 由修复者擅自扩大或缩小验证范围 |
+| 修复过程中发现必须修改 `detailed-design.md` 或更上游的设计产物才能正确修复 | 诊断层级错误 | SHALL 退回 `kflow-bug-triage` 重新执行四层溯源；SHALL NOT 在快车道内修改设计产物 |
+
+## 产物边界
+
+快车道 SHALL NOT 创建或修改 `functional-designs/`、`detailed-design/`、`api-tests/`、`e2e-tests/` 下的任何文件；允许修改的范围限于代码实现与测试代码。快车道产出清单：
+
+- `bugs/fix/{BUG-ID}/bugfix-status.md`
+- `bugs/fix/{BUG-ID}/verify-report.md`
+- 代码与测试代码修改
+- `bugs/index.md` 与问题详情文件的更新
+
+---
+
 # 与其他 Skill 的关系
 
-- **输入来自**：`kflow-e2e-test`（子变更级 E2E 测试失败）、接口单元测试失败（子变更级）、`kflow-bug-triage`（L4 实现问题路由）
-- **输出给**：测试阶段（重新测试）
-- **前置阶段**：测试（子变更级：接口单元测试或 E2E 测试），或 kflow-bug-triage L4 路由
-- **后续阶段**：返回测试阶段（实现/测试错误）
-- **关系说明**：仅处理子变更级，变更级集成测试修复由 `kflow-integration-test` 内聚处理。用户反馈统一由 `kflow-bug-triage` 处理（A路径），本 Skill 入口仅限测试阶段自动发现（B路径）
-- **回写 bugs/ 目录**：A 路径修复验证通过后 SHALL 回写 `bugs/bug-NNN-NNN.md` 修复记录节并更新 `bugs/index.md` 状态为「已解决」；B 路径若对应 bug 已在 bugs/ 登记则同步追加摘要
-- **执行模式**：重复制（内嵌多 Agent 并行分析），重复制循环（轮次下限 1、轮数由实际执行的重复制循环决定，无上限；参见 references/repetition.md §14.3 / §14.4），自然终止记 `执行完成` / 停滞升级记 `停滞`；审查范围冻结 + 范围外观察降级，3 次修复上限独立共存，复杂度评估仅信息展示，主 Agent 验收闭环
+- **输入来自**：`kflow-e2e-test`（子变更级 E2E 测试失败）、接口单元测试失败（子变更级）、`kflow-bug-triage`（L4 实现问题路由 → 快车道模式）
+- **输出给**：既有模式 → 测试阶段（重新测试）；快车道模式 → 定向验证 → 快速收口
+- **前置阶段**：测试（子变更级：接口单元测试或 E2E 测试），或 kflow-bug-triage 的 L4 路由（快车道模式，无测试阶段上下文）
+- **后续阶段**：既有模式返回测试阶段（实现/测试错误）；快车道模式进入定向验证并在收口后终止，SHALL NOT 返回任何变更级测试阶段
+- **关系说明**：既有模式下处理子变更级缺陷修复，变更级集成测试修复由 `kflow-integration-test` 内聚处理。用户反馈统一由 `kflow-bug-triage` 处理（A路径），既有模式入口仅限测试阶段自动发现（B路径）；**快车道模式**由 `kflow-bug-triage` 的 L4 结论独占入口，承载 L4 实现层缺陷的独立闭环
+- **回写 bugs/ 目录**：A 路径修复验证通过后 SHALL 回写 `bugs/bug-NNN-NNN.md` 修复记录节并更新 `bugs/index.md` 状态为「已解决」；B 路径若对应 bug 已在 bugs/ 登记则同步追加摘要；快车道模式 SHALL 回写 `bugs/fix/{BUG-ID}/bugfix-status.md` 并在快速收口后更新 `bugs/index.md` 状态为「已解决」
+- **执行模式**：既有模式为重复制（内嵌多 Agent 并行分析），重复制循环（轮次下限 1、轮数由实际执行的重复制循环决定，无上限；参见 references/repetition.md §14.3 / §14.4），自然终止记 `执行完成` / 停滞升级记 `停滞`；审查范围冻结 + 范围外观察降级，3 次修复上限独立共存，复杂度评估仅信息展示，主 Agent 验收闭环。快车道模式复用 3 次修复上限与子代理隔离，不使用收敛驱动循环，状态写入缺陷级 `bugfix-status.md`
 
 ---
 
 # 核心提醒
 
-- 本 Skill 仅处理子变更级缺陷修复，变更级集成测试修复由 `kflow-integration-test` 内聚处理
-- 用户反馈统一由 `kflow-bug-triage` 处理，本 Skill 入口仅限测试阶段自动发现（B路径）
+- 既有模式下本 Skill 处理子变更级缺陷修复，变更级集成测试修复由 `kflow-integration-test` 内聚处理
+- 用户反馈统一由 `kflow-bug-triage` 处理，既有模式入口仅限测试阶段自动发现（B路径）
+- **快车道模式**仅由 `kflow-bug-triage` 的 L4 结论触发，SHALL NOT 提供其他入口；无测试阶段上下文且来源非 L4 路由时 SHALL 用 AskUserQuestion 确认调用上下文，SHALL NOT 直接进入快车道
+- 快车道模式 SHALL NOT 读取变更级 `.status.md` 的「变更档位」与阶段状态字段，轮次 SHALL NOT 写入变更级 `执行轮次`；状态写入 `bugs/fix/{BUG-ID}/bugfix-status.md`
+- 快车道模式的验证为**定向验证**——仅执行受影响项清单覆盖的测试用例，SHALL NOT 重跑全量测试套件，SHALL NOT 使用收敛驱动循环或见证轮判据
+- 快车道模式 SHALL NOT 创建或修改 `functional-designs/`、`detailed-design/`、`api-tests/`、`e2e-tests/`；影响面超出清单或需改设计产物时判定分诊失效 / 诊断层级错误并退回 `kflow-bug-triage`
+- 快速收口 SHALL NOT 触发阶段回退、SHALL NOT 阻塞变更级阶段流转、SHALL NOT 触发版本自增或打包（那是变更级归档的职责）
 - A 路径修复完成后 SHALL 回写 `bugs/bug-NNN-NNN.md` 修复记录节，SHALL NOT 在 bugs/ 创建独立 fix-report 文件
 - 同一测试用例最多 3 次自动修复尝试，超出后升级用户
 - 必须先构建 feedback loop，禁止跳过直接进入假设阶段

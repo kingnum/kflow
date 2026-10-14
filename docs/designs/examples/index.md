@@ -15,6 +15,7 @@
 | 变更级状态文件示例 | [change-status.md](change-status.md) | 完整的变更级 `.status.md` 文件示例（含子变更进度矩阵） |
 | 子变更状态文件示例 | [subchange-status.md](subchange-status.md) | 完整的子变更级 `.status.md` 文件示例（5 阶段表格） |
 | 回退前状态文件示例 | [rollback-status.md](rollback-status.md) | 变更级 `.status.md` 展示 ⚠️ 需修订 状态 |
+| 缺陷级状态文件示例 | [bugfix-status.md](bugfix-status.md) | 完整的缺陷级 `bugfix-status.md`（L4 快车道缺陷，含多次定向验证记录与收口结论） |
 
 ### 设计文档示例
 

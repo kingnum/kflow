@@ -1,8 +1,10 @@
 # 阶段钩子执行规范（运行时）
 
-> **版本**: 1.0.0
+> **版本**: 1.1.0
 > **类型**: 运行时共享文件（被各阶段 SKILL.md 引用）
 > **创建时间**: 2026-05-28
+>
+> **v1.1.0**: 新增 bug-fix **快车道模式**的钩子分支——PRE_HOOK 不依赖服务（校验缺陷级状态文件 + RELOAD 缺陷级产物）、POST_HOOK 回写缺陷级 `bugfix-status.md`（SHALL NOT 更新变更级 `.status.md` 阶段字段）。
 
 > **加载层级**: 服务层
 > **适用阶段**: api-test/e2e-test/integration-test
@@ -52,6 +54,19 @@
 > 裁剪阶段的豁免仅适用于上述三个阶段，且 MUST 以变更级 `.status.md` 的阶段适用性声明依据为前提。无声明依据的 `⏭️` SHALL NOT 触发豁免，按门控规则阻塞。裁剪判定见 [gates.md](gates.md) §1.2，声明字段定义见 [state-values.md](state-values.md) §5。
 >
 > **豁免范围**: PRE_HOOK 与 POST_HOOK 整体跳过，包括 `CHECK_STATE`、`RELOAD`、服务生命周期操作与 `UPDATE_STATE`。阶段状态由 kflow-design 在写入适用性声明时一次性标记为 `⏭️ 不适用`，不由被裁剪阶段自身更新。
+
+### bug-fix 快车道模式的钩子
+
+`kflow-bug-fix` 的**快车道模式**（由 `kflow-bug-triage` 的 L4 结论触发、无触发测试阶段上下文）不适用「同触发阶段」的继承规则，其钩子配置独立：
+
+| 钩子 | 服务依赖 | 步骤 |
+|------|:------:|------|
+| PRE_HOOK | ❌ 不需要服务 | `CHECK_STATE`（验证缺陷级状态文件存在且受影响项清单已填）→ `RELOAD`（重读缺陷级产物与受影响项代码） |
+| POST_HOOK | ❌ 不需要服务 | `UPDATE_STATE` → 更新**缺陷级** `bugfix-status.md`（修复记录区 / 定向验证区 / 收口结论区） |
+
+> **服务依赖说明**: 快车道模式 SHALL NOT 启动、停止或刷新任何服务，SHALL NOT 执行编译 / 迁移 / 健康检查——其验证为**定向验证**（仅重跑受影响项清单覆盖的用例），由修复者本地执行。
+>
+> **状态写入边界**: 快车道模式的 POST_HOOK SHALL NOT 更新变更级 `.status.md` 的阶段状态、`执行轮次` 或 `终止结果` 字段。状态写入边界详见 `skills/<SKILL>/references/state-values.md` 与 `bugfix-fast-lane` 能力。
 
 ---
 
@@ -148,7 +163,27 @@ PRE_HOOK（E2E/集成测试阶段）:
   13. HEALTH_FE          → /health 验证前端就绪
 ```
 
-### 2.6 PRE_HOOK 阻塞规则
+### 2.6 缺陷修复快车道模式（❌ 不需要服务）
+
+```
+PRE_HOOK（bug-fix 快车道模式）:
+  1. CHECK_STATE → 验证缺陷级状态文件 bugs/fix/{BUG-ID}/bugfix-status.md 存在
+                   且「受影响项清单」区已填写（由 kflow-bug-triage 产出）
+  2. RELOAD      → 重读缺陷级产物与受影响项代码:
+                   ├── bugs/fix/{BUG-ID}/bugfix-status.md（分诊结论 + 受影响项清单）
+                   ├── bugs/bug-NNN-NNN.md（问题详情）
+                   └── 受影响项清单覆盖的代码与测试文件
+                   （SHALL NOT 读取变更级 .status.md 的「变更档位」与阶段状态字段）
+```
+
+| 子步骤 | 失败后果 |
+|--------|---------|
+| CHECK_STATE（状态文件缺失或受影响项清单为空） | ❌ 阻塞，提示缺失项，退回 `kflow-bug-triage` |
+| RELOAD（文件不存在） | ❌ 阻塞，提示缺失的文件路径 |
+
+> 快车道模式 SHALL NOT 执行 `CHECK_PORTS`、`READ_SERVICE_GUIDE`、`COMPILE`、`MIGRATE`、`START_SERVICE`、`HEALTH_CHECK` 中的任何一步。
+
+### 2.7 PRE_HOOK 阻塞规则
 
 | 子步骤 | 失败后果 |
 |--------|---------|
@@ -200,7 +235,21 @@ POST_HOOK（测试阶段）:
   5. UPDATE_SERVICE_STATE → 更新/清理 .service-state.json
 ```
 
-### 3.5 POST_HOOK 阻塞规则
+### 3.5 缺陷修复快车道模式（❌ 不需要服务）
+
+```
+POST_HOOK（bug-fix 快车道模式）:
+  1. UPDATE_STATE → 更新缺陷级 bugs/fix/{BUG-ID}/bugfix-status.md
+                    ├── 修复记录区（修复阶段状态 / 耗时 / 轮次 / 根因分类）
+                    ├── 定向验证区（每次验证追加记录，不覆盖）
+                    └── 收口结论区（收口时间 + 校验项逐项结论）
+                    SHALL NOT 更新变更级 .status.md 的阶段状态、
+                    `执行轮次` 与 `终止结果` 字段
+```
+
+> 快车道模式 SHALL NOT 执行 `STOP_SERVICE`、`VERIFY_STOP`、`BROWSER_CLEANUP`、`UPDATE_SERVICE_STATE` 中的任何一步。
+
+### 3.6 POST_HOOK 阻塞规则
 
 | 子步骤 | 失败后果 |
 |--------|---------|
@@ -280,7 +329,7 @@ POST_HOOK（测试阶段）:
 
 ## 五、服务生命周期操作步骤
 
-服务生命周期具体操作指令定义在 `skills/kflow-api-test/references/service-lifecycle.md` 中。本文档仅列出各阶段各服务类型需要执行的操作步骤。执行时参考 `service-lifecycle.md` 获取每条指令的具体调用方式。
+服务生命周期具体操作指令定义在 `skills/kflow-code/references/service-lifecycle.md` 中。本文档仅列出各阶段各服务类型需要执行的操作步骤。执行时参考 `service-lifecycle.md` 获取每条指令的具体调用方式。
 
 ### 5.1 各服务类型操作映射
 

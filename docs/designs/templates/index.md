@@ -2,8 +2,8 @@
 
 > **版本**: 参见仓库根目录 `VERSION` 文件
 > **创建时间**: 2026-05-05
-> **更新时间**: 2026-09-29
-> **总模板数**: 54（含 1 个已废弃）
+> **更新时间**: 2026-10-14
+> **总模板数**: 57（含 1 个已废弃）
 
 本文档是 KFlow Skills 体系中所有阶段产物模板的索引入口。模板目录按镜像实际 `docs/` 输出结构组织，模板路径与产物路径形成直接映射。
 
@@ -15,6 +15,10 @@
 templates/
 ├── index.md                                   # 本文件：模板目录索引
 ├── changes/{change}/                           # 变更级模板（镜像 docs/changes/{change}/）
+│   ├── bugs/                                    #   问题登记（镜像 docs/changes/{change}/bugs/）
+│   │   ├── bugs-index.md                        #     问题索引模板
+│   │   ├── bugs-detail.md                       #     问题详情模板
+│   │   └── fix/{BUG-ID}/bugfix-status.md        #     缺陷级状态文件模板（L4 快车道）
 │   ├── functional-designs/                     #   功能设计文档
 │   │   ├── index.md                            #     功能设计索引模板
 │   │   └── part-NN.md                          #     功能设计分册模板
@@ -125,6 +129,14 @@ templates/
 | 24 | changes/{change}/migration-log.md | migrations/migration-log.md | kflow-code | 抽取 |
 | 25 | changes/{change}/traceability.md | docs/changes/{change}/traceability.md | kflow-design | 新建 |
 | 26 | changes/{change}/checkpoint.md | checkpoints/{timestamp}-checkpoint.md | kflow-resume | 抽取 |
+
+### 问题登记模板 (changes/{change}/bugs/)
+
+| 序号 | 模板文件 | 对应产物 | 产出 Skill | 类型 |
+|------|---------|---------|-----------|------|
+| 55 | changes/{change}/bugs/bugs-index.md | docs/changes/{change}/bugs/index.md | kflow-bug-triage | 新建 |
+| 56 | changes/{change}/bugs/bugs-detail.md | docs/changes/{change}/bugs/bug-NNN-NNN.md | kflow-bug-triage | 新建 |
+| 57 | changes/{change}/bugs/fix/{BUG-ID}/bugfix-status.md | docs/changes/{change}/bugs/fix/{BUG-ID}/bugfix-status.md | kflow-bug-triage（创建 + 分诊结论 + 受影响项清单）/ kflow-bug-fix（修复记录 + 定向验证 + 收口结论） | 新建 |
 
 ### 集成测试模板 (changes/{change}/integration/)
 

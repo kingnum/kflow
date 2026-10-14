@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 created_at: 2026-06-16
 ---
 
@@ -60,15 +60,18 @@ created_at: 2026-06-16
 |--------|------|
 | 受影响功能点 | {FP-NNN, FP-NNN, ...} |
 | 受影响接口 | {/api/xxx, /api/yyy, ...} |
+| 受影响测试用例 | {用例标识, ...} |
 | 数据模型变更 | {none / 变更描述} |
 | 影响范围分数 | {计算值：FP数×1 + 接口数×1.5 + 数据模型×2} |
+
+> **受影响测试用例**为 L4 快车道定向验证的验证范围来源，SHALL 与 `bugs/fix/{BUG-ID}/bugfix-status.md`「受影响项清单」区的「受影响测试用例」一致；非 L4 结论时可记「（不适用）」。
 
 ### 解决方案
 
 | 字段 | 值 |
 |------|---|
 | 建议方案 | {方案描述} |
-| 路由目标 | {explore REVISION / prototype-design REVISION / design REVISION / kflow-bug-fix} |
+| 路由目标 | {explore REVISION / prototype-design REVISION / design REVISION / 缺陷修复快车道} |
 | 影响范围 | {受影响的子变更和功能点} |
 | 下游影响 | {对后续阶段的影响评估} |
 | EXECUTION_MODE | SUBAGENT_REQUIRED |
@@ -81,6 +84,23 @@ created_at: 2026-06-16
 - [ ] 执行修复
 - [ ] 验证修复
 - [ ] 关闭
+
+### 快车道入口与收口状态
+
+**仅当「问题源头层级」= L4 时填写本节**；L1 / L2 / L3 时整节记「（不适用）」，SHALL NOT 创建缺陷级状态文件。
+
+| 字段 | 值 |
+|------|---|
+| 快车道入口 | {✅ 已进入 / （不适用）} |
+| 缺陷级状态文件 | `bugs/fix/{BUG-ID}/bugfix-status.md` |
+| 入口时间 | {YYYY-MM-DD HH:MM} |
+| 定向验证报告 | `bugs/fix/{BUG-ID}/verify-report.md` |
+| 收口状态 | {修复中 / 定向验证中 / 已收口 / （不适用）} |
+| 收口时间 | {YYYY-MM-DD HH:MM 或「—」} |
+
+> **入口标记的写入时机**: 由 `kflow-bug-triage` 在 L4 路由时写入「快车道入口」与「入口时间」，并创建缺陷级状态文件；「收口状态」与「收口时间」由 `kflow-bug-fix` 的快速收口环节回写。
+>
+> **边界**: 填写本节 SHALL NOT 修改变更级 `.status.md` 的任何阶段状态字段——快车道不进入变更级阶段状态矩阵。
 
 ### 修复记录
 
@@ -96,6 +116,8 @@ created_at: 2026-06-16
 
 **Post-mortem**:
 {什么可以防止此类缺陷}
+
+> **快车道模式下的回写**: L4 缺陷的详细修复过程记录在缺陷级状态文件 `bugs/fix/{BUG-ID}/bugfix-status.md`（修复记录区 / 定向验证区）；快速收口后在本节追加修复摘要（修复日期、根因分类、修复文件、验证结果、修复内容、Post-mortem）并标记快车道收口完成。
 
 ### 关联
 
