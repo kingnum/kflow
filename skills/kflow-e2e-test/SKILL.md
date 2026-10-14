@@ -1,6 +1,6 @@
 ---
 name: kflow-e2e-test
-version: 0.26.0
+version: 0.27.0
 description: Use when user needs E2E testing/E2E 测试、QA 测试、功能测试、浏览器自动化测试, or subchange API tests (kflow-api-test) pass and ready for browser testing. Playwright snapshot+ref模式，决策树路由，健康评分映射。仅前后端项目，纯后端跳过。依赖前置 kflow-api-test。含 PRE_HOOK/POST_HOOK 阶段钩子。/playwright
 license: MIT
 triggers:
@@ -49,7 +49,7 @@ allowed-tools:
 
 > **机制说明**：四态判定矩阵参见 `skills/kflow-e2e-test/references/gates.md` §1.2，声明字段参见 `skills/kflow-e2e-test/references/state-values.md` §5，钩子豁免参见 `skills/kflow-e2e-test/references/hooks.md` §1。
 
-> **适用范围**：仅 `变更档位 = 轻量` 适用；`标准` 与 `完整` 档 SHALL NOT 应用，阶段集合维持既有规则。纯后端项目跳过本阶段的既有规则与档位无关，按项目类型优先判定。
+> **适用范围**：仅 `变更档位 = 轻量` 适用；`标准` 档 SHALL NOT 应用，阶段集合维持既有规则。纯后端项目跳过本阶段的既有规则与档位无关，按项目类型优先判定。
 
 本门控 SHALL 在执行流程入口（PRE_HOOK 之前）读取变更级 `.status.md` 的「阶段适用性声明」区中的「E2E测试」条目，并按「声明 × `e2e-tests/` 产物存在性」四态判定：
 
@@ -483,7 +483,7 @@ E2E 测试阶段属于**单轮类执行阶段**，采用**单轮全面执行 + �
 
 - **单轮全量执行**：子代理在一轮内遍历 e2e-tests/ 全部测试场景执行完整流程，SHALL NOT 执行第二轮全量审查。
 - **定向重验**：发现失败项时，仅在修复后**重跑失败用例**，不重跑全量；属**有界重试**，SHALL NOT 使用轮次循环判据或预设轮数。定向重验与已移除的 `recheck-round`（审查循环到达终止点后追加的复核轮）语义不同，命名 SHALL NOT 混用。
-- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段（缺失按 `完整` 档处理）。变更档位 SHALL 只决定**审查形态与产出深度**，SHALL NOT 决定执行轮数。
+- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段（缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理）。变更档位 SHALL 只决定**审查形态与产出深度**，SHALL NOT 决定执行轮数。
 - **审查范围冻结**：主 Agent 从阶段产物既有内容生成审查对象集合并冻结，审查维度限于本阶段枚举；冻结范围之外的发现降级为「范围外观察」——不改产物、不计入执行发现数，记入执行报告的「范围外观察」小节（为空时记「（空）」）。
 - **回退重执行**：SHALL NOT 预置或提高执行轮数；「最近修订信息」的受影响项清单仅供验证门控的「受影响项 100% 覆盖」使用。
 

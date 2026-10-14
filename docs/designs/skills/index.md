@@ -13,7 +13,7 @@
 | `kflow-guide` | 流程指引 | — | 按需 | 意图识别、活跃变更检测、跨变更冲突检测 | [kflow-guide.md](kflow-guide.md) |
 | `kflow-explore` | 设计探索 | 变更级 | 必须 | 需求澄清、功能点拆分、项目类型继承（读取项目级记录，不再划分子变更） | [kflow-explore.md](kflow-explore.md) |
 | `kflow-prototype-design` | 原型设计 | 变更级 | 可选 | HTML 原型设计（默认复用已锁定工具链，产物直写产品级 `docs/designs/prototypes/`）、BUILD 四项静态门控、审查方式二选一（人工审查 / 子代理自动审查验证）、用户评审确认 | [kflow-prototype-design.md](kflow-prototype-design.md) |
-| `kflow-design` | 详细设计 | **变更级** | 必须 | 统一详细设计（含NFR）、四视角审查、子变更划分、测试用例文档、用户评审确认 | [kflow-design.md](kflow-design.md) |
+| `kflow-design` | 详细设计 | **变更级** | 必须 | 统一详细设计（含NFR）、按变更档位分级的设计审查（轻量单 Agent / 标准两视角）、子变更划分、测试用例文档、用户评审确认 | [kflow-design.md](kflow-design.md) |
 | `kflow-plan` | 计划 | 子变更级 | 必须 | Checkbox 任务清单、DoD验收标准、功能点级全展开 | [kflow-plan.md](kflow-plan.md) |
 | `kflow-code` | 编码 | 子变更级 | 必须 | TDD 流程、数据库迁移、跨变更冲突检测、多 Agent 并行编码 | [kflow-code.md](kflow-code.md) |
 | `kflow-code-review` | 代码审查 | 子变更级 | 必须 | 两视角并行审查（安全+规范/质量+性能）、闭环验证 | [kflow-code-review.md](kflow-code-review.md) |

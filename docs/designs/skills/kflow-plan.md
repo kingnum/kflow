@@ -35,7 +35,7 @@ allowed-tools:
 - .status.md 存在
 - 详细设计状态 = ✅ 完成
 - 变更级 detailed-design.md 文件或 detailed-design/index.md 目录索引存在（不再检查子变更 detailed-design.md）
-- 设计审查产物按变更档位分支：轻量档 → cross-reviews/{timestamp}/synthesis.md 存在且标记审查通过；标准档 → 两份视角报告（business-technical-review.md、security-quality-review.md）+ synthesis.md 存在且标记审查通过；完整档 → 四视角审查状态均 = ✅ 完成 + cross-reviews/ 四份视角报告存在 + 最新批次 synthesis.md 标记审查通过
+- 设计审查产物按变更档位分支：轻量档 → cross-reviews/{timestamp}/synthesis.md 存在且标记审查通过；标准档 → 两份视角报告（business-technical-review.md、security-quality-review.md）+ synthesis.md 存在且标记审查通过。档位字段缺失或为历史遗留的 `完整` 取值时按标准档分支判读，SHALL NOT 要求四份视角报告存在
 - detailed-design.md 中 NFR 章节包含至少 1 项性能需求和 1 项安全需求
 - 变更级 `.status.md` 的「阶段适用性声明」区已读取（仅轻量档；声明区缺失或非轻量档时按全部阶段适用处理），轻量档下判为 `⏭️ 不适用` 的阶段其输入产物不存在属合法跳过
 
@@ -397,7 +397,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 
 ### 概述
 
-计划阶段在 VERIFY 步骤（步骤 8）之后、COMPLETE 步骤（步骤 9）之前，执行自审（SELFREV）。自审固定为**单轮**：SHALL NOT 预置轮数上限，SHALL NOT 执行第二轮，SHALL NOT 存在 0 轮豁免路径。变更档位只决定**审查形态与产出深度**，SHALL NOT 决定轮数。自审启动前 SHALL 读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理，仅决定报告输出深度）。
+计划阶段在 VERIFY 步骤（步骤 8）之后、COMPLETE 步骤（步骤 9）之前，执行自审（SELFREV）。自审固定为**单轮**：SHALL NOT 预置轮数上限，SHALL NOT 执行第二轮，SHALL NOT 存在 0 轮豁免路径。变更档位只决定**审查形态与产出深度**，SHALL NOT 决定轮数。自审启动前 SHALL 读取变更级 `.status.md` 的「变更档位」字段（缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理，仅决定报告输出深度）。
 
 单轮由三个环节构成：
 
@@ -418,7 +418,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 | 轮次 | **固定 1 轮**（无例外；SHALL NOT 存在 0 轮豁免路径，SHALL NOT 追加确认轮） |
 | 成功终止 | 单轮验证零发现且无签署不成立项 → 终止结果 `验证通过` |
 | 发现终止 | 存在发现项或签署不成立项 → 终止结果 `验证发现问题({N})`（N 为发现总数） |
-| 评分底线 | 仅 `完整` 档适用，作为报告输出深度要求——各维度评分与不达标时的具体问题项须列出；SHALL NOT 参与终止判定 |
+| 评分底线 | 已废除——验证报告 SHALL NOT 输出各维度评分与不达标项清单（评分不参与终止判定） |
 
 **审查范围冻结与范围外观察**：主 Agent 从阶段产物既有内容生成审查对象集合并冻结，审查维度集合封闭；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度、SHALL NOT 借审查之名新增功能点/字段/章节/分支。冻结范围之外的发现 SHALL 记为「范围外观察」——不改产物、不计入发现数，写入验证报告的「范围外观察」小节（为空时记「（空）」）；子代理引入范围外新内容的轮次 SHALL NOT 被接受，主 Agent SHALL 拒收并要求在冻结范围内重新验证。主 Agent SHALL 在阶段终止时汇总范围外观察条目并向用户提示。
 
@@ -440,7 +440,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 ```
 SELFREV 自审（单轮验证）:
 
-1. 读取变更级 .status.md 的「变更档位」字段（缺失按 完整 档处理，仅决定报告输出深度）
+1. 读取变更级 .status.md 的「变更档位」字段（缺失或历史取值 完整 按 标准 档处理，仅决定报告输出深度）
 2. 主 Agent 按 任务覆盖完整性、DoD 验收标准正确性、HITL 标注准确性、任务粒度合理性 四个维度逐项签署自证（零子代理）
    ├── 逐维度填写「自证结论」与「证据锚点」
    └── 自证发现某维度不通过 → 先行修复并重新自证该维度
@@ -458,7 +458,7 @@ SELFREV 自审（单轮验证）:
 
 - 全部档位 SHALL 执行单轮验证，SHALL NOT 存在 0 轮豁免路径，SHALL NOT 执行第二轮
 - 变更档位 SHALL NOT 决定轮数；档位仅决定审查形态与产出深度
-- 完整档报告须输出各维度评分与不达标时的具体问题项，作为报告输出深度要求；评分 SHALL NOT 参与终止判定
+- 验证报告 SHALL NOT 输出各维度 0–10 评分与不达标项清单（该评分要求已随第三档取值一并废除）
 - SHALL NOT 在验证后追加确认轮
 - 审查对象集合 SHALL 由主 Agent 从阶段产物既有内容生成并冻结，审查维度集合封闭；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度
 - 冻结范围之外的发现 SHALL 记为「范围外观察」，SHALL NOT 在本轮修复、SHALL NOT 计入发现数

@@ -1,6 +1,6 @@
 ---
 name: kflow-code
-version: 0.26.0
+version: 0.27.0
 description: Use when user needs coding implementation/编码实现、TDD、功能实现, or subchange task plan is ready for execution. 子变更级TDD编码——编译验证、数据库迁移管理、多Agent并行编码、跨变更冲突检测。必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:
@@ -45,7 +45,7 @@ allowed-tools:
 | NFR 章节完整性 | `detailed-design.md` 中 NFR 章节含性能+安全需求 |
 | 跨变更冲突检测 | 检查活跃变更文件重叠（见 §跨变更冲突检测） |
 | `docs/service-guide.md` | 存在（init 可预生成草稿）或自动生成（见 §服务指引） |
-| 阶段适用性声明 | 轻量档读取变更级 `.status.md` 的「阶段适用性声明」区，据此判定 `api-tests/` 等输入产物不存在是否属合法跳过；`标准`/`完整` 档及声明区缺失时按全部适用处理（判定见共享 `references/gates.md` §1.2、字段定义见 `references/state-values.md` §5） |
+| 阶段适用性声明 | 轻量档读取变更级 `.status.md` 的「阶段适用性声明」区，据此判定 `api-tests/` 等输入产物不存在是否属合法跳过；`标准` 档及声明区缺失时按全部适用处理（判定见共享 `references/gates.md` §1.2、字段定义见 `references/state-values.md` §5） |
 
 不满足则 ❌ 阻塞，提示先完成前置条件。
 

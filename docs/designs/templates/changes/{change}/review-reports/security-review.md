@@ -4,7 +4,7 @@ skill: kflow-design
 version: 1.0.0
 created_at: 2026-05-05
 template_for: review-reports/security-review.md
-template_description: 安全视角审查报告模板，用于完整档（四视角并行）设计审查。标准档时安全视角与质量视角合并为 security-quality-review.md，轻量档时并入 synthesis.md，均不使用本模板。审查 Agent 数按档位取值（轻量 1 / 标准 2 / 完整 4）。
+template_description: 安全视角审查报告模板。当前档位枚举为 `{轻量, 标准}`，两档均**不产出单视角独立报告**——轻量档由单个 Agent 串行覆盖四视角全部检查项并写入 `synthesis.md`，标准档将安全视角与质量要求合并为 `security-quality-review.md`。本模板保留为安全视角检查项与结论勾选项的**格式参考**，供合并视角报告与综合报告复用。审查 Agent 数按档位取值（轻量 1 / 标准 2）。
 ---
 
 # 安全视角审查报告
@@ -19,7 +19,6 @@ template_description: 安全视角审查报告模板，用于完整档（四视�
 > |------|--------------|-----------|
 > | 轻量 | 1 | 不产生视角报告；四视角全部检查项由单个 Agent 串行综合覆盖，写入 `synthesis.md` |
 > | 标准 | 2 | 与质量视角合并为 `security-quality-review.md`（1 个 Agent 覆盖安全+质量全部检查项），本模板不单独产出 |
-> | 完整 | 4 | `security-review.md`（本模板，由独立 Security Agent 产出） |
 
 ---
 
@@ -50,4 +49,4 @@ template_description: 安全视角审查报告模板，用于完整档（四视�
 - [ ] 认证授权机制完善
 - [ ] **判定**: ✅ 通过 / ⚠️ 有条件通过 / ❌ 不通过
 
-> **按档位分支**：完整档由本视角独立给出上述判定；标准档在 `security-quality-review.md` 中按安全、质量两组检查项分别给出判定；轻量档四视角检查项在 `synthesis.md` 中合并给出单一判定。
+> **按档位分支**：标准档在 `security-quality-review.md` 中按安全、质量两组检查项分别给出判定；轻量档四视角检查项在 `synthesis.md` 中合并给出单一判定。

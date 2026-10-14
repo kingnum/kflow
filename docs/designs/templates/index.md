@@ -36,11 +36,11 @@ templates/
 │   │   ├── integration-summary.md              #     集成测试总结模板
 │   │   ├── contract-error-report.md            #     接口契约错误报告模板
 │   │   └── arch-assessment.md                  #     架构评估报告模板
-│   ├── review-reports/                         #   交叉审查报告（产物形态按变更档位：完整四视角 / 标准两视角 / 轻量单 synthesis）
-│   │   ├── business-review.md                  #     业务视角审查报告模板（完整档；标准档并入 business-technical-review.md）
-│   │   ├── technical-review.md                 #     技术视角审查报告模板（完整档；标准档并入 business-technical-review.md）
-│   │   ├── security-review.md                  #     安全视角审查报告模板（完整档；标准档并入 security-quality-review.md）
-│   │   ├── quality-review.md                   #     质量视角审查报告模板（完整档；标准档并入 security-quality-review.md）
+│   ├── review-reports/                         #   交叉审查报告（产物形态按变更档位：标准两视角 / 轻量单 synthesis）
+│   │   ├── business-review.md                  #     业务视角检查项格式参考（标准档并入 business-technical-review.md）
+│   │   ├── technical-review.md                 #     技术视角检查项格式参考（标准档并入 business-technical-review.md）
+│   │   ├── security-review.md                  #     安全视角检查项格式参考（标准档并入 security-quality-review.md）
+│   │   ├── quality-review.md                   #     质量视角检查项格式参考（标准档并入 security-quality-review.md）
 │   │   └── review-synthesis.md                 #     审查综合报告模板（全档位均产出；轻量档为唯一审查产物）
 │   ├── self-reviews/                           #   自循环审查报告（单轮验证，固定一份）
 │   │   ├── report.md                           #     单轮验证报告模板

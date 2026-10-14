@@ -3,7 +3,7 @@
 > **审计时间**: 2026-05-04 15:30
 > **审计范围**: ecommerce-platform-init（单个变更）
 > **审计方式**: 归档前自动触发
-> **变更档位**: 完整
+> **变更档位**: 标准
 > **执行者**: 单个审计子代理（`Agent` subagent；SHALL NOT 由主 Agent 直接执行，SHALL NOT 拆分为多个并行子代理）
 > **报告形态**: 记账记录（四项职责结论 + 耗时效率摘要 + 分级问题清单 + 改进建议）——全部档位同一形态
 
@@ -42,8 +42,8 @@
 | 条件产物正确处理（🔶 / ⏭️ 图例） | ✅ | `api-tests/`、`e2e-tests/`、`test-reports/integration/` 均已产出 |
 | 产物内容非空且无占位符 | ✅ | 抽查无 TODO / TBD / 未填充占位符 |
 | 自审报告存在（份数为 1 为正常形态） | ✅ | `self-reviews/{explore,design,plan}/report.md` 各 1 份；未因仅 1 份判为缺项 |
-| 裁剪阶段不判缺项 | ⏭️ | 本变更为完整档，无裁剪阶段 |
-| 视角报告按档位要求核对 | ✅ | 完整档四视角报告 + `synthesis.md` 齐备 |
+| 裁剪阶段不判缺项 | ⏭️ | 本变更为 `标准` 档，无裁剪阶段 |
+| 视角报告按档位要求核对 | ✅ | `标准` 档两份视角报告（business-technical-review.md、security-quality-review.md）+ `synthesis.md` 齐备 |
 
 ### 3. (c) 耗时汇总
 

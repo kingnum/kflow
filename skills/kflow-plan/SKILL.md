@@ -1,6 +1,6 @@
 ---
 name: kflow-plan
-version: 0.26.0
+version: 0.27.0
 description: Use when user needs task planning/任务计划、任务清单、实现计划, or detailed-design.md is ready for subchange breakdown. 子变更级checkbox任务清单（含DoD四维验收标准），功能点级全展开TDD循环，区分后端SC/前端SC输入源。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务）。
 license: MIT
 triggers:
@@ -45,7 +45,7 @@ allowed-tools:
 | `functional-designs/index.md` | 存在 | [全部] |
 | `api-tests/index.md` | 存在 或 已裁剪（轻量档适用性声明判 `接口单元测试` 为 `⏭️ 不适用` 且有判定依据） | [全部] |
 | `e2e-tests/index.md` | 存在（条件：前端SC + 前后端项目） | [前端子变更] |
-| 设计审查产物 | 按变更档位分支：轻量档 → `cross-reviews/{timestamp}/synthesis.md` 存在且标记审查通过；标准档 → 两份视角报告（business-technical-review.md、security-quality-review.md）+ `synthesis.md` 存在且标记审查通过；完整档 → 四视角审查状态均 = ✅ 完成 + `cross-reviews/` 四份视角报告存在 + 最新批次 `synthesis.md` 标记审查通过 | [全部] |
+| 设计审查产物 | 按变更档位分支：轻量档 → `cross-reviews/{timestamp}/synthesis.md` 存在且标记审查通过；标准档 → 两份视角报告（business-technical-review.md、security-quality-review.md）+ `synthesis.md` 存在且标记审查通过。档位字段缺失或为历史遗留的 `完整` 取值时按标准档分支判读，SHALL NOT 要求四份视角报告存在 | [全部] |
 | NFR 章节完整性 | 含 ≥ 1 项性能需求和 ≥ 1 项安全需求 | [全部] |
 | 子变更 HITL 标记 | 所有子变更 SHALL NOT 含 HITL 标记（HITL = 设计不完整，禁止进入 plan） | [全部] |
 | 阶段适用性声明 | 轻量档读取变更级 `.status.md` 的「阶段适用性声明」区，据此判定 `接口单元测试` 阶段是否已裁剪；非轻量档或声明区缺失时按全部阶段适用处理 | [轻量档] |
@@ -112,7 +112,7 @@ allowed-tools:
 
 ## 步骤 2：CHECK — 门控检查
 
-验证详细设计完成、四视角审查通过、NFR 章节完整。不满足条件时 ❌ 阻塞，提示先完成设计阶段。
+验证详细设计完成、设计审查通过、NFR 章节完整。不满足条件时 ❌ 阻塞，提示先完成设计阶段。
 
 ## 步骤 3：READ — 读取设计文档
 
@@ -349,7 +349,7 @@ allowed-tools:
 
 **轮次规则**：轮数恒为 1（SHALL NOT 预置任何审查轮数、SHALL NOT 执行第二轮、无 0 轮豁免路径）；SHALL NOT 因该轮发现问题而自动执行第二轮，发现项一律由主 Agent 统一修复；SHALL NOT 追加确认轮。计划阶段 SELFREV SHALL NOT 使用轮间摘要机制。
 
-**档位语义**：变更档位 SHALL 只决定**审查形态与产出深度**，SHALL NOT 决定轮数（轮数恒为 1）。自审启动前 SHALL 读取变更级 `.status.md` 的「变更档位」字段（`轻量` / `标准` / `完整`）；字段缺失时按 `完整` 档处理。
+**档位语义**：变更档位 SHALL 只决定**审查形态与产出深度**，SHALL NOT 决定轮数（轮数恒为 1）。自审启动前 SHALL 读取变更级 `.status.md` 的「变更档位」字段（`轻量` / `标准`）；字段缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理。
 
 ### 签署清单
 
@@ -486,7 +486,7 @@ allowed-tools:
 ```
 单轮验证自审执行流程（轮数恒为 1）:
 
-0. 读取变更档位：读取变更级 .status.md 基本信息的「变更档位」字段（缺失按完整档处理）
+0. 读取变更档位：读取变更级 .status.md 基本信息的「变更档位」字段（缺失或历史取值 完整 按 标准 档处理）
    └── 档位只决定审查形态与产出深度，SHALL NOT 决定轮数（轮数恒为 1）
 
 1. 主 Agent 按 4 个定制维度完成**签署自证**（零子代理），逐维度填写
@@ -653,7 +653,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 ```
 1. 复杂度评估 → 写入 .status.md 备注列（仅信息展示，不驱动执行行为）
 
-1.5 INIT → 读取变更级 .status.md 的「变更档位」字段（缺失按完整档处理），仅用于确定
+1.5 INIT → 读取变更级 .status.md 的「变更档位」字段（缺失或历史取值 完整 按 标准 档处理），仅用于确定
      审查形态与产出深度（SHALL NOT 决定轮数）；写入 .status.md 执行轮次为 1 轮
 
 2. 主 Agent 构建阶段输入
@@ -702,7 +702,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 - DoD 采用 WHEN/THEN 格式，每功能点 4 维（Happy ≥1 + Error ≥2 + Edge ≥1 + Quality ≥1）
 - HITL = 设计不完整标记，HITL 子变更禁止进入 plan 阶段，需回退到 kflow-design 补全设计
 - 禁止 TODO/TBD/{待填写} 等占位符
-- 自审固定为**单轮验证**：轮数恒为 1，SHALL NOT 执行第二轮、无 0 轮豁免路径、不追加确认轮（参见步骤 8.5 与 `skills/kflow-plan/references/repetition.md`；缺失档位按完整档）；轻量档同样执行单轮验证并附加产物完整性门控
+- 自审固定为**单轮验证**：轮数恒为 1，SHALL NOT 执行第二轮、无 0 轮豁免路径、不追加确认轮（参见步骤 8.5 与 `skills/kflow-plan/references/repetition.md`；缺失档位或历史取值 完整 按 标准 档）；轻量档同样执行单轮验证并附加产物完整性门控
 - **审查范围冻结**：主 Agent 从阶段产物既有内容生成审查对象集合并冻结，审查维度限于 4 个定制维度；冻结范围之外的发现降级为「范围外观察」——不改产物、不计入验证发现数；越界轮 SHALL NOT 被接受为有效验证
 - **轻量档单一子变更**：轻量档变更恒为 1 个子变更，「遍历全部子变更」等复数表述在该场景下即为遍历该唯一子变更，不产生额外要求；`api-tests/` 可因 `接口单元测试` 被裁剪而不存在，属合法跳过
 - **单轮验证自审强制执行**：OUTPUT 步骤完成后自动进入 SELFREV，主 Agent 完成 4 维度签署自证（零子代理）→ 启动 1 个独立子代理做单轮验证（先独立遍历全部子变更 tasks.md 形成自身结论且不读签署清单，再逐项对照签署清单打假，只报告不修改任何 tasks.md）→ 主 Agent 统一修复并生成「本阶段修复清单」；4 维度为任务覆盖完整性 / DoD 验收标准正确性 / HITL 标注准确性 / 任务粒度合理性，审查对象集合由主 Agent 冻结、维度集合封闭；轮数恒为 1、SHALL NOT 执行第二轮，终止结果 `验证通过` / `验证发现问题({N})`

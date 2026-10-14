@@ -1,6 +1,6 @@
 ---
 name: kflow-archive
-version: 0.26.0
+version: 0.27.0
 description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md）。
 license: MIT
 triggers:
@@ -273,7 +273,7 @@ Options:
 | 归档前最终覆盖检查 | `traceability.md` 中具有声明依据的 `⏭️ 不适用` 列视为满足，SHALL NOT 参与覆盖率判定、SHALL NOT 产生缺口记录 |
 | 覆盖率分母 | 裁剪列整列填 `⏭️`，覆盖率 = 已填充格数 / (总格数 - 不适用格数) |
 
-> `标准` 与 `完整` 档的归档条件维持既有规则；纯后端项目跳过 E2E测试的既有规则不受影响。
+> `标准` 档的归档条件维持既有规则；纯后端项目跳过 E2E测试的既有规则不受影响。
 
 ---
 

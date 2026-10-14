@@ -1,6 +1,6 @@
 ---
 name: kflow-explore
-version: 0.26.0
+version: 0.27.0
 description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces signed-checklist self-review (the agent signs off on 4 dimensions with in-artifact evidence anchors, then one independent verification round, then a unified fix — a single round, never a second) and two-action save rule for external info gathering.
 license: MIT
 triggers:
@@ -47,7 +47,7 @@ allowed-tools:
 - `functional-designs/index.md` 必须存在，含版本号（格式：`主版本.次版本.修订号`）和统一修订记录表（合并原需求变更记录与修订记录，含修订类型枚举列）、项目类型字段
 - `functional-designs/index.md` **不再包含**子变更划分方案（子变更划分后置到 design 阶段）
 - `functional-designs/` 至少包含一个 `part-NN.md` 分册文件
-- `.status.md` 必须存在并标记设计探索阶段为 ✅ 完成，且基本信息含「变更档位」字段（`{轻量|标准|完整}`）
+- `.status.md` 必须存在并标记设计探索阶段为 ✅ 完成，且基本信息含「变更档位」字段（`{轻量|标准}`）
 - `self-reviews/explore/report.md` 存在即为正常形态（固定路径，不按轮次编号）；缺失判缺项（自审固定单轮，无 0 轮豁免路径）
 - 全部档位均执行自审（固定单轮，SHALL NOT 执行第二轮），轻量档附加产物完整性门控：`functional-designs/` 产物全部存在且不含 TODO/TBD/未填充占位符
 - 终止结果：阶段终止时 SHALL 在 `.status.md` 写入终止结果字段，取值 `验证通过` / `验证发现问题({N})`；`验证通过` 当且仅当单轮验证零发现且无签署不成立项，`验证发现问题({N})` 为存在发现项或签署不成立项时的取值（N 为该阶段发现总数）
@@ -116,7 +116,6 @@ allowed-tools:
 │  │   主 Agent 统一修复 + 生成「本阶段修复清单」                  │
 │  │   报告路径: self-reviews/explore/report.md                    │
 │  │   轮数恒为 1，SHALL NOT 执行第二轮，无 0 轮豁免路径           │
-│  │   完整档附加各维度评分 > 8 与评分不达标问题项清单（报告深度）  │
 │  12. PROTO_GATE → 原型设计决策门控（仅前后端项目）             │
 │  │   ├── 轻量档 → 不主动询问，跳过本门控（用户显式要求时仍可执行）│
 │  │   ├── 检查 .status.md 中是否存在 prototype_decision 标记     │
@@ -321,7 +320,7 @@ CLARIFY SHALL 维护「未决问题清单」，并在进入 SPLIT 之前要求�
 
 ## 步骤 8：TIER — 变更档位初判 + 用户覆盖确认
 
-SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的「变更档位」字段。档位是贯穿全流程的单一分级依据，驱动后续阶段的执行轮次、审查形态与产出深度。
+SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的「变更档位」字段。档位是贯穿全流程的单一分级依据，驱动后续阶段的审查形态与产出深度——SHALL NOT 决定执行轮次。
 
 **初判仅使用本阶段可得的信息**（变更类型 + 功能点数）。接口数与数据模型变更数属于本阶段域外内容（见「阶段边界约束」），SHALL NOT 为凑齐完整影响范围分数公式而在 explore 阶段定义接口或数据模型；完整公式复核由 kflow-design 在 DIVIDE 之后执行。
 
@@ -332,14 +331,13 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 | 功能缺陷 | FP ≤ 3 | 轻量 |
 | 功能缺陷 | FP > 3 | 标准 |
 | 功能需求 | FP ≤ 2 | 轻量 |
-| 功能需求 | 3 ≤ FP ≤ 10 | 标准 |
-| 功能需求 | FP > 10 | 完整 |
+| 功能需求 | FP > 2 | 标准 |
 | 产品需求 | 按功能点数比照功能需求规则 | 与功能需求同规则分档 |
 
 > 阈值保守取值：功能需求需 FP ≤ 2 才判轻量，避免初判偏低导致 design 阶段频繁升档。
 >
 > `产品需求` SHALL 按功能点数比照 `功能需求` 的分档规则判定（如 FP = 5 → `标准`），SHALL NOT 设独立于该规则的档位下限。
-> SHALL NOT 无条件判定为 `完整`（功能点数 > 10 时才按 `完整` 处理）；初判结果 SHALL 标注为「初判」，由 kflow-design 的复核环节用完整影响范围分数公式校正；SHALL NOT 存在任何独立于该映射规则的变更类型档位分支。
+> SHALL NOT 无条件判定为 `标准` 之外的档位；初判结果 SHALL 标注为「初判」，由 kflow-design 的复核环节用完整影响范围分数公式校正；SHALL NOT 存在任何独立于该映射规则的变更类型档位分支。枚举为 `{轻量, 标准}` 二值，SHALL NOT 存在按功能点数上探的第三档取值。
 
 ### 8b. 用户覆盖确认
 
@@ -350,7 +348,7 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 将最终档位（初判结果或用户覆盖结果）写入变更级 `.status.md` 基本信息：
 
 ```
-- **变更档位**: {轻量|标准|完整}
+- **变更档位**: {轻量|标准}
 ```
 
 ### 8d. 按档位的阶段集合提示
@@ -359,15 +357,14 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 
 | 档位 | 阶段集合提示内容 |
 |------|----------------|
-| 轻量 | 计划 → 编码 → 代码审查 为**恒执行**；接口单元测试、E2E测试、集成测试为**条件适用**，将在详细设计后由「阶段适用性声明」判定；审计走轻量自检 |
+| 轻量 | 计划 → 编码 → 代码审查 为**恒执行**；接口单元测试、E2E测试、集成测试为**条件适用**，将在详细设计后由「阶段适用性声明」判定；审计由单一子代理按统一形态执行 |
 | 标准 | 全阶段执行，无裁剪 |
-| 完整 | 全阶段执行，无裁剪 |
 
 提示文案要求：
 
 - SHALL 显式区分「恒执行阶段」与「条件适用阶段」，SHALL NOT 将条件适用阶段表述为已跳过
 - SHALL 说明条件适用阶段的判定责任在 `kflow-design`（DIVIDE 之后生成阶段适用性声明），本步骤 SHALL NOT 给出适用性结论
-- SHALL 说明 `标准` 与 `完整` 档全阶段执行、无裁剪
+- SHALL 说明 `标准` 档全阶段执行、无裁剪
 - SHALL 说明不适用阶段在 `traceability.md` 中整列标记 `⏭️` 且不计入覆盖率分母
 
 > **轻量档不改动探索流程**：轻量档 SHALL NOT 改变本阶段的流程——不新增或跳过任何步骤（本提示为唯一新增输出）、不改变产出物路径与结构、SHALL NOT 在功能点上预判「是否涉及接口」或「是否涉及 UI」（该判定依据详细设计的客观信号，属 `kflow-design` 职责）。
@@ -378,7 +375,6 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 |------|----------------|
 | 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 固定单轮（产物完整性门控为附加硬门）；PROTO_GATE 不主动询问 |
 | 标准 | 标准产出；SELFREV 固定单轮，报告逐维度给出结论 |
-| 完整 | 完整产出；SELFREV 固定单轮，附加各维度评分 > 8 与评分不达标时的具体问题项清单（报告输出深度要求，不参与终止判定） |
 
 > 档位判定公式、单向升档安全阀与缺省回退规则详见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.1.1 与 `docs/designs/skills/kflow-explore.md`。
 
@@ -489,7 +485,7 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 
 系统 SHALL NOT 预置任何审查轮数、SHALL NOT 执行第二轮、SHALL NOT 存在 0 轮豁免路径。终止结果 SHALL 为 `验证通过` 或 `验证发现问题({N})`，写入变更级 `.status.md`。
 
-> **档位语义**：变更档位只决定**审查形态与产出深度**，SHALL NOT 决定自审轮数（轮数恒为 1）。自审启动前 SHALL 读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失时按 `完整` 档处理。
+> **档位语义**：变更档位只决定**审查形态与产出深度**，SHALL NOT 决定自审轮数（轮数恒为 1）。自审启动前 SHALL 读取变更级 `.status.md` 基本信息的「变更档位」字段；字段缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理。
 
 > **独立验证的归属**：本机制只承担「写作质量控制 + 单轮打假」。**真正的独立验证留给交叉审查（REVIEW）环节**——主 Agent 统一修复后生成的「本阶段修复清单」随产物一并交给交叉审查，使下游验证者掌握已知修复清单。
 
@@ -566,7 +562,7 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 - 审查对象集合 SHALL 由主 Agent 从阶段产物既有内容生成并冻结，审查维度限于完整性/闭环性/必要性/清晰性四维枚举；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度
 - 冻结范围之外的发现 SHALL 记为「范围外观察」，SHALL NOT 修改产物、SHALL NOT 计入发现数；引入范围外新内容的验证 SHALL 被拒收并要求在冻结范围内重新验证，越界事实记录 `docs/skill-suggestion.md`
 - 统一修复 SHALL 仅修复报告确认的问题，SHALL NOT 追加确认轮；「本阶段修复清单」SHALL 随产物交付下游交叉审查
-- 完整档各维度评分 > 8 与评分不达标时的具体问题项清单为**报告输出深度要求**，SHALL NOT 参与终止判定（单轮验证无论评分高低均在单轮结束时终止）
+- 验证报告 SHALL NOT 输出各维度 0–10 评分与不达标项清单（该评分要求原为第三档专属的报告输出深度，已随该取值一并废除）
 - 终止结果 SHALL 写入 `.status.md`，取值 `验证通过` / `验证发现问题({N})`
 - 子代理异常时 MUST 重新创建（新 Agent 调用），主代理 SHALL NOT 接管验证执行；最多重试 3 次，全部失败后标记 ⚠️ 阻塞并提示用户
 - 主 Agent SHALL 在阶段终止时汇总「范围外观察」条目并向用户提示
@@ -695,7 +691,7 @@ CONTEXT.md 消费链:
 - **functional-designs/ 结构**：index.md（含版本号、需求变更记录表、配置项影响矩阵）+ part-NN.md 目录化结构
 - **functional-designs/index.md 版本号**：格式为 `主版本.次版本.修订号`，初始版本为 `1.0.0`
 - **变更粒度**：产品级 → 完整流程；功能需求级 → 标准流程；功能缺陷级 → 简化流程
-- **档位阶段集合提示**：档位初判（含用户覆盖）后 SHALL 向用户输出该档位的阶段集合——轻量档为「计划→编码→代码审查」恒执行，接口单元测试/E2E测试/集成测试为条件适用（由 `kflow-design` 的阶段适用性声明判定）；标准档与完整档全阶段执行、无裁剪。提示为信息性输出，不作为新的确认点；轻量档不改动探索流程本身
+- **档位阶段集合提示**：档位初判（含用户覆盖）后 SHALL 向用户输出该档位的阶段集合——轻量档为「计划→编码→代码审查」恒执行，接口单元测试/E2E测试/集成测试为条件适用（由 `kflow-design` 的阶段适用性声明判定）；标准档全阶段执行、无裁剪。提示为信息性输出，不作为新的确认点；轻量档不改动探索流程本身
 - **禁止越界**：不得输出技术方案、接口定义、数据模型、子变更划分方案
 - **需求澄清收敛门**：CLARIFY SHALL 维护未决问题清单，清单为空或每项已消解/已显式降级（`待补充` + 降级理由 + 责任阶段）方可进入 SPLIT；候选须由五个内容域逐域遍历产生，SHALL NOT 以直接置空代替；SHALL NOT 以扩增功能设计内容的方式消歧；事实项自动查证、决策项一次一项
 - **变更名称**：使用 kebab-case 格式

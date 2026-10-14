@@ -1,6 +1,6 @@
 ---
 name: kflow-verify
-version: 0.26.0
+version: 0.27.0
 description: Use when user needs artifact diagnosis/诊断、验证产物、检查产物、产物完整性、输入源检查、verify, or before archive to check all artifacts. 独立诊断 Skill（非流程阶段），七维度全阶段产物诊断、严重度分级（🔴阻塞/🟡警告/🔵建议）、修复路由到对应阶段 REVISION 模式。可随时手动调用 + 归档前自动触发。不写入 .status.md 阶段状态表。
 license: MIT
 triggers:
@@ -64,7 +64,7 @@ allowed-tools:
 | 无声明依据的 `⏭️` | 阶段被标记 `⏭️`（`traceability.md` 对应列整列 `⏭️` 或阶段状态表标记 `⏭️ 不适用`），但声明区无对应判定依据 | 🔴 阻塞，提示缺失裁剪依据。仅约束声称由变更档位裁剪产生的 `⏭️`；按项目类型产生的 `⏭️`（纯后端项目的 E2E测试列与阶段）不要求声明依据 |
 | 声明 `✅ 适用` 但产物缺失 | 声明区标记 `✅ 适用` 且产物不存在 | 🔴 阻塞，按缺项处理 |
 
-- 裁剪判定 SHALL 仅适用于 `轻量` 档；`标准`/`完整` 档 SHALL NOT 应用，维持既有规则
+- 裁剪判定 SHALL 仅适用于 `轻量` 档；`标准` 档 SHALL NOT 应用，维持既有规则
 - 声明区缺失时，三个阶段 SHALL 按 `✅ 适用` 处理
 
 ## D2 产物内容完整性检查

@@ -9,7 +9,7 @@
 
 ```yaml
 name: kflow-design
-description: 详细设计阶段 - 变更级统一详细设计、NFR定义、按变更档位分级审查、子变更划分、变更档位复核。必须阶段，Agent 并行度按变更档位确定（完整四视角 / 标准两视角 / 轻量单 Agent 综合）。输出 detailed-design.md（FP ≤ 20）或 detailed-design/ 目录（FP > 20，6 文件结构），含复杂度评估和高复杂度 FP 用户确认。
+description: 详细设计阶段 - 变更级统一详细设计、NFR定义、按变更档位分级审查、子变更划分、变更档位复核。必须阶段，Agent 并行度按变更档位确定（标准两视角 / 轻量单 Agent 综合）。输出 detailed-design.md（FP ≤ 20）或 detailed-design/ 目录（FP > 20，6 文件结构），含复杂度评估和高复杂度 FP 用户确认。
 license: MIT
 triggers:
   - 详细设计
@@ -65,7 +65,7 @@ allowed-tools:
 | 接口测试用例 | api-tests/ | [接口测试索引](../../templates/changes/{change}/api-tests/index.md)、[接口测试分册](../../templates/changes/{change}/api-tests/part-NN.md) | ✅ 必须（轻量档：🔶 条件适用） | 统一接口单元测试用例文档；轻量档下由[阶段适用性声明](#阶段适用性声明)判定，判为 `⏭️ 不适用` 时 SHALL NOT 产出 |
 | E2E测试用例 | e2e-tests/ | [E2E测试索引](../../templates/changes/{change}/e2e-tests/index.md)、[E2E测试分册](../../templates/changes/{change}/e2e-tests/part-NN.md) | ✅ 必须（前后端项目；轻量档：🔶 条件适用） | 统一浏览器自动化测试用例文档；轻量档下由[阶段适用性声明](#阶段适用性声明)判定，判为 `⏭️ 不适用` 时 SHALL NOT 产出 |
 | 元素覆盖树 | element-coverage-tree.md（变更根目录，有原型）或 e2e-tests/element-coverage-tree.md（无原型） | 见本页 [element-coverage-tree 产物格式规范](#element-coverage-tree-产物格式规范) | ✅ 必须（前后端项目；轻量档下 E2E测试判为 `⏭️ 不适用` 时不产出） | 四层树状元素覆盖文件，合并页面导航、交互元素、状态和 TC-ID 映射。有原型时由原型设计阶段生成于变更根目录，design 阶段在其上追加填充 TC-ID。替代已废弃的 element-spec.md 和 nav-tree.md |
-| 审查报告 | cross-reviews/{timestamp}/*.md | [业务审查](../../templates/changes/{change}/review-reports/business-review.md)、[技术审查](../../templates/changes/{change}/review-reports/technical-review.md)、[安全审查](../../templates/changes/{change}/review-reports/security-review.md)、[质量审查](../../templates/changes/{change}/review-reports/quality-review.md) | 🔶 条件 | 视角报告数量按变更档位确定：完整档四份独立视角报告 + synthesis.md；标准档两份合成视角报告（business-technical-review.md、security-quality-review.md）+ synthesis.md；轻量档仅单一 synthesis.md（单 Agent 综合审查） |
+| 审查报告 | cross-reviews/{timestamp}/*.md | [业务审查](../../templates/changes/{change}/review-reports/business-review.md)、[技术审查](../../templates/changes/{change}/review-reports/technical-review.md)、[安全审查](../../templates/changes/{change}/review-reports/security-review.md)、[质量审查](../../templates/changes/{change}/review-reports/quality-review.md) | 🔶 条件 | 视角报告数量按变更档位确定：标准档两份合成视角报告（business-technical-review.md、security-quality-review.md）+ synthesis.md；轻量档仅单一 synthesis.md（单 Agent 综合审查） |
 | 审查综合报告 | cross-reviews/{timestamp}/synthesis.md | [审查综合报告](../../templates/changes/{change}/review-reports/review-synthesis.md) | ✅ 必须 | 问题汇总、追踪矩阵、关闭条件 |
 | 架构决策记录 | docs/adr/{序号}-{标题}.md | [ADR 格式](#adr-文件格式) | 🔶 条件 | 满足三条件时创建，含过期条件标注，每变更上限控制 |
 | 用户评审记录 | .status.md | [变更级状态文件](../../templates/changes/{change}/change-status.md) | ✅ 必须 | 详细设计评审状态、时间、备注 |
@@ -77,14 +77,14 @@ allowed-tools:
 | 覆盖追溯矩阵 | traceability.md | [覆盖追溯矩阵](../../templates/changes/{change}/traceability.md) | ✅ 必须 | 基于 functional-designs/index.md FP 清单初始化空白矩阵，功能点ID 列已填充 |
 | 统一详细设计 | detailed-design.md（FP ≤ 20）或 detailed-design/ 目录（FP > 20，6 文件结构） | [统一详细设计](../../templates/changes/{change}/detailed-design.md) | ✅ 必须 | 系统架构 + 所有功能点设计 + NFR 章节 + 子变更划分 + 复杂度分布表 + 高复杂度 FP 确认记录 + 修订记录（统一格式：版本/日期/修订类型/修订内容/影响功能点/触发阶段） |
 | 接口测试用例 | api-tests/ | [接口测试索引](../../templates/changes/{change}/api-tests/index.md)、[接口测试分册](../../templates/changes/{change}/api-tests/part-NN.md) | ✅ 必须（轻量档：🔶 条件适用） | 统一接口单元测试用例文档；轻量档下由[阶段适用性声明](#阶段适用性声明)判定，判为 `⏭️ 不适用` 时 SHALL NOT 产出 |
-| 审查报告 | cross-reviews/{timestamp}/*.md | [业务审查](../../templates/changes/{change}/review-reports/business-review.md)、[技术审查](../../templates/changes/{change}/review-reports/technical-review.md)、[安全审查](../../templates/changes/{change}/review-reports/security-review.md)、[质量审查](../../templates/changes/{change}/review-reports/quality-review.md) | 🔶 条件 | 视角报告数量按变更档位确定：完整档四份独立视角报告 + synthesis.md；标准档两份合成视角报告（business-technical-review.md、security-quality-review.md）+ synthesis.md；轻量档仅单一 synthesis.md（单 Agent 综合审查） |
+| 审查报告 | cross-reviews/{timestamp}/*.md | [业务审查](../../templates/changes/{change}/review-reports/business-review.md)、[技术审查](../../templates/changes/{change}/review-reports/technical-review.md)、[安全审查](../../templates/changes/{change}/review-reports/security-review.md)、[质量审查](../../templates/changes/{change}/review-reports/quality-review.md) | 🔶 条件 | 视角报告数量按变更档位确定：标准档两份合成视角报告（business-technical-review.md、security-quality-review.md）+ synthesis.md；轻量档仅单一 synthesis.md（单 Agent 综合审查） |
 | 审查综合报告 | cross-reviews/{timestamp}/synthesis.md | [审查综合报告](../../templates/changes/{change}/review-reports/review-synthesis.md) | ✅ 必须 | 问题汇总、追踪矩阵、关闭条件 |
 | 架构决策记录 | docs/adr/{序号}-{标题}.md | [ADR 格式](#adr-文件格式) | 🔶 条件 | 满足三条件时创建，含过期条件标注，每变更上限控制 |
 | 用户评审记录 | .status.md | [变更级状态文件](../../templates/changes/{change}/change-status.md) | ✅ 必须 | 详细设计评审状态、时间、备注 |
 
 **注意**：纯后端项目不输出 e2e-tests/ 目录。api-tests.md 已改为 api-tests/ 目录，e2e-tests.md 已改为 e2e-tests/ 目录。architecture.md 已合并到 detailed-design.md 中。
 
-**轻量档的条件适用**：变更档位为 `轻量` 时，`接口单元测试` 与 `E2E测试` 两个阶段由本阶段产出的[阶段适用性声明](#阶段适用性声明)判定适用性——判为 `⏭️ 不适用` 时对应产物（`api-tests/` / `e2e-tests/` 及其元素覆盖树）SHALL NOT 产出，且该阶段列在 `traceability.md` 中整列填充 `⏭️` 并不计入覆盖率分母。`标准` 与 `完整` 档的阶段集合维持既有规则不变。
+**轻量档的条件适用**：变更档位为 `轻量` 时，`接口单元测试` 与 `E2E测试` 两个阶段由本阶段产出的[阶段适用性声明](#阶段适用性声明)判定适用性——判为 `⏭️ 不适用` 时对应产物（`api-tests/` / `e2e-tests/` 及其元素覆盖树）SHALL NOT 产出，且该阶段列在 `traceability.md` 中整列填充 `⏭️` 并不计入覆盖率分母。`标准` 档的阶段集合维持既有规则不变。
 
 ---
 
@@ -120,18 +120,18 @@ allowed-tools:
 │  │   │     （AskUserQuestion 告知原因并请求确认；按标准档重新划分；│
 │  │   │       SHALL NOT 阻塞；SHALL NOT 回退 kflow-explore；      │
 │  │   │       SHALL NOT 生成阶段适用性声明）                       │
-│  │   └── (标准/完整档) 子步骤:                                   │
+│  │   └── (标准档) 子步骤:                                        │
 │  │      9a. 读取 functional-designs/index.md 获取每 FP 的类型列   │
 │  │      9b. 按设计域聚合，每组 FP 类型一致性校验:                 │
 │  │          - 全部「后端」→ 自动标记为「后端子变更」              │
-│  │          - 全部「前端」→ 自动标记为「前端子变更」              │
+│  │        阈值映射：<=3 → 轻量；>3 → 标准                         │
 │  │          - 混合（同时含后端+前端）→ ❌ 拒绝划分，提示拆分      │
 │  │      9c. 类型由系统推断，SHALL NOT 人工手动填写                │
 │  │      9d. 旧版兼容：functional-designs/index.md 缺少类型列      │
 │  │          → 🟡 警告，提示重新执行 kflow-explore REVISION 补充  │
 │  9.5 TIER_RECHECK → 变更档位复核（完整公式 + 单向升档安全阀）    │
 │  │   9.5a. 计算影响范围分数：功能点数×1 + 接口数×1.5 + 数据模型变更数×2│
-│  │        阈值映射：<=3 → 轻量；4~15 → 标准；>15 → 完整          │
+│  │        阈值映射：<=3 → 轻量；>3 → 标准                          │
 │  │        产品需求与功能需求、功能缺陷适用同一映射（无类型特判）   │
 │  │   9.5b. 与 .status.md 现有档位比较：                           │
 │  │        - 复核档位 > 当前档位 → AskUserQuestion 请求确认升档    │
@@ -145,7 +145,7 @@ allowed-tools:
 │  │   ├── 保守回退: 依据缺失/格式不符 → 该阶段判为 ✅ 适用         │
 │  │   ├── 写入变更级 .status.md「阶段适用性声明」区               │
 │  │   ├── 被裁剪阶段 → traceability.md 对应列一次性整列填 ⏭️      │
-│  │   └── 标准/完整档 SHALL NOT 执行本步骤                        │
+│  │   └── 标准档 SHALL NOT 执行本步骤                             │
 │  10. SELFREV   → 单轮验证（签署自证 + 1 轮独立子代理验证）       │
 │  │   │   1) 主 Agent 按 一致性/完备性/可行性/可测性 逐项签署自证  │
 │  │   │      （零子代理，含证据锚点）                             │
@@ -153,7 +153,7 @@ allowed-tools:
 │  │   │   3) 主 Agent 统一修复，生成「本阶段修复清单」交交叉审查   │
 │  │   报告路径: self-reviews/design/report.md（固定一份）          │
 │  │   终止结果: 验证通过 / 验证发现问题({N})                       │
-│  11. REVIEW    → 按变更档位分级审查（轻量单 Agent / 标准两视角 / 完整四视角）│
+│  11. REVIEW    → 按变更档位分级审查（轻量单 Agent / 标准两视角）             │
 │  12. SYNTH    → 输出审查综合报告（含问题追踪矩阵和关闭条件）     │
 │  13. FIX      → 根据审查问题更新设计文档                        │
 │  14. APPROVAL → 展示设计给用户最终评审（AskUserQuestion）       │
@@ -688,7 +688,7 @@ E2E 测试用例编写和 TC-ID 映射完成后，SHALL 执行覆盖率门控检
 
 变更档位为 `轻量` 时，DIVIDE 步骤 SHALL 走简化分支——跳过依赖关系分析与子变更划分表，直接产出单一子变更：
 
-| 维度 | 轻量档行为 | 标准/完整档行为 |
+| 维度 | 轻量档行为 | 标准档行为 |
 |------|-----------|----------------|
 | 依赖关系分析 | 跳过 | 执行 |
 | 子变更划分表与依赖关系图 | SHALL NOT 产出 | 产出 |
@@ -700,8 +700,8 @@ E2E 测试用例编写和 TC-ID 映射完成后，SHALL 执行覆盖率门控检
 ```
 轻量档 DIVIDE 流程:
 
-1. 读取变更级 .status.md 的「变更档位」字段（缺失按 完整 档处理）
-2. 档位 = 轻量 → 走本分支；档位 = 标准/完整 → 走既有划分流程
+1. 读取变更级 .status.md 的「变更档位」字段（缺失或历史取值 完整 按 标准 档处理）
+2. 档位 = 轻量 → 走本分支；档位 = 标准 → 走既有划分流程
 3. 读取 functional-designs/index.md 的 FP「类型」列:
    ├── 全部「后端」→ 单一子变更自动标记为「后端子变更」
    ├── 全部「前端」→ 单一子变更自动标记为「前端子变更」
@@ -728,7 +728,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
      - SHALL NOT 生成阶段适用性声明（已生成的亦失效，按全阶段适用处理）
 ```
 
-> **与 TIER_RECHECK 的关系**：类型混合升档发生在 DIVIDE 步骤内，先于 9.5 TIER_RECHECK；升档后按 `标准` 档继续执行 TIER_RECHECK（单向升档，SHALL NOT 降档）。标准/完整档下候选组内 FP 类型混合仍按既有规则 ❌ 拒绝该组划分并提示拆分——该规则不变，仅轻量档的单子变更场景以升档替代拒绝。
+> **与 TIER_RECHECK 的关系**：类型混合升档发生在 DIVIDE 步骤内，先于 9.5 TIER_RECHECK；升档后按 `标准` 档继续执行 TIER_RECHECK（单向升档，SHALL NOT 降档）。标准档下候选组内 FP 类型混合仍按既有规则 ❌ 拒绝该组划分并提示拆分——该规则不变，仅轻量档的单子变更场景以升档替代拒绝。
 
 ### 划分前 FP 类型一致性校验
 
@@ -826,7 +826,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 
 | 维度 | 规则 |
 |------|------|
-| 生成条件 | 仅 `变更档位 = 轻量`；`标准` 与 `完整` 档 SHALL NOT 生成该区，三个阶段按各档既有规则执行全部阶段 |
+| 生成条件 | 仅 `变更档位 = 轻量`；`标准` 档 SHALL NOT 生成该区，三个阶段按各档既有规则执行全部阶段 |
 | 生成时机 | DIVIDE 之后（档位在 9.5 TIER_RECHECK 复核后已定型） |
 | 适用对象 | 仅 `接口单元测试`、`E2E测试`、`集成测试` 三个阶段 |
 | 写入位置 | 变更级 `.status.md` 的「阶段适用性声明」区 |
@@ -868,7 +868,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 - 步骤 7/8 在本步骤之前 SHALL NOT 产出对应目录
 - 判定为 `⏭️ 不适用` 的阶段，其目录 SHALL NOT 产出，亦 SHALL NOT 保留既有残留
 - 顺序约束的依据：「声明不适用但产物存在」在门控中判为不一致并阻塞，先产出再裁剪会直接触发该状态
-- `标准` 与 `完整` 档不生成适用性声明，步骤 7/8 维持 DIVIDE 之前的既有顺序不变
+- `标准` 档不生成适用性声明，步骤 7/8 维持 DIVIDE 之前的既有顺序不变
 
 ### 保守回退
 
@@ -879,7 +879,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 ### 写入与联动
 
 ```
-1. 读取变更级 .status.md 的「变更档位」字段（缺失按 完整 档处理）
+1. 读取变更级 .status.md 的「变更档位」字段（缺失或历史取值 完整 按 标准 档处理）
    └── 档位 ≠ 轻量 → SHALL NOT 执行本步骤，直接进入步骤 10（SELFREV）
 2. 按上表逐阶段判定，记录适用性与判定依据
 3. 写入变更级 .status.md 的「阶段适用性声明」区:
@@ -898,7 +898,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 6. 纯后端项目跳过 E2E测试的既有规则与变更档位无关，不由本声明产生
 ```
 
-> **档位隔离**：`标准` 与 `完整` 档 SHALL NOT 生成该声明区；轻量档因 FP 类型混合升档为 `标准` 时 SHALL NOT 生成（已生成的亦失效，按全阶段适用处理）。
+> **档位隔离**：`标准` 档 SHALL NOT 生成该声明区；轻量档因 FP 类型混合升档为 `标准` 时 SHALL NOT 生成（已生成的亦失效，按全阶段适用处理）。
 >
 > **裁剪以列为单位**：适用性是阶段级的（一个阶段要么执行要么不执行），被裁剪阶段 SHALL 整列填充 `⏭️`，SHALL NOT 逐格填充，以保证覆盖率分母一致。
 
@@ -906,40 +906,18 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 
 ## 多视角审查流程
 
-设计审查按**变更档位**分级执行（档位取值来源：变更级 `.status.md` 基本信息的「变更档位」字段，缺失时按 `完整` 档处理）：
+设计审查按**变更档位**分级执行（档位取值来源：变更级 `.status.md` 基本信息的「变更档位」字段，缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理）：
 
 | 变更档位 | 审查模式 | 执行方式 | 产物形态 |
 |---------|---------|---------|---------|
 | 轻量 | 简化模式 | 单 Agent 串行综合审查，覆盖业务/技术/安全/质量四视角全部检查项 | 单一 `synthesis.md` |
 | 标准 | 两视角模式 | 两个 Agent 并行：业务+技术视角 / 安全+质量视角 | `business-technical-review.md` + `security-quality-review.md` + `synthesis.md` |
-| 完整 | 完整模式 | 四个 Agent 并行：业务 / 技术 / 安全 / 质量 | 四份视角报告 + `synthesis.md` |
 
-> **检查项不得缩减**: 轻量档单 Agent 与标准档两视角 SHALL 覆盖完整档四视角的全部检查项，仅并行度与产物形态随档位变化。
+> **检查项不得缩减**: 轻量档单 Agent 与标准档两视角 SHALL 覆盖业务/技术/安全/质量四视角的全部检查项，仅并行度与产物形态随档位变化。
 >
-> **分级重审闭环的档位分支**: 轻量档与标准档在问题修复后走单轮复检，完整档执行 `review-closed-loop` 的分级重审闭环（高/中/低差异化的多批次验证）。
+> **分级重审闭环的档位分支**: 轻量档在问题修复后走单轮复检；标准档执行 `review-closed-loop` 的分级重审闭环（高/中/低差异化的多批次验证）。
 
 ```
-详细设计审查流程（完整模式，变更档位 = 完整）:
-
-┌─────────────────────────────────────────────────────────────┐
-│                   REVIEW WORKFLOW（完整模式）                 │
-├─────────────────────────────────────────────────────────────┤
-│  1. PREPARE   → 收集变更级所有设计文档（detailed-design.md, api-tests/, e2e-tests/） │
-│  2. DISPATCH  → 并行启动四个审查 Agent（变更级一次执行）     │
-│  │   ├── Business Agent → 业务视角审查                       │
-│  │   ├── Technical Agent → 技术视角审查                      │
-│  │   ├── Security Agent → 安全视角审查                       │
-│  │   └── Quality Agent → 质量视角审查                        │
-│  3. COLLECT   → 收集各 Agent 审查报告                         │
-│  4. SYNTHESIZE → 综合审查报告，汇总问题（含问题追踪矩阵）     │
-│  5. RESOLVE   → 按严重度分级修复：                             │
-│  │   ├── 高严重度 → 强制修复 + 原视角+安全视角交叉检查        │
-│  │   ├── 中严重度 → 修复 + 原视角重审                        │
-│  │   └── 低严重度 → 修复 + 随机30%抽查                       │
-│  6. VALIDATE  → 验证所有问题已关闭                            │
-│  7. COMPLETE  → 更新状态文件                                  │
-└─────────────────────────────────────────────────────────────┘
-
 详细设计审查流程（标准模式，变更档位 = 标准）:
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -951,7 +929,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 │  │   └── Security+Quality Agent → 覆盖安全视角与质量视角全部检查项   │
 │  3. COLLECT   → 收集两份视角报告                              │
 │  4. SYNTHESIZE → 综合审查报告，汇总问题（含问题追踪矩阵）     │
-│  5. RESOLVE   → 修复问题后走单轮复检（不执行分级重审闭环）    │
+│  5. RESOLVE   → 修复问题后执行分级重审闭环（高/中/低差异化）  │
 │  6. VALIDATE  → 验证所有问题已关闭                            │
 │  7. COMPLETE  → 更新状态文件                                  │
 └─────────────────────────────────────────────────────────────┘
@@ -975,7 +953,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 
 ## 审查检查项目录（四视角）
 
-> 以下四视角检查项是设计审查的**完整检查项目录**，全部档位均须覆盖。轻量档由单个 Agent 串行覆盖全部四组，标准档由两个 Agent 分别覆盖「业务+技术」与「安全+质量」两组合并项，完整档由四个 Agent 各覆盖一组。
+> 以下四视角检查项是设计审查的**完整检查项目录**，两种审查模式均须覆盖。轻量档由单个 Agent 串行覆盖全部四组，标准档由两个 Agent 分别覆盖「业务+技术」与「安全+质量」两组合并项。
 
 ### 业务视角
 
@@ -1162,7 +1140,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 
 ### 概述
 
-详细设计阶段在 DIVIDE 步骤之后、REVIEW 步骤之前执行自审（SELFREV）。自审固定为**单轮**：SHALL NOT 预置轮数上限，SHALL NOT 执行第二轮，SHALL NOT 存在 0 轮豁免路径。变更档位只决定**审查形态与产出深度**，SHALL NOT 决定轮数。自审启动前 SHALL 读取变更级 `.status.md` 的「变更档位」字段（缺失按 `完整` 档处理，仅决定报告输出深度）。
+详细设计阶段在 DIVIDE 步骤之后、REVIEW 步骤之前执行自审（SELFREV）。自审固定为**单轮**：SHALL NOT 预置轮数上限，SHALL NOT 执行第二轮，SHALL NOT 存在 0 轮豁免路径。变更档位只决定**审查形态与产出深度**，SHALL NOT 决定轮数。自审启动前 SHALL 读取变更级 `.status.md` 的「变更档位」字段（缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理，仅决定报告输出深度）。
 
 单轮由三个环节构成：
 
@@ -1174,7 +1152,7 @@ THEN 系统 SHALL 将变更档位升为「标准」，并:
 
 **审查范围冻结与范围外观察**：主 Agent 从阶段产物既有内容生成审查对象集合并冻结，审查维度集合封闭；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度、SHALL NOT 借审查之名新增功能点/字段/章节/分支。冻结范围之外的发现 SHALL 记为「范围外观察」——不改产物、不计入发现数，写入验证报告的「范围外观察」小节（为空时记「（空）」），由主 Agent 在阶段终止时汇总并向用户提示。子代理引入冻结范围之外的新内容时，主 Agent SHALL 拒收该轮并要求其在冻结范围内重新验证。
 
-**评分语义**：完整档仍要求验证报告输出各维度评分（0-10 量纲）与评分不达标时的具体问题项，作为**报告输出深度**要求；评分 SHALL NOT 参与终止判定——单轮验证无论评分高低均在单轮结束时终止，发现项由主 Agent 统一修复。
+**评分语义**：验证报告 SHALL NOT 输出各维度 0–10 评分与不达标项清单——该评分要求原为第三档专属的报告输出深度，且不参与终止判定（单轮验证无论评分高低均在单轮结束时终止，发现项由主 Agent 统一修复），已随该取值一并废除。
 
 > 机制权威定义见 `07-agent-model.md` §16 与 `signed-checklist-verification` 能力，落地表述见 `skills/kflow-design/references/self-review.md`。
 
@@ -1198,7 +1176,7 @@ DIVIDE 步骤完成后、SELFREV 之前，本阶段 SHALL 执行档位复核，�
 | 轮次 | **固定 1 轮**（无例外；SHALL NOT 存在 0 轮豁免路径，SHALL NOT 追加确认轮） |
 | 成功终止 | 单轮验证零发现且无签署不成立项 → 终止结果 `验证通过` |
 | 发现终止 | 存在发现项或签署不成立项 → 终止结果 `验证发现问题({N})`（N 为发现总数） |
-| 评分底线 | 仅 `完整` 档适用，作为报告输出深度要求——各维度评分与不达标时的具体问题项须列出；SHALL NOT 参与终止判定 |
+| 评分底线 | 已废除——验证报告 SHALL NOT 输出各维度评分与不达标项清单（评分不参与终止判定） |
 
 **审查范围冻结与范围外观察**：主 Agent 从阶段产物既有内容生成审查对象集合并冻结，审查维度集合封闭；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度、SHALL NOT 借审查之名新增功能点/字段/章节/分支。冻结范围之外的发现 SHALL 记为「范围外观察」——不改产物、不计入发现数，写入验证报告的「范围外观察」小节（为空时记「（空）」）；子代理引入范围外新内容的轮次 SHALL NOT 被接受，主 Agent SHALL 拒收并要求在冻结范围内重新验证。主 Agent SHALL 在阶段终止时汇总范围外观察条目并向用户提示。
 
@@ -1219,7 +1197,7 @@ DIVIDE 步骤完成后、SELFREV 之前，本阶段 SHALL 执行档位复核，�
 ```
 自审执行流程（单轮验证）:
 
-1. 读取变更级 .status.md 的「变更档位」字段（缺失按 完整 档处理，仅决定报告输出深度）
+1. 读取变更级 .status.md 的「变更档位」字段（缺失或历史取值 完整 按 标准 档处理，仅决定报告输出深度）
 2. 主 Agent 按 一致性、完备性、可行性、可测性 四个维度逐项签署自证（零子代理）
    ├── 逐维度填写「自证结论」与「证据锚点」
    └── 自证发现某维度不通过 → 先行修复并重新自证该维度
@@ -1231,7 +1209,7 @@ DIVIDE 步骤完成后、SELFREV 之前，本阶段 SHALL 执行档位复核，�
    )
 4. 子代理返回验证报告路径
 5. 主 Agent 读取报告，按验证结论统一修复全部发现项，生成「本阶段修复清单」
-6. SHALL NOT 追加确认轮；修复后的产物连同修复清单直接交付交叉审查（形态按档位：完整四视角 / 标准两视角 / 轻量单 Agent 综合）
+6. SHALL NOT 追加确认轮；修复后的产物连同修复清单直接交付交叉审查（形态按档位：标准两视角 / 轻量单 Agent 综合）
 7. 在 .status.md 写入终止结果（验证通过 / 验证发现问题({N})）
 ```
 
@@ -1248,7 +1226,6 @@ DIVIDE 步骤完成后、SELFREV 之前，本阶段 SHALL 执行档位复核，�
 - 范围外观察小节（无条目时记「（空）」）
 - 全量遍历证明（显式声明四个维度与全部审查对象均已完成遍历，反空转）
 - 验证结论（终止结果 `验证通过` / `验证发现问题({N})`）
-- 各维度评分表（仅完整档，作为报告输出深度要求）
 - 本阶段修复清单（主 Agent 统一修复后填写）
 
 ### 强制执行规则
@@ -1260,7 +1237,7 @@ DIVIDE 步骤完成后、SELFREV 之前，本阶段 SHALL 执行档位复核，�
 - SHALL 启动独立子代理（Agent subagent）执行验证，不允许主 Agent 自身执行验证、SHALL NOT 由主 Agent 接管
 - SHALL NOT 并行启动多个子代理（单轮内仅 1 个验证子代理）
 - 自审终止后 SHALL 在 `.status.md` 写入终止结果字段（`验证通过` / `验证发现问题({N})`）；完成后进入交叉审查
-- 交叉审查结果保存到 `cross-reviews/{timestamp}/` 目录，目录内视角报告数量按档位确定（轻量仅 `synthesis.md` / 标准两份视角报告 + `synthesis.md` / 完整四份视角报告 + `synthesis.md`）
+- 交叉审查结果保存到 `cross-reviews/{timestamp}/` 目录，目录内视角报告数量按档位确定（轻量仅 `synthesis.md` / 标准两份视角报告 + `synthesis.md`）
 
 ---
 

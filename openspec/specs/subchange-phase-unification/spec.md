@@ -9,7 +9,7 @@ Defines the subchange phase unification (5 phases) with per-round batch sync and
 系统 SHALL 将子变更的阶段列表统一为 5 个阶段：计划 → 编码 → 代码审查 → 接口单元测试 → E2E测试（kflow-e2e-test）。前后端项目执行全部 5 阶段，纯后端项目跳过 E2E测试。变更档位为 `轻量` 时，接口单元测试与 E2E测试 SHALL 按阶段适用性声明条件适用，可标记为 `⏭️ 不适用`。测试阶段包含「等待变更级同步」状态，确保子变更在每轮测试间批量同步。
 
 #### Scenario: 前后端项目子变更阶段
-- **WHEN** 项目类型为前后端项目 且 变更档位为 `标准` 或 `完整`
+- **WHEN** 项目类型为前后端项目 且 变更档位为 `标准`
 - **THEN** 子变更阶段依次为：计划 → 编码 → 代码审查 → 接口单元测试 → E2E测试（kflow-e2e-test）
 - **AND** 所有 5 个阶段均需执行
 

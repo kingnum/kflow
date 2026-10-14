@@ -1,6 +1,6 @@
 ---
 name: kflow-integration-test
-version: 0.26.0
+version: 0.27.0
 description: Use when user needs integration testing/集成测试、跨子变更测试、integration test, or all subchanges complete and ready for cross-subchange verification. 变更级集成测试，内聚四分法修复循环，架构评估自动触发。必须阶段（轻量档下按阶段适用性声明条件适用），变更级。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:
@@ -22,7 +22,7 @@ allowed-tools:
 
 变更级集成测试执行器。所有子变更完成后执行跨子变更集成测试，验证接口契约和端到端流程。内聚四分法缺陷修复循环，不委托给 `kflow-bug-fix`。适用于前后端和纯后端项目。
 
-变更档位为 `轻量` 且阶段适用性声明判定为 `⏭️ 不适用`（有判定依据）时，本 Skill SHALL NOT 启动，SHALL 直接进入审计阶段（见「阶段适用性入口门控」）。`标准` 与 `完整` 档 SHALL NOT 应用该机制。
+变更档位为 `轻量` 且阶段适用性声明判定为 `⏭️ 不适用`（有判定依据）时，本 Skill SHALL NOT 启动，SHALL 直接进入审计阶段（见「阶段适用性入口门控」）。`标准` 档 SHALL NOT 应用该机制。
 
 > ⚠ **子代理强制规则**（参见 skills/kflow-integration-test/references/repetition.md §12）:
 > 1. 本阶段主工作 MUST 通过 Agent 子代理执行，主 Agent 仅负责调度和验收
@@ -52,7 +52,7 @@ allowed-tools:
 
 > **四态判定矩阵**参见 `skills/kflow-integration-test/references/gates.md` §1.2；**声明字段**参见 `skills/kflow-integration-test/references/state-values.md` §5；**钩子豁免**参见 `skills/kflow-integration-test/references/hooks.md` §1
 
-仅 `变更档位 = 轻量` 时适用，`标准` 与 `完整` 档 SHALL NOT 应用本机制。变更档位读取自变更级 `.status.md` 基本信息，字段缺失时按 `完整` 档处理。
+仅 `变更档位 = 轻量` 时适用，`标准` 档 SHALL NOT 应用本机制。变更档位读取自变更级 `.status.md` 基本信息，字段缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理。
 
 ## 适用性判定
 
@@ -366,7 +366,7 @@ allowed-tools:
 
 - **单轮全量执行**：子代理在一轮内遍历 integration-tests/ 全部集成场景执行完整流程，SHALL NOT 执行第二轮全量审查。
 - **定向重验**：发现失败项时，仅在修复后**重跑失败用例**，不重跑全量；属**有界重试**，SHALL NOT 使用轮次循环判据或预设轮数。定向重验与已移除的 `recheck-round`（审查循环到达终止点后追加的复核轮）语义不同，命名 SHALL NOT 混用。
-- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段（缺失按 `完整` 档处理）。变更档位 SHALL 只决定**审查形态与产出深度**，SHALL NOT 决定执行轮数。
+- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段（缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理）。变更档位 SHALL 只决定**审查形态与产出深度**，SHALL NOT 决定执行轮数。
 - **审查范围冻结**：主 Agent 从阶段产物既有内容生成审查对象集合并冻结，审查维度限于本阶段枚举；冻结范围之外的发现降级为「范围外观察」——不改产物、不计入执行发现数，记入执行报告的「范围外观察」小节（为空时记「（空）」）。
 - **回退重执行**：SHALL NOT 预置或提高执行轮数；「最近修订信息」的受影响项清单仅供验证门控的「受影响项 100% 覆盖」使用。
 
@@ -467,7 +467,7 @@ allowed-tools:
   - 纯后端项目：接口单元测试（所有子变更接口单元测试通过后）
 - **输出给**：`kflow-audit`（审计门控）→ `kflow-archive`（归档）；轻量档本阶段被判定为 `⏭️ 不适用`（有声明依据）时 SHALL 直接进入 `kflow-audit`，SHALL NOT 执行服务刷新与阶段钩子
 - **前置阶段**：所有子变更编码 + 审查 + 测试通过（测试阶段可标记 `⏭️ 不适用`，须有声明依据）+ 服务刷新
-- **阶段裁剪**：仅轻量档可被阶段适用性声明裁剪，裁剪时本 Skill SHALL NOT 启动；`标准` 与 `完整` 档 SHALL NOT 应用
+- **阶段裁剪**：仅轻量档可被阶段适用性声明裁剪，裁剪时本 Skill SHALL NOT 启动；`标准` 档 SHALL NOT 应用
 - **后续阶段**：审计 → 归档
 - **阶段衔接**：验收通过后执行阶段衔接决策（见 `skills/kflow-integration-test/references/phase-transition.md`），直接调度审计阶段 `kflow-audit`，SHALL NOT 提示用户输入推进指令；本阶段为变更级，不涉及子变更遍历
 - **内聚功能**：变更级缺陷修复（四分法），不跳转到 `kflow-bug-fix`

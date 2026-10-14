@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-fix
-version: 0.26.0
+version: 0.27.0
 description: Use when user needs bug fixing/缺陷修复、Bug 修复、测试失败, or a subchange test round has failures, or kflow-bug-triage routes an L4 implementation issue to the bugfix fast lane. 二分法根因分类路由（实现错误/测试错误），系统化诊断，多Agent并行分析。两种执行模式——测试阶段上下文下的既有模式（子变更级 / 变更级，出口返回测试阶段）与无测试阶段上下文下的**快车道模式**（由 kflow-bug-triage 的 L4 路由触发，状态写入缺陷级 bugfix-status.md，出口进入定向验证）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（同触发阶段的钩子配置）。
 license: MIT
 triggers:
@@ -413,7 +413,7 @@ post-mortem 未发现架构改进机会时，简要记录"无架构改进建议"
 
 缺陷修复阶段属于执行类阶段，采用**重复制循环**——子代理每轮全量遍历全部失败用例，每个独立分析+修复+验证，内层 3 次修复上限独立共存于外层轮次迭代中。**轮次下限恒为 1 轮**，轮数由实际执行的重复制循环决定（参见 `skills/kflow-bug-fix/references/repetition.md` §13 轮间摘要 / §14.3 重复制类阶段循环终止 / §14.4 终止结果写入）：
 
-- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段（缺失按 `完整` 档处理）。变更档位 SHALL 只决定**每轮审查形态与产出深度**，SHALL NOT 决定轮数。
+- **档位来源**：读取变更级 `.status.md` 基本信息的「变更档位」字段（缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理）。变更档位 SHALL 只决定**每轮审查形态与产出深度**，SHALL NOT 决定轮数。
 - **轮数**：SHALL NOT 预置或受限于任何数值；某轮无新发现且无可执行工作时自然终止，无须凑轮数。
 - **成功终止条件**：某轮无新发现且无可执行工作（如全部用例已升级用户决策、无可修复项），且执行报告证明全部失败用例已完成全量遍历时 SHALL 自然终止，终止结果 `执行完成`。3 次修复尝试上限不终止外层迭代。
 - **停滞终止**：连续 3 轮无实质进展（同一问题项反复出现）时 SHALL 终止，终止结果 `停滞`，进入升级分支（skill-suggestion.md + AskUserQuestion + 可标记 ⚠️ 阻塞）。
