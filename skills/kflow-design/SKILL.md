@@ -1,6 +1,6 @@
 ---
 name: kflow-design
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs detailed design/详细设计、技术设计、架构设计、设计审查. 变更级统一详细设计——系统架构、数据模型、接口设计、NFR定义、按变更档位分级审查（轻量单 Agent 综合 / 标准两视角并行）、变更档位复核、子变更划分（含HITL/AFK分类）、ADR架构决策记录。必须阶段，依赖 kflow-explore 输出。
 license: MIT
 triggers:
@@ -175,6 +175,17 @@ detailed-design/
 |----------|-----------|---------|---------|------|
 | FP-{ID} | {名称} | {时间} | ✅ 确认通过 / ⚠️ 需修订 / ⬇️ 降级为中 | {备注} |
 ```
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 

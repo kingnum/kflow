@@ -30,6 +30,8 @@
 | bug-fix | 同触发阶段 | service-guide.md, 相关文档, .status.md |
 | archive | ❌ | 全量产物, .status.md |
 
+> 上表为概览；各文件的**定位来源**（`index.md` 或章节号）见 §4.1，读取侧 SHALL 按定位来源读取目标分册或行区间。
+
 ### 图例
 
 | 图例 | 含义 |
@@ -66,7 +68,7 @@
 
 > **服务依赖说明**: 快车道模式 SHALL NOT 启动、停止或刷新任何服务，SHALL NOT 执行编译 / 迁移 / 健康检查——其验证为**定向验证**（仅重跑受影响项清单覆盖的用例），由修复者本地执行。
 >
-> **状态写入边界**: 快车道模式的 POST_HOOK SHALL NOT 更新变更级 `.status.md` 的阶段状态、`执行轮次` 或 `终止结果` 字段。状态写入边界详见 `skills/<SKILL>/references/state-values.md` 与 `bugfix-fast-lane` 能力。
+> **状态写入边界**: 快车道模式的 POST_HOOK SHALL NOT 更新变更级 `.status.md` 的阶段状态、`执行轮次` 或 `终止结果` 字段。状态写入边界详见 `skills/kflow-plan/references/state-values.md` 与 `bugfix-fast-lane` 能力。
 
 ---
 
@@ -80,121 +82,6 @@ PRE_HOOK（轻量）:
   2. RELOAD      → 按 RELOAD 清单重读基础信息文件
 ```
 
-### 2.2 需要浏览器进程的阶段（🔶 浏览器）
-
-```
-PRE_HOOK:
-  1. CHECK_STATE         → 验证前置阶段状态为 ✅ 完成
-  2. RELOAD              → 按 RELOAD 清单重读文件
-  3. PLAYWRIGHT_READY    → 检测 .kflow-runtime/playwright/ 就绪
-                            ├── 检测 .kflow-runtime/playwright/node_modules/playwright 是否存在
-                            ├── 不存在 → mkdir -p .kflow-runtime/playwright
-                            │           && cd .kflow-runtime/playwright
-                            │           && npm init -y && npm install playwright
-                            │           && npx playwright install chromium
-                            └── 已存在 → 跳过安装，直接使用
-```
-
-### 2.3 需要编译验证的阶段（🔶 编译验证）
-
-```
-PRE_HOOK（编码阶段）:
-  1. CHECK_STATE         → 验证前置阶段状态为 ✅ 完成
-  2. RELOAD              → 按 RELOAD 清单重读文件
-  3. READ_SERVICE_GUIDE  → 读取 service-guide.md 获取编译命令
-```
-
-### 2.4 需要后端服务的阶段（✅ 后端）
-
-```
-PRE_HOOK（API 测试阶段）:
-  1. CHECK_STATE         → 验证前置阶段状态为 ✅ 完成
-  2. RELOAD              → 按 RELOAD 清单重读文件
-  3. READ_SERVICE_GUIDE  → 四阶段就绪检测流程:
-    PHASE 1: DETECT（检测存在性）
-      ├── docs/service-guide.md 存在？
-      │   ├── NO  → 进入 PHASE 3（COLLECT）全量收集
-      │   └── YES → 进入 PHASE 2（VALIDATE）
-    PHASE 2: VALIDATE（验证完整性）
-      ├── dev 环境启动命令 ≠ 模板占位符（{命令}、{端口}、{框架名称}）？
-      ├── dev 环境端口值实际存在且为有效数字？
-      ├── 「服务依赖」章节存在且每项外部服务连接信息完整？
-      ├── 配置状态标记 = ✅ 已就绪？
-      │   ├── ALL PASS → 直接使用，跳过 PHASE 3
-      │   └── FAIL    → 进入 PHASE 3（仅询问缺失项）
-    PHASE 3: COLLECT（收集用户输入）
-      ├── AskUserQuestion: "检测到以下配置缺失，请提供:"
-      │   ├── [缺失项 1] 后端启动命令和端口
-      │   ├── [缺失项 2] 数据库连接信息（类型/主机/端口/数据库名）
-      │   ├── [缺失项 3] Redis 连接信息（主机/端口）
-      │   └── [缺失项 N] ...
-      ├── 用户提供信息 → 写入 service-guide.md
-      └── 用户选择「稍后配置」→ ❌ 阻塞当前阶段
-    PHASE 4: PERSIST（持久化）
-      ├── 将用户输入写入 service-guide.md 对应章节
-      ├── 记录配置完成标记: > **配置状态**: ✅ 已就绪 ({确认日期})
-      ├── 记录检测时间戳: > **上次检测**: {ISO 8601 时间戳}
-      └── 后续会话 PHASE 2 检测到标记后自动跳过询问
-  4. CHECK_PORTS         → 检测目标端口是否被占用
-  5. STOP_STALE          → 停止残留的旧服务进程
-  6. COMPILE             → 执行后端编译
-  7. MIGRATE             → 执行未执行的数据库迁移脚本
-  8. START_SERVICE       → 启动后端服务（skills/kflow-code/scripts/with_server.py --daemon）
-  9. HEALTH_CHECK        → /health + /db-health 验证服务就绪
-```
-
-### 2.5 需要前后端服务的阶段（✅ 前后端）
-
-```
-PRE_HOOK（E2E/集成测试阶段）:
-  1. CHECK_STATE         → 验证前置阶段状态为 ✅ 完成
-  2. RELOAD              → 按 RELOAD 清单重读文件
-  3. READ_SERVICE_GUIDE  → 四阶段就绪检测流程（同 §2.4）:
-    PHASE 1 DETECT → PHASE 2 VALIDATE → PHASE 3 COLLECT → PHASE 4 PERSIST
-  4. CHECK_PORTS         → 检测前后端目标端口是否被占用
-  5. STOP_STALE          → 停止残留的旧服务进程
-  6. COMPILE_BE          → 执行后端编译
-  7. COMPILE_FE          → 执行前端编译
-  8. MIGRATE             → 执行未执行的数据库迁移脚本
-  9. START_BE            → 启动后端服务（skills/kflow-code/scripts/with_server.py --daemon）
-  10. START_FE           → 启动前端服务（skills/kflow-code/scripts/with_server.py --daemon）
-  11. HEALTH_BE          → /health 验证后端就绪
-  12. HEALTH_DB          → /db-health 验证数据库就绪
-  13. HEALTH_FE          → /health 验证前端就绪
-```
-
-### 2.6 缺陷修复快车道模式（❌ 不需要服务）
-
-```
-PRE_HOOK（bug-fix 快车道模式）:
-  1. CHECK_STATE → 验证缺陷级状态文件 bugs/fix/{BUG-ID}/bugfix-status.md 存在
-                   且「受影响项清单」区已填写（由 kflow-bug-triage 产出）
-  2. RELOAD      → 重读缺陷级产物与受影响项代码:
-                   ├── bugs/fix/{BUG-ID}/bugfix-status.md（分诊结论 + 受影响项清单）
-                   ├── bugs/bug-NNN-NNN.md（问题详情）
-                   └── 受影响项清单覆盖的代码与测试文件
-                   （SHALL NOT 读取变更级 .status.md 的「变更档位」与阶段状态字段）
-```
-
-| 子步骤 | 失败后果 |
-|--------|---------|
-| CHECK_STATE（状态文件缺失或受影响项清单为空） | ❌ 阻塞，提示缺失项，退回 `kflow-bug-triage` |
-| RELOAD（文件不存在） | ❌ 阻塞，提示缺失的文件路径 |
-
-> 快车道模式 SHALL NOT 执行 `CHECK_PORTS`、`READ_SERVICE_GUIDE`、`COMPILE`、`MIGRATE`、`START_SERVICE`、`HEALTH_CHECK` 中的任何一步。
-
-### 2.7 PRE_HOOK 阻塞规则
-
-| 子步骤 | 失败后果 |
-|--------|---------|
-| CHECK_STATE | ❌ 阻塞，提示缺失的前置阶段 |
-| RELOAD（文件不存在） | ❌ 阻塞，提示缺失的文件路径 |
-| CHECK_PORTS（非预期进程占用） | ⚠️ 阻塞，提示占用信息（端口号、PID、进程名） |
-| COMPILE | ❌ 阻塞，修复后重新编译 |
-| HEALTH_CHECK | ❌ 阻塞，分析日志定位原因 |
-
----
-
 ## 三、POST_HOOK 执行步骤
 
 ### 3.1 不需要服务的阶段（❌）
@@ -204,84 +91,32 @@ POST_HOOK（轻量）:
   1. UPDATE_STATE → 更新 .status.md（阶段状态、完成时间）
 ```
 
-### 3.2 需要浏览器进程的阶段（🔶 浏览器）
-
-```
-POST_HOOK（原型设计阶段）:
-  1. BROWSER_CLEANUP → 从项目根目录执行 playwright-cli kill-all 清理浏览器进程
-                       并清理 docs/designs/prototypes/ 下残留的 node_modules/、package.json、package-lock.json
-                       SHALL NOT 在 docs/designs/prototypes/ 目录下产生残留文件
-  2. UPDATE_STATE    → 更新 .status.md
-```
-
-> **条件性**：Playwright 验证仅在审查方式为「子代理自动审查验证」时执行，因此 BROWSER_CLEANUP 的浏览器进程清理只在需要时产生实际作用；残留产物清理与 UPDATE_STATE 无条件执行。审查方式记录字段见 [state-values.md](state-values.md) §3。
-
-### 3.3 需要编译验证的阶段（🔶 编译验证）
-
-```
-POST_HOOK（编码阶段）:
-  1. UPDATE_STATE → 更新 .status.md
-```
-
-### 3.4 需要服务的阶段（✅ 后端 / ✅ 前后端）
-
-```
-POST_HOOK（测试阶段）:
-  1. STOP_SERVICE        → 停止所有运行中的服务（skills/kflow-code/scripts/with_server.py --stop-all）
-  2. VERIFY_STOP         → 验证所有服务端口已释放
-  3. BROWSER_CLEANUP     → 从项目根目录执行 playwright-cli kill-all（如有浏览器进程）
-                            SHALL NOT 在 docs/designs/prototypes/ 目录下产生残留文件
-  4. UPDATE_STATE        → 更新 .status.md
-  5. UPDATE_SERVICE_STATE → 更新/清理 .service-state.json
-```
-
-### 3.5 缺陷修复快车道模式（❌ 不需要服务）
-
-```
-POST_HOOK（bug-fix 快车道模式）:
-  1. UPDATE_STATE → 更新缺陷级 bugs/fix/{BUG-ID}/bugfix-status.md
-                    ├── 修复记录区（修复阶段状态 / 耗时 / 轮次 / 根因分类）
-                    ├── 定向验证区（每次验证追加记录，不覆盖）
-                    └── 收口结论区（收口时间 + 校验项逐项结论）
-                    SHALL NOT 更新变更级 .status.md 的阶段状态、
-                    `执行轮次` 与 `终止结果` 字段
-```
-
-> 快车道模式 SHALL NOT 执行 `STOP_SERVICE`、`VERIFY_STOP`、`BROWSER_CLEANUP`、`UPDATE_SERVICE_STATE` 中的任何一步。
-
-### 3.6 POST_HOOK 阻塞规则
-
-| 子步骤 | 失败后果 |
-|--------|---------|
-| STOP_SERVICE 超时（SIGTERM 30s + SIGKILL 10s） | ❌ 阻塞，提示僵尸进程信息 |
-| VERIFY_STOP 端口未释放 | ❌ 阻塞 |
-
----
-
 ## 四、RELOAD 清单详情
 
 ### 4.1 各阶段 RELOAD 文件列表
 
-| 阶段 | 必须重读文件 | 条件重读文件 |
-|------|------------|------------|
-| explore | CONTEXT.md, functional-designs/index.md, .status.md | module-summary.md（如存在） |
-| prototype-design | CONTEXT.md, toolchain.md, functional-designs/, .status.md | docs/designs/prototypes/manifest.md（如存在），prototype-changes.md（如存在） |
-| design | CONTEXT.md, functional-designs/, functional-designs/index.md, .status.md | module-summary.md（如存在），docs/designs/prototypes/manifest.md（如存在），prototype-changes.md（如存在） |
-| plan | detailed-design.md, functional-designs/index.md, functional-designs/part-NN.md, api-tests/index.md, .status.md | module-summary.md（如存在），docs/designs/prototypes/manifest.md（条件，前端SC），prototype-changes.md（条件，前端SC） |
-| code | service-guide.md, CONTEXT.md, detailed-design.md, functional-designs/index.md, .status.md | docs/designs/prototypes/manifest.md（条件，前端SC），prototype-changes.md（条件，前端SC） |
-| code-review | service-guide.md, CONTEXT.md, detailed-design.md, functional-designs/index.md, .status.md | docs/designs/prototypes/manifest.md（条件，前端SC），prototype-changes.md（条件，前端SC） |
-| api-test | service-guide.md, api-tests/, detailed-design.md, functional-designs/index.md, .status.md | docs/designs/prototypes/manifest.md（如存在），prototype-changes.md（如存在） |
-| e2e-test | service-guide.md, e2e-tests/, detailed-design.md, functional-designs/index.md, .status.md | docs/designs/prototypes/manifest.md（条件，前端SC），prototype-changes.md（条件，前端SC） |
-| integration-test | service-guide.md, integration-tests/, detailed-design.md, functional-designs/index.md, .status.md | docs/designs/prototypes/manifest.md（如存在），prototype-changes.md（如存在） |
-| audit | 全量产物, cross-reviews/, test-reports/, .status.md | — |
-| bug-fix | service-guide.md, 失败测试报告, 相关设计文档, .status.md | — |
-| archive | 全量产物, .status.md | — |
+清单中的每个条目 SHALL 标注定位来源——`index.md`（经索引定位目标分册）或章节号（按章节定位目标区间）。读取侧 SHALL 按标注的来源定位后读取目标分册或行区间，SHALL NOT 整体读取已拆分文档或大体量单文件。
+
+| 阶段 | 必须重读文件（定位来源） | 条件重读文件（定位来源） |
+|------|------------------------|------------------------|
+| explore | `CONTEXT.md`（术语表章节）、`functional-designs/index.md`（全文，索引）、`.status.md`（全文） | `module-summary.md`（如存在，全文） |
+| prototype-design | `CONTEXT.md`（术语表章节）、`toolchain.md`（全文）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `docs/designs/prototypes/manifest.md`（按页面 ID 定位条目）；`prototype-changes.md`（按本变更页面 ID 定位） |
+| design | `CONTEXT.md`（术语表章节）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `module-summary.md`（如存在，全文）；`manifest.md`（按页面 ID）；`prototype-changes.md`（按页面 ID）；`functional-designs/part-NN.md`（经 index.md 定位目标分册） |
+| plan | `detailed-design.md`（经 `detailed-design/index.md` 定位子变更相关设计域，单文件时按章节标题定位）、`functional-designs/index.md`（全文）、`api-tests/index.md`（全文）、`.status.md`（全文） | `functional-designs/part-NN.md`（经 index.md 定位）；`module-summary.md`；`manifest.md`；`prototype-changes.md` |
+| code | `service-guide.md`（dev 环境章节）、`CONTEXT.md`（术语表章节）、`detailed-design.md`（按子变更相关设计域章节定位）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `manifest.md`（前端 SC，按页面 ID）；`prototype-changes.md`（前端 SC） |
+| code-review | `service-guide.md`（dev 环境章节）、`CONTEXT.md`（术语表章节）、`detailed-design.md`（按子变更相关设计域章节定位）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `manifest.md`（前端 SC，按页面 ID）；`prototype-changes.md`（前端 SC） |
+| api-test | `service-guide.md`（dev 环境章节）、`api-tests/index.md`（全文）、`api-tests/part-NN.md`（经 index.md 定位本阶段用例分册）、`detailed-design.md`（接口设计章节）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `manifest.md`（如存在）；`prototype-changes.md`（如存在） |
+| e2e-test | `service-guide.md`（dev 环境章节）、`e2e-tests/index.md`（全文）、`e2e-tests/part-NN.md`（经 index.md 定位）、`detailed-design.md`（页面/流程相关章节）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `manifest.md`（前端 SC）；`prototype-changes.md`（前端 SC） |
+| integration-test | `service-guide.md`（dev 环境章节）、`integration-tests/index.md`（全文）、`integration-tests/part-NN.md`（经 index.md 定位）、`detailed-design.md`（跨子变更接口契约章节）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `manifest.md`（如存在）；`prototype-changes.md`（如存在） |
+| audit | 全量产物（经各文档组 index.md 定位）、`cross-reviews/`（最新批次目录）、`test-reports/`（各阶段 `summary.md`）、`.status.md`（全文）、`status-log.md`（审计场景读取） | — |
+| bug-fix | `service-guide.md`（dev 环境章节）、失败测试报告（按用例 ID 定位）、相关设计文档（经 index.md 或章节标题定位）、`.status.md`（全文） | — |
+| archive | 全量产物（经各文档组 index.md 定位）、`.status.md`（全文） | — |
 
 ### 4.2 RELOAD 执行规则
 
-1. 仅重读 RELOAD 清单中列出的文件
+1. 仅重读 RELOAD 清单中列出的文件，并按清单标注的定位来源读取目标分册/章节/行区间
 2. 文件 mtime 未变化且已在当前会话中读取过，可跳过重读
-3. 文件 mtime 发生变化或首次读取时 SHALL 完整重读
+3. 文件 mtime 发生变化或首次读取时 SHALL 完整重读（已拆分文档仍按定位来源读取目标分册）
 4. RELOAD 清单中文件不存在时 ❌ 阻塞，不继续执行
 
 ### 4.3 RELOAD 增量模式

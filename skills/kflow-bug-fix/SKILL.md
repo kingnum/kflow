@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-fix
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs bug fixing/缺陷修复、Bug 修复、测试失败, or a subchange test round has failures, or kflow-bug-triage routes an L4 implementation issue to the bugfix fast lane. 二分法根因分类路由（实现错误/测试错误），系统化诊断，多Agent并行分析。两种执行模式——测试阶段上下文下的既有模式（子变更级 / 变更级，出口返回测试阶段）与无测试阶段上下文下的**快车道模式**（由 kflow-bug-triage 的 L4 路由触发，状态写入缺陷级 bugfix-status.md，出口进入定向验证）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（同触发阶段的钩子配置）。
 license: MIT
 triggers:
@@ -83,6 +83,17 @@ allowed-tools:
 | 缺陷级状态文件（修复记录区） | `bugs/fix/{BUG-ID}/bugfix-status.md` | ✅ 必须（快车道模式） | 回写「修复记录」区：修复阶段状态、耗时、轮次、根因分类。轮次 SHALL 写入本区，SHALL NOT 写入变更级 `.status.md` 的 `执行轮次` 字段 |
 | 定向验证报告 | `bugs/fix/{BUG-ID}/verify-report.md` | ✅ 必须（快车道模式） | 仅覆盖受影响项清单的验证结果；同时回写至 `bugfix-status.md` 的「定向验证」区 |
 | 快速收口回写 | `bugfix-status.md` 收口结论区 + `bugs/index.md` + 问题详情 | ✅ 必须（快车道模式） | 定向验证通过后回写收口时间与校验项结论、更新 `bugs/index.md` 状态为「已解决」、在问题详情标记快车道收口完成 |
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 
@@ -479,10 +490,12 @@ post-mortem 未发现架构改进机会时，简要记录"无架构改进建议"
 
 2. 构建阶段专属提示词
    ├── 分层加载（基础层 + 执行层）:
+
    │   ├── skills/kflow-bug-fix/references/state-values.md（摘要）
    │   ├── skills/kflow-bug-fix/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-bug-fix/references/repetition.md
    ├── 输入: 测试轮次报告 + detailed-design.md + functional-designs/
+   ├── 本子代理承担的修复范围: {失败用例清单子集}（单个子代理 ≤ 3 个功能点对应的用例；超出时先分片再构建 prompt，前一片落盘后启动后一片承接）
    ├── 执行要求:
    │   ├── Phase 1: BUILD LOOP（10 种方法优先级尝试，优化 loop）
    │   ├── Phase 2: REPRODUCE（确定性/非确定性缺陷策略）

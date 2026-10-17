@@ -291,26 +291,6 @@ python skills/kflow-code/scripts/with_server.py --health --state-file .service-s
 
 ---
 
-## 六、浏览器进程清理
-
-Playwright 运行时环境隔离在 `.kflow-runtime/playwright/` 下。安装和二进制由 🔶 浏览器 阶段 PRE_HOOK 按需初始化（`cd .kflow-runtime/playwright && npm install playwright && npx playwright install chromium`）。
-
-```bash
-# 清理所有残留 Playwright 浏览器进程（从项目根目录执行）
-playwright-cli kill-all
-```
-
-清理场景：
-- prototype-design 阶段 VERIFY 步骤完成后
-- e2e-test 阶段每轮测试完成后（POST_HOOK）
-- integration-test 阶段完成后（POST_HOOK，仅前后端项目）
-
-**路径约束**：
-- `playwright-cli kill-all` SHALL 从项目根目录执行，SHALL NOT 在 `docs/designs/prototypes/` 目录下产生残留文件
-- Playwright 安装、使用均通过 `.kflow-runtime/playwright/` 下的隔离环境
-
----
-
 ## 七、数据库迁移
 
 ### 7.1 迁移执行规则

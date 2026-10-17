@@ -101,6 +101,8 @@ allowed-tools:
 
 ---
 
+> **状态双写**：阶段完成、回退与重执行时，主 Agent SHALL 向 `docs/changes/{change}/status-log.md` 追加事件记录，并刷新 `.status.md` 的当前状态字段；`.status.md` SHALL 保持在 100 行以内。常规阶段推进与门控判定 SHALL 仅读取 `.status.md`，`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
+
 ## 执行流程
 
 ```
@@ -547,7 +549,7 @@ E2E 测试阶段属于执行类**单轮类阶段**，采用**单轮全面执行 
 
 > **权威定义**：执行类阶段的单轮执行与定向重验模型定义于 `agent-iteration-execution` 能力；审查范围冻结定义于 `convergence-driven-repetition` 能力。本 Skill 仅引用，SHALL NOT 自行定义轮次数值或终止条件。
 
-> 通用规范（复杂度公式、prompt 规范、审查范围冻结、验证门控）参见 `skills/kflow-e2e-test/references/repetition.md`
+> 通用规范（复杂度公式、prompt 规范、**工作量分片**、审查范围冻结、验证门控）参见 `skills/kflow-e2e-test/references/repetition.md`
 
 ### 阶段特定参数
 

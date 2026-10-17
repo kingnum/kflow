@@ -21,7 +21,11 @@ docs/
 ├── changes/                           # 变更管理目录
 │   ├── index.md                       # 变更管理索引（活跃变更列表 + 已归档变更列表）
 │   ├── {change-name}/                 # 单个变更目录（kebab-case命名）
-│   │   ├── .status.md                 # 变更总状态文件（含子变更进度矩阵）
+│   │   ├── .status.md                 # 变更总状态文件（**当前有效状态**，≤100 行；含子变更进度矩阵）
+│   │   ├── status-log.md              # 变更状态历史日志（各阶段完成时间与耗时、历史轮次、回退与重执行记录）
+│   │   │                              #   ↑ 读取场景：**中断恢复与审计**；常规阶段推进与门控判定 SHALL NOT 读取
+│   │   ├── revision-history.md        # 变更级产物的修订记录历史（按产物文件分组）
+│   │   │                              #   ↑ 读取场景：**版本追溯**（某产物的历史修订内容）；常规读取 SHALL NOT 读取
 │   │   ├── tasks.md                   # 变更总任务清单（子变更级checkbox）
 │   │   ├── functional-designs/        # 功能设计阶段输出（目录化结构）
 │   │   │   ├── index.md               #   功能设计索引入口（全部功能点清单、依赖关系图）
@@ -115,6 +119,8 @@ docs/
 │   └── archive/                       # 归档目录
 │       └── {YYYY-MM-DD}-{change}/     # 归档的变更（整体归档，保持原结构）
 │           ├── .status.md
+│           ├── status-log.md
+│           ├── revision-history.md
 │           ├── tasks.md
 │           ├── subchanges/
 │           └── ...
@@ -163,6 +169,8 @@ docs/
 | 类型 | 格式 | 示例 |
 |------|------|------|
 | 变更目录 | kebab-case | `product-init`, `add-user-auth`, `fix-login-bug` |
+| 变更状态日志 | `status-log.md` | `docs/changes/{change}/status-log.md`（读取场景：中断恢复 / 审计） |
+| 产物修订历史 | `revision-history.md` | `docs/changes/{change}/revision-history.md`（读取场景：版本追溯） |
 | 子变更目录 | kebab-case | `user-auth`, `order-management`, `payment-integration` |
 | 功能设计目录 | `functional-designs/` | `docs/changes/{change}/functional-designs/` |
 | 功能设计索引 | `index.md` | `docs/changes/{change}/functional-designs/index.md` |
@@ -311,6 +319,59 @@ docs/designs/
 | FP-001 | 用户注册 | 新用户通过邮箱注册账号 | P0 | 无 | part-01 |
 | FP-002 | 用户登录 | 已注册用户通过邮箱密码登录 | P0 | #001 | part-01 |
 ```
+
+#### 按需分片读取规则
+
+拆分产生的目录化结构 SHALL 配套按需分片读取，SHALL NOT 被整体读取：
+
+| 规则 | 说明 |
+|------|------|
+| 经索引定位 | 读取已拆分文档组（functional-designs / api-tests / e2e-tests / integration-tests 的 `part-NN.md`，以及目录化的 detailed-design）前，SHALL 先读取该文档组的 `index.md` 定位目标功能点/接口/场景/设计域所在分册 |
+| 只读目标分册 | 定位后 SHALL 仅读取目标分册，或该分册中的目标行区间；SHALL NOT 读取其余分册 |
+| 未拆分文档的片段读取 | 未触发拆分但体量较大的文档，SHALL 按章节行区间读取所需片段 |
+| 索引文件是唯一可整体读取对象 | 需要了解文档组全貌时，整体读取的对象 SHALL 限于 `index.md`；其体量须保持在可整体读取的范围内 |
+| 产品级文档按体积两档处理 | 产品级文档 > 30 KB SHALL 提供章节索引；> 80 KB SHALL 拆分为目录化结构；术语表例外（见 `large-doc-splitting` 能力） |
+
+**片段注入优先于读取指令**：主 Agent 构造子代理 prompt 时，对子代理所需的大文档输入 SHALL 直接选取并注入所需片段，SHALL NOT 仅以「请读取某文件」的形式转嫁读取动作。片段选取范围 SHALL 与该子代理承担的功能点或任务项对应，SHALL NOT 注入与其职责无关的章节；子代理在执行中发现内联片段不足时，SHALL 有权按章节行区间自行读取。
+
+> 权威定义见 `large-doc-splitting` 能力；RELOAD 场景下的具体执行见 `09-phase-hooks.md` §5.5。
+
+#### 修订记录留存边界
+
+承载修订记录的文档，其头部 SHALL 仅保留最近 **3 条**修订记录；超出部分 SHALL 按文档层级移入历史承载位置：
+
+| 文档层级 | 头部保留 | 历史承载位置 | 读取场景 |
+|---------|---------|-------------|---------|
+| 变更级产物（`functional-designs/part-NN.md`、`detailed-design.md`、`api-tests/part-NN.md`、`e2e-tests/part-NN.md`、`integration-tests/part-NN.md` 等） | 最近 3 条 | `docs/changes/{change}/revision-history.md`（按产物文件分组） | 版本追溯 |
+| 产品级文档（`CONTEXT.md`、`docs/designs/**`、`docs/open/**`） | 最近 3 条 | `docs/designs/changelog.md`（保留原属文档标识） | 版本追溯 |
+
+**规则**：
+
+- 追加第 4 条时，最早的一条 SHALL 移入对应层级的历史承载位置；移出时全部字段（版本、日期、修订类型、修订内容、影响对象、触发阶段）SHALL 原样保留，SHALL NOT 丢失字段或改写表述
+- 文档的当前版本号 SHALL 始终反映全部修订的累积结果——移出不改变版本号
+- 历史承载位置 SHALL NOT 参与常规读取；各阶段的阶段前置钩子读取修订记录时，只消费文档头部保留的条目
+- 留存边界的执行由变更归档的设计合并步骤承担（见 `04-gates-and-transitions.md` 与 `kflow-archive`），新变更产生的文档自动遵守，用户无需额外操作
+- 变更级状态文件的阶段记录**不属于**修订记录，按 `status-file-layering` 能力分层，不套用 3 条规则
+
+> 权威定义见 `artifact-revision-record-retention` 能力；模板的修订记录章节见 `templates/`。
+
+#### 产品级文档体积规则
+
+拆分机制的适用范围 SHALL 覆盖产品级文档（`CONTEXT.md`、`docs/designs/**`、`docs/open/**`），按体积触发两档处理：
+
+| 体积 | 处理方式 | 说明 |
+|------|---------|------|
+| > **30 KB** | 提供章节索引 | 文件头部的章节导航，或同级 `index.md`；索引列出各章节标题与其行号区间或所在文件 |
+| > **80 KB** | 拆分为目录化结构 | `<name>/index.md + <name>/<section>.md`；`index.md` 承载章节导航与分册清单；原单文件路径 SHALL NOT 继续存在 |
+
+**规则**：
+
+- 体积为唯一通用且可机器判定的维度（产品级文档多为叙述性内容，无稳定条目计数）
+- 拆分 SHALL 在同一步完成引用更新——项目文档、Skill 规则与脚本中的该文档路径 SHALL 被同步更新，SHALL NOT 留待后续
+- **术语表例外**：`CONTEXT.md` 的读取模式是「按术语名随机查询」，拆分会破坏随机查询能力，故 MAY 保持单文件，改为提供按模块或按首字母的术语索引，读取侧按索引定位到目标术语所在区间
+- 归档的设计合并步骤在改变产品级文档的章节结构或体积时 SHALL 同步维护索引并在跨越阈值时触发拆分
+
+> 权威定义见 `large-doc-splitting` 能力；存量文档的一次性优化入口见 `kflow-doc-optimize`。
 
 ### 2.5 项目级 CONTEXT.md 领域词汇表
 

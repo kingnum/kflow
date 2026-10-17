@@ -27,6 +27,7 @@
 | `kflow-audit` | 使用评估 | — | 归档门控+按需 | 四项记账职责、审计报告、审计回退路由 | [kflow-audit.md](kflow-audit.md) |
 | `kflow-init` | 环境初始化 | — | 按需 | 环境能力发现、工具推荐矩阵、toolchain.md 输出 | [kflow-init.md](kflow-init.md) |
 | `kflow-resume` | 中断恢复 | — | 按需 | 通过变更名定位断点、按优先级链读取状态、调度阶段 Skill | [kflow-resume.md](kflow-resume.md) |
+| `kflow-doc-optimize` | 文档优化 | — | 按需（独立维护） | 存量文档修订记录裁剪、大文档拆分与章节索引、引用完整性校验；非流程阶段，不写入阶段状态 | [kflow-doc-optimize.md](kflow-doc-optimize.md) |
 
 ---
 
@@ -53,6 +54,7 @@
 | 集成测试、跨子变更测试 | `kflow-integration-test` | 所有项目 |
 | 审计、评估、检查、审核 | `kflow-audit` | 所有项目 |
 | 初始化、环境配置、工具推荐、设置 | `kflow-init` | 所有项目 |
+| 文档优化、文档瘦身、拆分文档、清理修订记录、文档体积 | `kflow-doc-optimize` | 所有项目（无活跃变更时同样可路由） |
 
 ---
 

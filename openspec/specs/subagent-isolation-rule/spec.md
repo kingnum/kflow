@@ -38,7 +38,7 @@
 
 ### Requirement: 主 Agent 职责边界硬线声明
 
-所有执行类阶段 SHALL 遵守主 Agent 职责边界硬线：主 Agent 的职责限定为调度（构建 prompt、启动子代理）和验收（检查产物、决定通过/拒收），SHALL NOT 直接执行任何阶段主工作（编码/修复/测试/审查/计划等），无例外。此规则适用于所有入口场景，包括直接触发、triage 路由和其他 Skill 调用。
+所有执行类阶段 SHALL 遵守主 Agent 职责边界硬线：主 Agent 的职责限定为调度（构建 prompt、启动子代理）和验收（检查产物、决定通过/拒收），SHALL NOT 直接执行任何阶段主工作（编码/修复/测试/审查/计划等），无例外。此规则适用于所有入口场景，包括直接触发、triage 路由和其他 Skill 调用。该硬线 SHALL 由 `main-agent-execution-gating` 能力提供的工具级门控强制实施，SHALL NOT 仅依赖 SKILL.md 中的声明性约束。
 
 #### Scenario: 主 Agent 直接执行阶段主工作
 
@@ -60,6 +60,23 @@
 - **AND** SHALL NOT 因 triage 上下文而直接执行修复工作
 - **AND** MUST 通过子代理执行修复主工作
 
+#### Scenario: 硬线由工具级门控强制实施
+
+- **WHEN** 执行类阶段的主 Agent 尝试调用 `Edit` / `Write` 写入非白名单路径，或调用长输出构建与测试命令
+- **THEN** 该调用 SHALL 被工具级门控拒绝
+- **AND** 门控拒绝 SHALL NOT 被视为流程阻塞，主 Agent SHALL 转而创建子代理执行
+
+#### Scenario: 硬线遵守情况可审计
+
+- **WHEN** 审计阶段核验执行类阶段的主 Agent 职责边界遵守情况
+- **THEN** 审计 SHALL 以门控拒绝记录与主 Agent 的工具调用分布为依据
+- **AND** 发现主 Agent 承担了阶段主工作时 SHALL 记录为发现项
+
+#### Scenario: 设计类阶段不适用本硬线
+
+- **WHEN** 阶段为 explore / prototype-design / design
+- **THEN** 主 Agent 的产物写作职责 SHALL 不受本硬线约束
+- **AND** 这些阶段的自审机制 SHALL 按既有规定执行
 ### Requirement: 轮次级重试机制
 
 子代理重试粒度 SHALL 为轮次级：当某轮子代理异常崩溃时，主 Agent SHALL 新建 Agent 重跑该轮（从当前轮次号继续），而非重启整个阶段或让主 Agent 接管。

@@ -1,6 +1,6 @@
 ---
 name: kflow-prototype-design
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs prototype design/原型设计、UI 设计、交互设计、HTML 原型 for frontend changes. 编排层，默认复用 docs/toolchain.md 已锁定的设计工具链，委托子代理生成 HTML 原型并直写产品级 docs/designs/prototypes/。BUILD 四项静态门控必做，通过后由用户选择人工审查或子代理自动审查验证。含用户评审循环、变更级改动追踪（哈希并发检测）、CDN 离线扫描、多文件交叉引用检查。含 PRE_HOOK/POST_HOOK 阶段钩子引用。
 license: MIT
 triggers:
@@ -159,6 +159,17 @@ docs/designs/prototypes/
 └── assets/
     └── app-phone.js            ← AppPhone 状态管理器
 ```
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 

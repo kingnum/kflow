@@ -1,6 +1,6 @@
 ---
 name: kflow-archive
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md）。
 license: MIT
 triggers:
@@ -23,7 +23,7 @@ allowed-tools:
 
 # 任务
 
-门控检查（集成测试 + 审计门控 + 所有子变更阶段完成）→ 用户确认归档 → 设计合并到产品级（EXTRACT → MATCH → MERGE → ANNOTATE → CONFLICT → CHANGELOG → SUMMARY）→ 原型改动登记到 docs/designs/prototypes/manifest.md → 功能模块摘要更新 → ADR 索引更新检查 → 移动变更目录到 archive/ → 更新状态文件和索引 → 输出归档完成信息 → 分析归档内容 → 询问是否 git commit。
+门控检查（集成测试 + 审计门控 + 所有子变更阶段完成）→ 用户确认归档 → 设计合并到产品级（EXTRACT → MATCH → MERGE → ANNOTATE → CONFLICT → CHANGELOG → RETAIN → SUMMARY）→ 原型改动登记到 docs/designs/prototypes/manifest.md → 功能模块摘要更新 → ADR 索引更新检查 → 移动变更目录到 archive/ → 更新状态文件和索引 → 输出归档完成信息 → 分析归档内容 → 询问是否 git commit。
 
 # 门控检查
 
@@ -56,8 +56,20 @@ allowed-tools:
 | 索引文件更新 | `docs/changes/index.md` | ✅ 必须 | 活跃列表移除，归档列表添加 |
 | 产品级功能设计文档（合并） | `docs/designs/functional-designs/{menu}/index.md` + `{menu}/part-NN.md`（前后端）或 `{domain}.md`（纯后端） | ✅ 必须 | 设计合并后的产品级功能设计，按 FP-ID 追加/替换，更新 index.md 分册总览 |
 | 详细设计全景文档更新 | `docs/designs/detailed-designs/{architecture,data-model,api-catalog,nfr-baseline,config-items,error-handling}.md` | 🔶 条件 | 涉及跨模块变更时按类型分散更新至 6 文件 |
-| 变更日志更新 | `docs/designs/changelog.md` | 🔶 条件 | 新增功能模块或结构变更时更新 |
+| 变更日志更新 | `docs/designs/changelog.md` | 🔶 条件 | 新增功能模块或结构变更时更新；合并时被裁剪出的产品级修订记录亦追加于此 |
+| 产物修订历史 | `docs/changes/{change}/revision-history.md` | 🔶 条件 | 变更级产物的修订记录超出保留条数时创建；按产物文件分组，原样保留被移出记录的字段 |
 | 功能模块摘要更新 | `docs/designs/functional-designs/module-summary.md` | ✅ 必须 | 设计合并后更新模块摘要（模块名+核心功能+FP-ID范围+文档位置） |
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 
@@ -235,6 +247,17 @@ Options:
 
 6. CHANGELOG（更新变更日志）:
    └── docs/designs/changelog.md 追加本次合并记录
+
+6.5 RETAIN（文档留存与体积治理）——三项全程自动，无需用户操作:
+   ├── 裁剪产品级文档修订记录: 头部保留最近 3 条，移出记录追加到 docs/designs/changelog.md
+   │   对应变更条目下（保留原属文档标识）；文档当前版本号保持为全部修订的累积结果
+   ├── 同步维护章节索引: 合并改变某产品级文档的章节结构或体积时，同步更新其章节索引
+   ├── 体积跨越阈值触发拆分: > 30 KB 提供章节索引；> 80 KB 拆分为目录化结构，
+   │   并在同一步完成引用更新与索引建立；CONTEXT.md 为术语表例外（保持单文件 + 术语索引）
+   ├── 变更级产物修订记录同步裁剪: 超出保留条数的部分移入 docs/changes/{change}/revision-history.md，
+   │   按产物文件分组组织（分组标题为产物相对路径）
+   └── 仅拆分边界或引用更新存在歧义时交由用户裁决，其余可自动完成的部分先行完成，
+       SHALL NOT 因个别歧义阻塞整步
 
 7. SUMMARY（更新功能模块摘要）:
    ├── 文件不存在 → 首次创建，全量扫描 functional-designs/ 生成摘要

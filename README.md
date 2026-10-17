@@ -2,7 +2,7 @@
 
 一套**文档驱动的阶段门控开发流程体系**，将软件开发从设计到交付的全流程标准化为一系列 Claude Code Skills，确保每个阶段产物可追溯、可验证。
 
-> **版本**: 0.27.0 | **更新时间**: 2026-10-14 | **适用版本**: KFlow Skills 体系 2.0.0+
+> **版本**: 0.28.0 | **更新时间**: 2026-10-17 | **适用版本**: KFlow Skills 体系 2.0.0+
 
 ---
 
@@ -451,6 +451,21 @@ docs/
 ---
 
 ## 版本更新说明
+
+### v0.28.0 (2026-10-17)
+
+**上下文预算优化：references 按阶段切片、读取纪律、状态分层、文档留存边界与主 Agent 门控**
+
+- **references 按阶段切片（BREAKING）**：`gates.md` / `repetition.md` / `state-values.md` / `self-review.md` / `phase-transition.md` / `service-lifecycle.md` / `hooks.md` 由逐字节副本改为按阶段切片。权威源迁至 `references-src/`，各 skill 副本由 `scripts/sync-references.sh`（Python 实现 `scripts/sync_references.py`）按 `references-src/slice-manifest.tsv` 生成并校验；`scripts/gen-slice-manifest.py` 生成切片清单。**`skills/*/references/` 下的共享文件禁止手工编辑**
+- **读取纪律**：已拆分文档经 `index.md` 定位后读取目标分册或行区间；主 Agent 构造子代理 prompt 时优先注入片段；同阶段内不重复全文读取、mtime 变化后重读、不依赖上一阶段上下文残留；RELOAD 清单为每个条目标注定位来源
+- **状态分层**：`.status.md` 仅承载当前有效状态（≤100 行），历史移入 `status-log.md`（仅中断恢复与审计读取）；阶段完成/回退时双写
+- **文档留存边界**：文档头部修订记录保留最近 3 条，超出部分移入 `revision-history.md`（变更级）或 `docs/designs/changelog.md`（产品级）；产品级文档 >30 KB 提供章节索引、>80 KB 拆分为目录化结构，术语表例外；归档设计合并步骤自动执行裁剪、索引维护与拆分触发
+- **主 Agent 禁手门控**：新增 `main-agent-execution-gating` 能力——执行类阶段主 Agent 的越界 `Edit`/`Write` 与长输出命令由 `PreToolUse` hook 拒绝，子代理放行。三条实时探针已确认路径 A（stdin 的 `agent_id`/`agent_type`），`Task`/`Agent` 拦截点不可达、会话级 deny 无法被 `permissionMode` 解除
+- **子代理粒度上限**：单个子代理不超过 3 个功能点或 10 个 TDD 步骤；工作量上限与轮数上限口径显式区分
+- **新 Skill `kflow-doc-optimize`**：独立维护工具（非流程阶段），扫描 → 清单 → 用户确认 → 仅搬移/拆分/建索引 → 引用校验；随包提供 `scan_docs.py`、`check_refs.py`（find/ replace/ verify）与报告模板。Skill 数量 18 → 19
+- **`kflow-init` 增强**：写入 `autoCompactWindow: 300000`、安装主 Agent 门控脚本并注册 hook、注入 `kflow-doc-optimize` 适用边界例外声明；新增 `verify_project_config.py` 配置校验。两条幂等规则：已存在且更小的压缩阈值不覆盖、项目自定义 hook 条目保持不变
+- **打包修复**：`package-skills.sh` 优先产出真正的 zip（`zip` 命令 / Python `zipfile` / PowerShell `Compress-Archive`），无工具时降级为 `.tar.gz` 并提示
+- **兼容性**：历史变更的未分层 `.status.md` 按单文件口径兼容读取，不强制回填；门控在无法判定阶段时放行，异常 fail-open，可设置 `KFLOW_GATING_DISABLE=1` 临时关闭
 
 ### v0.27.0 (2026-10-14)
 

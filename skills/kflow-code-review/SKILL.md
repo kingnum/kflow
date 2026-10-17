@@ -1,6 +1,6 @@
 ---
 name: kflow-code-review
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs code review/代码审查、审查代码、code review, or subchange coding is complete and ready for review. 按变更档位分级审查（轻量档单 Agent 串行覆盖两视角全部检查项 / 标准档两视角并行），修复后验证按档位分支（轻量单轮复检 / 标准档分级重审闭环）。独立于编码阶段，子变更级必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，纯静态分析）。
 license: MIT
 triggers:
@@ -61,6 +61,17 @@ allowed-tools:
 | 产物 | 文件 | 图例 | 验收标准 |
 |------|------|------|---------|
 | 代码审查报告 | `docs/changes/{change}/subchanges/{subchange}/test-reports/review/code-review.md` | ✅ 必须 | 按变更档位的审查形态产出且门控满足（轻量档单 Agent 高=0 且 中<3；标准档两视角门控满足），含问题追踪矩阵 |
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 
@@ -433,10 +444,12 @@ grep -rn 'app\.use(\|app\.post(\|router\.get(\|@PostMapping\|@GetMapping' \
 
 2. 构建阶段专属提示词
    ├── 分层加载（基础层 + 执行层）:
+
    │   ├── skills/kflow-code-review/references/state-values.md（摘要）
    │   ├── skills/kflow-code-review/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-code-review/references/repetition.md
    ├── 输入: 所有子变更代码变更 diff + detailed-design.md + tasks.md + CONTEXT.md + service-guide.md
+   ├── 本子代理承担的功能点范围: {子变更}/{FP-NNN 列表 或 代码变更文件区块}（单个子代理 ≤ 3 个功能点；超出时先分片再构建 prompt，前一片落盘后启动后一片承接）
    ├── 按变更档位执行审查 (轻量档单 Agent 串行 / 标准档两视角并行)
    ├── 双层遍历: 外层遍历全部子变更 + 内层遍历全部代码变更
    ├── 修复后验证 (轻量档单轮复检 / 标准档高/中/低严重度分级重审)

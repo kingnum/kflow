@@ -157,28 +157,61 @@ if [ "$VERSION_CHECKED" -ne "$SKILL_COUNT" ]; then
 fi
 echo "  ✓ $VERSION_CHECKED 个 SKILL.md version 与 VERSION ($VERSION) 一致"
 
-# 打包为 zip
+# 打包为 zip（优先产出真正的 zip；无 zip 工具时降级为同内容的 tar.gz 并以正确扩展名落盘）
 echo ""
 echo "生成 $ZIP_FILE ..."
 cd "$WORK_DIR"
 
 # 检测可用打包工具
-if command -v tar &> /dev/null; then
-  # tar 方式（Git Bash / Linux / macOS 通用）
-  tar -czf "$ZIP_FILE" "$PACKAGE_NAME/" 2>/dev/null || {
-    # tar.gz 备选方案
-    echo "tar -czf 失败，尝试 tar -cf + gzip ..."
-    tar -cf "$ZIP_FILE.tar" "$PACKAGE_NAME/"
-    gzip -f "$ZIP_FILE.tar"
-    mv "$ZIP_FILE.tar.gz" "$ZIP_FILE" 2>/dev/null || true
+# 顺序: zip → Python zipfile → PowerShell Compress-Archive → tar.gz（降级）
+if command -v zip &> /dev/null; then
+  zip -r -q "$ZIP_FILE" "$PACKAGE_NAME/" || {
+    echo "错误: zip 打包失败"
+    rm -rf "$WORK_DIR"
+    exit 1
   }
-elif command -v zip &> /dev/null; then
-  zip -r "$ZIP_FILE" "$PACKAGE_NAME/"
+elif [ -n "${PYTHON_BIN:-}" ]; then
+  # Python zipfile：跨平台产出真正的 zip（脚本已依赖 Python 做 front matter 校验）
+  if ! "$PYTHON_BIN" - "$WORK_DIR" "$ZIP_FILE" "$PACKAGE_NAME" <<'PYEOF'
+import os
+import sys
+import zipfile
+
+work, out, pkg = sys.argv[1], sys.argv[2], sys.argv[3]
+root = os.path.join(work, pkg)
+with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
+    for dirpath, dirnames, filenames in os.walk(root):
+        for name in filenames:
+            full = os.path.join(dirpath, name)
+            rel = os.path.relpath(full, work).replace(os.sep, '/')
+            z.write(full, rel)
+PYEOF
+  then
+    echo "错误: Python zipfile 打包失败"
+    rm -rf "$WORK_DIR"
+    exit 1
+  fi
 elif command -v powershell.exe &> /dev/null; then
-  # Windows PowerShell 备选
-  powershell.exe -NoProfile -Command "Compress-Archive -Path '$PACKAGE_NAME' -DestinationPath '$ZIP_FILE' -Force"
+  # Windows PowerShell 的 Compress-Archive 需要 Windows 路径
+  WIN_WORK="$(cygpath -w "$WORK_DIR" 2>/dev/null || printf '%s' "$WORK_DIR")"
+  WIN_ZIP="$(cygpath -w "$ZIP_FILE" 2>/dev/null || printf '%s' "$ZIP_FILE")"
+  powershell.exe -NoProfile -Command \
+    "Compress-Archive -Path '$WIN_WORK\\$PACKAGE_NAME' -DestinationPath '$WIN_ZIP' -Force" || {
+      echo "错误: Compress-Archive 打包失败"
+      rm -rf "$WORK_DIR"
+      exit 1
+    }
+elif command -v tar &> /dev/null; then
+  # 降级为 tar.gz：使用正确的扩展名，避免出现「.zip 实为 gzip」的产物
+  ZIP_FILE="$TARGETS_DIR/$PACKAGE_NAME.tar.gz"
+  tar -czf "$ZIP_FILE" "$PACKAGE_NAME/" || {
+    echo "错误: tar 打包失败"
+    rm -rf "$WORK_DIR"
+    exit 1
+  }
+  echo "提示: 未找到 zip 工具，已降级为 tar.gz 产物"
 else
-  echo "错误: 未找到可用的打包工具（tar/zip/Compress-Archive）"
+  echo "错误: 未找到可用的打包工具（zip/Python zipfile/Compress-Archive/tar）"
   rm -rf "$WORK_DIR"
   exit 1
 fi

@@ -94,6 +94,8 @@ kflow-bug-triage (分诊台)               kflow-bug-fix (手术室)
 
 ---
 
+> **状态双写**：阶段完成、回退与重执行时，主 Agent SHALL 向 `docs/changes/{change}/status-log.md` 追加事件记录，并刷新 `.status.md` 的当前状态字段；`.status.md` SHALL 保持在 100 行以内。常规阶段推进与门控判定 SHALL 仅读取 `.status.md`，`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
+
 ## 执行流程
 
 ```

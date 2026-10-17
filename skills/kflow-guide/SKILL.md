@@ -1,6 +1,6 @@
 ---
 name: kflow-guide
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs workflow guidance/流程指引、帮助、如何开始、下一步做什么 or says 恢复/resume with a change name, or advances an active change with 继续 + 变更名. Also use when user expresses intent to fix work/修复、Bug、缺陷 or design revision/设计需调整、功能设计需调整、原型.*调整、详细设计.*调整、接口设计.*改、修改.*设计、调整.*设计.自动检测用户意图、活跃变更，读取项目级项目类型记录，降低使用门槛，无需记忆所有 Skill 名称。RESUME 路由 + 轻量推进 + 定向指引 + DESIGN_REVISION 设计修订分流。**变更名模式（「恢复/resume + 变更名」与「继续 + 变更名」）优先级最高，禁止 Plan Mode 拦截，直接进入 Skill 路由链。** 新变更由 kflow-explore 承接，本 Skill SHALL NOT 承担新变更创建前指引。
 license: MIT
 triggers:
@@ -187,6 +187,7 @@ DESIGN_REVISION 路由流程:
 | 编码实现、TDD、功能实现 | 编码阶段 | `kflow-code` | 5 |
 | 审计、评估、检查、审核 | 审计阶段 | `kflow-audit` | 5 |
 | 诊断、验证产物、检查产物、产物完整性、输入源检查、verify | 产物诊断 | `kflow-verify` | 5 |
+| 文档优化、文档瘦身、拆分文档、清理修订记录、文档体积 | 存量文档优化 | `kflow-doc-optimize`（独立维护工具，**无活跃变更时同样可路由**） | 5 |
 | 集成测试、跨子变更测试 | 集成测试 | `kflow-integration-test` | 6 |
 | 归档、完成、结束 | 归档阶段 | `kflow-archive` | 6 |
 | 设计需调整、功能设计需调整、原型需调整、详细设计需调整、接口设计要改、修改设计、调整设计 | 设计修订 | DESIGN_REVISION 路由（§2c） | 0 |
@@ -376,6 +377,7 @@ DESIGN_REVISION 路由流程:
 | 归档 | kflow-archive | 变更归档、设计合并、索引更新 |
 | 产物诊断 | kflow-verify | 独立诊断 Skill（非流程阶段），七维度全阶段产物诊断、严重度分级、修复路由 |
 | 问题分诊 | kflow-bug-triage | 独立诊断 Skill（非流程阶段），四层溯源定位问题源头并路由修复 |
+| 文档优化 | kflow-doc-optimize | 独立维护（非流程阶段），可随时调用优化存量文档的修订记录与体积；**无活跃变更时同样可路由** |
 
 > `轻量` 档下被裁剪的阶段 SHALL 在该表中保留行，并在「阶段」列以 `⏭️ 不适用` 标注。
 

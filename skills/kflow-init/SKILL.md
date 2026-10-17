@@ -1,6 +1,6 @@
 ---
 name: kflow-init
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs environment initialization/初始化、环境配置、工具推荐、设置, project kickoff/项目启动, or legacy project reverse analysis/老项目逆向分析.
 license: MIT
 triggers:
@@ -47,7 +47,9 @@ allowed-tools:
 
 | 产物 | 文件 | 图例 | 内容要求 |
 |------|------|------|---------|
-| 工具链配置 | docs/toolchain.md | ✅ 必须 | 头部元信息（含项目类型字段，项目类型项目级记录的兜底真源）、各阶段推荐工具（含优先级）、环境能力扫描结果、权限配置状态、安装建议 |
+| 工具链配置 | docs/toolchain.md | ✅ 必须 | 头部元信息（含项目类型字段，项目类型项目级记录的兜底真源）、各阶段推荐工具（含优先级）、环境能力扫描结果、权限配置状态（含自动压缩阈值与门控 hook 状态）、安装建议 |
+| 项目设置 | .claude/settings.json | ✅ 必须 | `permissions.allow` 全局必需权限清单；顶层 `autoCompactWindow: 300000`；`hooks.PreToolUse` 主 Agent 门控注册条目（matcher 限定 `Edit`/`Write`/`Bash`）；三项均为合并不覆盖 |
+| 门控脚本 | .claude/hooks/kflow-main-agent-gate.py | ✅ 必须 | 从 `skills/kflow-init/scripts/kflow-main-agent-gate.py` 复制；阶段感知的主 Agent 工具禁用判定（判定规则见 `main-agent-execution-gating` 能力） |
 | 变更级覆盖（可选） | docs/changes/{change}/toolchain.md | 🔶 条件 | 特定变更需要不同工具链时创建，优先级高于项目级 |
 | CLAUDE.md 注入（项目画像） | CLAUDE.md | 🔶 条件 | 注入「项目画像」section（技术栈、目录结构、产品文档状态），marker 检测幂等 |
 | CLAUDE.md 注入（流程规则） | CLAUDE.md | 🔶 条件 | 注入/更新「变更流程强制规则」section（跨 skill 路由约束与用户接口约定，不含 skill 内部执行步骤），marker 检测幂等 |
@@ -119,12 +121,14 @@ DETECT(项目类型) -> TYPECONFIRM(项目类型确认，条件触发) -> SCAN(�
 │     ├── 项目类型、语言、框架、数据库、构建工具                   │
 │     ├── 关键目录、入口文件                                      │
 │     └── 产品文档状态（8 项存在性检测）                           │
-│  3.5 PERM_CONFIG  权限配置（新增）                               │
+│  3.5 PERM_CONFIG  权限配置 + 上下文配置（新增）                 │
 │     ├── 读取 skills/kflow-init/references/permission-model.md 权限声明          │
 │     ├── 检测 .claude/settings.json 是否存在及权限状态            │
 │     ├── 不存在 → AskUserQuestion → 创建 settings.json            │
 │     ├── 已存在但缺少部分权限 → AskUserQuestion → 追加缺失权限    │
 │     ├── 已齐全 → 输出"权限配置齐全 ✅"                          │
+│     ├── 写入 autoCompactWindow: 300000（已存在且更小则不覆盖）   │
+│     ├── 注册主 Agent 门控 PreToolUse hook（项目自定义条目不变）  │
 │     └── 用户拒绝 → toolchain.md 标注"权限未配置"                 │
 │  4. MATCH      匹配工具推荐矩阵                                  │
 │  5. GAP        检测能力缺口                                      │
@@ -268,7 +272,7 @@ CONTEXT 检测:
 
 详见 [references/legacy-analysis.md](references/legacy-analysis.md) — 8 项产品文档检测表及侧带检测规则。
 
-## 步骤 3.5：PERM_CONFIG — 权限配置
+## 步骤 3.5：PERM_CONFIG — 权限配置与上下文配置
 
 ```
 权限配置:
@@ -284,9 +288,29 @@ CONTEXT 检测:
    │   │   └── 用户拒绝 → toolchain.md 标注缺失权限
    │   └── 权限齐全 → 输出"权限配置齐全 ✅"
 3. 记录权限配置状态到 toolchain.md 权限配置状态节
+
+上下文配置（权限写入的同一动作内完成）:
+
+4. 写入自动压缩阈值 → 参见 permission-model.md §5.1
+   ├── settings.json 顶层无 autoCompactWindow → 写入 300000
+   └── 已存在且取值更小 → 保持不变（更早压缩，不抬高）
+5. 注册主 Agent 门控 hook → 参见 permission-model.md §5.2
+   ├── 复制门控脚本 skills/kflow-init/scripts/kflow-main-agent-gate.py
+   │   → 目标项目 .claude/hooks/kflow-main-agent-gate.py（目录不存在时创建）
+   ├── 在 hooks.PreToolUse 中追加门控注册条目（matcher: Edit|Write|Bash）
+   └── 项目自定义 hook 条目保持不变
+6. 校验上下文配置 → 运行 skills/kflow-init/scripts/verify_project_config.py --root <目标项目>
+   ├── 退出码 0 → 记录「上下文配置已生效」
+   └── 非 0 → 按输出修正缺失项后重跑；仍失败则记录到 toolchain.md 并提示手工补救
+7. 记录上下文配置状态到 toolchain.md 权限配置状态节
 ```
 
-幂等规则：仅追加缺失权限，不删除或修改已有条目，重复执行不重复添加。
+**幂等规则**（权限与上下文配置共同适用）：仅追加缺失条目，不删除或修改已有条目，重复执行不重复添加。其中两条为上下文配置专有：
+
+| 规则 | 说明 |
+|------|------|
+| 已存在且取值更小则不覆盖 | `autoCompactWindow` 已存在且小于 `300000` 时保持不变——更小的取值意味着更强的节流，SHALL NOT 被抬高 |
+| 项目自定义 hook 条目保持不变 | 仅在 `hooks.PreToolUse` 中定位本门控脚本的注册条目并更新之，SHALL NOT 整体替换 `PreToolUse` 数组，SHALL NOT 删除或改写项目自有的 hook 条目 |
 
 ## 步骤 4-6：MATCH + GAP + COMPAT
 
@@ -384,11 +408,14 @@ CONTEXT 检测:
 5. **变更名模式禁止 Plan Mode 拦截**：用户输入匹配「恢复/resume + 变更名」或「继续 + 变更名」时，SHALL NOT 进入 Plan Mode，直接进入 Skill 路由链；此规则优先级高于 Plan Mode 自动触发
 6. **流程阶段**: 设计探索 -> 原型设计(可选) -> 详细设计 -> 计划 -> 编码 -> 代码审查 -> 接口单元测试 -> E2E测试(前后端) -> 集成测试 -> 审计 -> 归档
 7. **查看状态**: 使用「状态」「进度」关键词触发 `kflow-status` 查看变更状态
+8. **存量文档优化**: `kflow-doc-optimize` 作为独立维护工具，可用于优化存量文档的修订记录与体积（文档优化 / 文档瘦身 / 拆分文档 / 清理修订记录），不属于变更流程的任何阶段；**不受本项目变更流程适用边界（如「KFlow Skills 仅在功能变更与缺陷修复场景调用」）的约束**，在文档维护场景下可正常调用。项目在其自维护的规则区块中声明该边界时，SHALL 一并记入此例外
 ```
 
 **模板版本取值**：`{kflow-init 的 version 值}` 取本文件 front matter 的 `version` 字段值。
 
 **作用域边界**：该 section 只承载跨 skill 的路由约束、用户接口约定与流程概览。归档后的 git commit 询问由 `kflow-archive` 的归档流程承载，非 git 仓库时的 git init 询问由本 Skill 步骤 13 承载——二者均为 skill 在自身执行流程中完成的步骤，SHALL NOT 写入该 section；该 section 中亦 SHALL NOT 出现技能开发仓库特有的脚本、产物目录与文件。
+
+**适用边界例外**：第 8 条声明 `kflow-doc-optimize` 不受项目变更流程适用边界的约束。该例外的表述、项目侧同步方式与「项目自定义规则」区块的保护边界见 [references/doc-optimize-boundary.md](references/doc-optimize-boundary.md)。
 
 ### Marker 3：Skill 改进建议自动捕获
 

@@ -1,6 +1,6 @@
 ---
 name: kflow-audit
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs audit/审计、评估、检查、审核 of a change, or before archiving/归档前, or anytime manual inspection is needed. 审计由单一子代理执行，全部变更档位同一形态——四项记账职责（门控校验 / 覆盖率与产物存在性校验 / 耗时数据汇总 / 阻塞级问题兜底），不作加权评分、不输出评分表、不对产物质量作独立评审，保留阻塞级问题拦截权与归档门控地位。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, cross-reviews/, self-reviews/, test-reports/, .status.md）。
 license: MIT
 triggers:
@@ -46,7 +46,8 @@ allowed-tools:
 | 产物 | 图例 | 说明 |
 |------|------|------|
 | 变更名称（可选） | 🔶 条件 | 指定审计的变更，不指定则审计全部活跃变更 |
-| 变更级 .status.md | ✅ 必须 | 阶段状态、终止结果与耗时数据 |
+| 变更级 .status.md | ✅ 必须 | 阶段状态、终止结果与当前有效状态 |
+| status-log.md | 🔶 条件 | 各阶段耗时记录与历史轮次、回退与重执行轨迹（审计场景读取；文件不存在时按未分层的单文件口径解析 .status.md） |
 | functional-designs/ | ✅ 必须 | 功能设计文档 |
 | detailed-design.md | ✅ 必须 | 详细设计文档 |
 | tasks.md | ✅ 必须 | 任务清单 |
@@ -77,7 +78,7 @@ allowed-tools:
 
 引用 `skills/kflow-audit/references/hooks.md` audit 阶段 PRE_HOOK（❌ 不需要服务：CHECK_STATE + RELOAD）。
 
-> RELOAD：重读全量产物, cross-reviews/, self-reviews/, test-reports/, .status.md。
+> RELOAD：重读全量产物, cross-reviews/, self-reviews/, test-reports/, .status.md, status-log.md（审计场景读取）。
 
 ---
 
@@ -89,7 +90,7 @@ allowed-tools:
 |------|------|-------------|---------|
 | (a) | 门控校验 | 各阶段门控是否全部通过（读变更级 `.status.md` 的阶段状态与终止结果字段） | `.status.md`、`test-reports/*/summary.md` |
 | (b) | 覆盖率与产物存在性校验 | traceability 覆盖率与阶段产物存在性、自审报告存在性 | `traceability.md`、各阶段产物目录、`self-reviews/{phase}/report.md` |
-| (c) | 耗时数据汇总 | 各阶段耗时与子代理轮次汇总、效率摘要、Post-mortem 架构改进汇总 | `.status.md` 耗时字段、`subchanges/*/test-reports/fix-reports/*.md` |
+| (c) | 耗时数据汇总 | 各阶段耗时与子代理轮次汇总、效率摘要、Post-mortem 架构改进汇总 | `.status.md` 当前状态字段、`status-log.md` 阶段耗时记录（审计场景读取；不存在时按未分层口径解析 `.status.md`）、`subchanges/*/test-reports/fix-reports/*.md` |
 | (d) | 阻塞级问题兜底 | 兜底扫出未被前序环节关闭的阻塞级问题 | 追踪矩阵、fix-reports、`cross-reviews/` |
 
 ## 职责 (a) 门控校验
@@ -185,6 +186,17 @@ allowed-tools:
 > 本节仅记录事实与改进建议，SHALL NOT 折算为评分或权重。
 
 ---
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 

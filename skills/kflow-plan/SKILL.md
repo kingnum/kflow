@@ -1,6 +1,6 @@
 ---
 name: kflow-plan
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs task planning/任务计划、任务清单、实现计划, or detailed-design.md is ready for subchange breakdown. 子变更级checkbox任务清单（含DoD四维验收标准），功能点级全展开TDD循环，区分后端SC/前端SC输入源。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务）。
 license: MIT
 triggers:
@@ -73,6 +73,17 @@ allowed-tools:
 | 子变更任务清单 | `docs/changes/{change}/subchanges/{subchange}/tasks.md` | ✅ 必须 | Checkbox 格式任务列表，含 4 维 DoD 验收标准 |
 | 自审报告 | `docs/changes/{change}/self-reviews/plan/report.md` | ✅ 必须 | 计划自审单轮验证报告，固定路径（不按轮次编号、不产出多份时间戳文件）；含 4 维度签署打假结果、独立发现问题清单、范围外观察小节、全量遍历证明、验证结论 |
 | 状态文件更新 | `.status.md` | ✅ 必须 | 标记计划阶段完成 |
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 
@@ -658,10 +669,12 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 
 2. 主 Agent 构建阶段输入
    ├── 分层加载（基础层 + 执行层）:
+
    │   ├── skills/kflow-plan/references/state-values.md（摘要）
    │   ├── skills/kflow-plan/references/gates.md（当前阶段相关门控）
    │   └── skills/kflow-plan/references/repetition.md（子代理隔离规则）
    ├── 输入: detailed-design.md 相关章节 + api-tests/ + e2e-tests/(🔶)
+   ├── 本子代理承担的功能点范围: {子变更}/{FP-NNN 列表}（单个子代理 ≤ 3 个功能点；超出时先分片再构建 prompt，前一片落盘后启动后一片承接）
    └── 输出: 各子变更 tasks.md（含 DoD 验收标准 + 子变更类型标注 + 4 维度签署清单）
 
 3. 调度 Agent 子代理执行计划主工作 → 输出各子变更 tasks.md 并更新 traceability.md 计划列

@@ -1,0 +1,82 @@
+# 切片清单 — references 文件的权威源与按阶段切片规则
+#
+# 字段: <权威源文件名>	<所属 skill>	<sections>
+#
+# 权威源位于 references-src/；各 skill 的副本位于 skills/<skill>/references/<文件>，
+# 由 scripts/sync-references.sh 依据本清单生成并校验，SHALL NOT 逐一手工编辑。
+# sections 指令语法见 scripts/sync-references.sh 头部注释；留空 = 全量形态。
+# 切片规则权威定义见 docs/designs/core-mechanisms/07-agent-model.md §17.3。
+#
+
+# ── gates.md — 门控标注约定(§1) + 本阶段正向门控(§2 定点) + 阶段回退门控(§3) + 本阶段专属规则 ──
+gates.md	kflow-api-test	1,~2:186-219,3,6
+gates.md	kflow-bug-fix	1,~2:172-185,3,8,9
+gates.md	kflow-code	1,~2:172-185,3,8
+gates.md	kflow-code-review	1,~2:186-219,3,4,5
+gates.md	kflow-design	1,~2:139-171,3
+gates.md	kflow-e2e-test	1,~2:220-234,3,6
+gates.md	kflow-explore	1,~2:125-131,3
+gates.md	kflow-integration-test	1,~2:235-253,3,6
+gates.md	kflow-plan	1,~2:172-185,3,7
+gates.md	kflow-prototype-design	1,~2:115-138,3
+
+# ── repetition.md — 执行模型/执行流程/验收/prompt 规范/隔离规则 + 本阶段适用章节 ──
+repetition.md	kflow-api-test	2,3,4,5,7,8,9,10,12,~14:472-503+534-553
+repetition.md	kflow-bug-fix	2,3,4,5,7,8,9,10,12,~14:472-481+504-553,13,15,16,17,18
+repetition.md	kflow-bug-triage	2,3,4,5,7,8,9,10,12,~14:472-481+504-553
+repetition.md	kflow-code	2,3,4,5,7,8,9,10,12,~14:472-481+504-553,13,15,16,17
+repetition.md	kflow-code-review	2,3,4,5,7,8,9,10,12,~14:472-481+504-553,13,15,16,17
+repetition.md	kflow-e2e-test	2,3,4,5,7,8,9,10,12,~14:472-503+534-553
+repetition.md	kflow-integration-test	2,3,4,5,7,8,9,10,12,~14:472-503+534-553
+repetition.md	kflow-plan	2,3,4,5,7,8,9,10,12,~14:472-481+504-553
+
+# ── state-values.md — 阶段流转状态值(§1) + 变更档位字段(§4) + 本阶段相关字段 ──
+state-values.md	kflow-api-test	1,4,5,6
+state-values.md	kflow-bug-fix	1,4,6
+state-values.md	kflow-code	1,4,6
+state-values.md	kflow-code-review	1,4,6
+state-values.md	kflow-design	1,4,2,5,6
+state-values.md	kflow-e2e-test	1,4,2,5,6
+state-values.md	kflow-explore	1,4
+state-values.md	kflow-integration-test	1,4,2,5,6
+state-values.md	kflow-plan	1,4,2,6
+state-values.md	kflow-prototype-design	1,4,3
+
+# ── self-review.md — 本阶段自审维度(§2) + 签署清单 + 单轮验证 + 交付与门控 ──
+self-review.md	kflow-design	2:2.3,1,3,4,5,6,10,13
+self-review.md	kflow-explore	2:2.1,1,3,4,5,6,10,13
+self-review.md	kflow-prototype-design	2:2.2,1,3,4,5,6,10,13
+
+# ── phase-transition.md — 衔接决策表 + 调度映射表 + 归档闸口 + 本阶段门控边界 ──
+phase-transition.md	kflow-api-test	1,2,3,5,4
+phase-transition.md	kflow-audit	1,2,3,5,6^6:审计
+phase-transition.md	kflow-code	1,2,3,5,4
+phase-transition.md	kflow-code-review	1,2,3,5,4
+phase-transition.md	kflow-design	1,2,3,5,6^6:详细设计
+phase-transition.md	kflow-e2e-test	1,2,3,5,4
+phase-transition.md	kflow-explore	1,2,3,5,6^6:设计探索
+phase-transition.md	kflow-integration-test	1,2,3,5,4
+phase-transition.md	kflow-plan	1,2,3,5,4
+phase-transition.md	kflow-prototype-design	1,2,3,5,4,6^6:原型设计
+phase-transition.md	kflow-resume	1,2,3,5
+
+# ── service-lifecycle.md — 服务启动/停止/健康检查操作指令（按阶段排除不适用章节）──
+service-lifecycle.md	kflow-api-test	1,2,3,4,5,6,7,-6
+service-lifecycle.md	kflow-code	1,2,3,4,5,6,7,-2,-4,-6,-7
+service-lifecycle.md	kflow-e2e-test	1,2,3,4,5,6,7,-7
+service-lifecycle.md	kflow-integration-test	1,2,3,4,5,6,7,-7
+
+# ── hooks.md — 钩子配置表(§1) + 本阶段 PRE_HOOK/POST_HOOK + RELOAD 清单(§4) + 服务操作映射(§5) ──
+hooks.md	kflow-api-test	1,2:2.4,3:3.4,4,5
+hooks.md	kflow-archive	1,2:2.1,3:3.1,4,5
+hooks.md	kflow-audit	1,2:2.1,3:3.1,4,5
+hooks.md	kflow-bug-fix	1,2:2.6,3:3.5,4,5
+hooks.md	kflow-bug-triage	1,2:2.6,3:3.5,4,5
+hooks.md	kflow-code	1,2:2.3,3:3.3,4,5
+hooks.md	kflow-code-review	1,2:2.1,3:3.1,4,5
+hooks.md	kflow-design	1,2:2.1,3:3.1,4,5
+hooks.md	kflow-e2e-test	1,2:2.5,3:3.4,4,5
+hooks.md	kflow-explore	1,2:2.1,3:3.1,4,5
+hooks.md	kflow-integration-test	1,2:2.5,3:3.4,4,5
+hooks.md	kflow-plan	1,2:2.1,3:3.1,4,5
+hooks.md	kflow-prototype-design	1,2:2.2,3:3.2,4,5

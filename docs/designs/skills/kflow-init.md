@@ -277,6 +277,18 @@ AskUserQuestion 仅在以下两种情形使用，其余情形 SHALL 静默复用
 - 不覆盖 deny 列表
 - 重复执行时已包含全部所需权限 → 不重复添加，不重复询问
 
+### 上下文配置与校验
+
+除权限清单外，PERM_CONFIG 步骤 SHALL 向目标项目写入门控与压缩阈值配置（详见 `skills/kflow-init/references/permission-model.md` §5）：
+
+| 配置项 | 取值 | 写入位置 | 幂等规则 |
+|--------|------|---------|---------|
+| 自动压缩阈值 | `autoCompactWindow: 300000` | `.claude/settings.json` 顶层 | 缺失补写；已存在且更小则不覆盖 |
+| 主 Agent 门控 hook | `PreToolUse`，matcher `Edit|Write|Bash` | `.claude/settings.json` 的 `hooks.PreToolUse` | 仅更新本门控条目；项目自定义条目保持不变 |
+| 门控脚本 | `kflow-main-agent-gate.py` | `.claude/hooks/` | 覆盖为本版本脚本 |
+
+**写入后校验**：运行 `scripts/verify_project_config.py --root <目标项目>`，校验 settings.json 可解析、`autoCompactWindow ≤ 300000`、门控脚本存在、`hooks.PreToolUse` 注册条目与 matcher 合规。退出码非 0 时按输出修正后重跑；仍失败则记录到 `toolchain.md` 并提示手工补救，SHALL NOT 阻塞 init 主流程。
+
 ### 权限配置状态输出
 
 | 字段 | 说明 |

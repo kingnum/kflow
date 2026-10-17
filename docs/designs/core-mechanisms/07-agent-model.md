@@ -34,6 +34,12 @@ kflow-plan 阶段的产物自审由 `plan-self-review` 能力承载，不适用�
 
 **审查范围冻结**：审查对象集合由主 Agent 从阶段产物既有内容生成并冻结，审查维度限于该阶段固定枚举；子代理 SHALL NOT 扩大审查对象集合、SHALL NOT 新增审查维度、SHALL NOT 借审查之名新增功能点/字段/章节/分支。冻结范围之外的发现降级为「范围外观察」——不修改产物、不计入发现数。审查对象集合 MAY 因阶段输入变化（如回退重执行新增受影响项）由主 Agent 更新。
 
+**工作量分片上限**：单个子代理承担的工作量 SHALL NOT 超过 **3 个功能点**或 **10 个 TDD 步骤**。超出该上限的工作 SHALL 被拆分为多个子代理按序执行——前一个子代理返回并落盘后，由主 Agent 启动后一个子代理承接剩余工作；子代理在完其所分配工作量前判断剩余工作需另行承接时，SHALL 落盘当前进度并返回，说明剩余工作范围，主 Agent SHALL 启动新子代理承接，SHALL NOT 在主 Agent 上下文中继续。
+
+> **仅重复制类阶段**（编码 / 代码审查 / 缺陷修复）适用本上限；单轮类测试阶段（接口单元测试 / E2E 测试 / 集成测试）的输入工作项已在设计阶段拆为用例级，超限场景由「按测试用例分片」自然覆盖，SHALL NOT 额外套用功能点计数。分片 SHALL NOT 改变「每轮遍历全部工作项」的既有要求——分片仅决定单次子代理调用的工作量边界，该轮次的遍历范围仍为阶段工作项全集。
+
+> **工作量上限与轮数上限的口径区分**：二者是两类不同的约束，SHALL NOT 混用。工作量上限约束**单个子代理承担的功能点数或 TDD 步数**，是允许且强制的要求；轮数上限约束**阶段的执行轮次**，属 prompt 禁止项（见下）。工作量上限 SHALL NOT 被表述为「最多执行 N 轮」。
+
 **档位语义**：变更档位只决定**审查形态**（轻量单 Agent 串行覆盖全部视角 / 标准两视角并行）与产出深度，SHALL NOT 决定轮数。变更级 `.status.md` 不含「变更档位」字段，或读取到历史变更遗留的 `完整` 取值时，按 `标准` 档确定审查形态与产出深度。
 
 **验证门控**：受影响项 100% 覆盖（回退重执行场景，存在受影响项清单时）+ 产物完整性；两项全部通过方验收通过。
@@ -42,7 +48,7 @@ kflow-plan 阶段的产物自审由 `plan-self-review` 能力承载，不适用�
 
 `执行轮次` 字段格式为 `{N} 轮`（无分母，下限 1 轮）；读取侧遇到历史 `{N} / {上限}` 形式时取分子、忽略分母。
 
-> 完整规范（复杂度公式、轮次执行细节、prompt 规范、审查范围冻结、验证门控）参见 `各执行类 skill 的 references/repetition.md`；权威定义见 `agent-iteration-execution` 能力
+> 完整规范（复杂度公式、轮次执行细节、prompt 规范、工作量分片、审查范围冻结、验证门控）参见 `各执行类 skill 的 references/repetition.md`；权威定义见 `agent-iteration-execution` 能力
 
 ### 15.2 轮间摘要传递
 
@@ -54,16 +60,19 @@ kflow-plan 阶段的产物自审由 `plan-self-review` 能力承载，不适用�
 
 ### 15.3 子代理隔离规则强化
 
-> **版本**: 2.7.0 新增（变更 enforce-subagent-execution），2.8.0 新增后台权限失败回退（变更 portable-permission-propagation）
+> **版本**: 2.7.0 新增（变更 enforce-subagent-execution），2.8.0 新增后台权限失败回退（变更 portable-permission-propagation），2.9.0 硬线升级为工具级强制（变更 optimize-context-budget）
 
 §12 强化内容：
 - **主 Agent 职责边界硬线**：执行类阶段主 Agent 职责 = 调度 + 验收，SHALL NOT 直接执行阶段主工作（编码/修复/测试/审查/计划等），无例外
+- **硬线由阶段感知的工具级门控强制实施**：硬线 SHALL NOT 仅依赖 SKILL.md 中的声明性约束——声明性约束已实测被违反（执行类阶段主 Agent 自行 `Edit` 生产代码、自行运行多轮 `pytest`，单会话产生 169~254 次 `Bash`、66~215 次 `Edit`）。硬线 SHALL 由 `main-agent-execution-gating` 能力提供的 `PreToolUse` 门控强制实施：由变更级 `.status.md` 的当前阶段字段判定是否执行类阶段，据此拒绝主 Agent 的越界 `Edit`/`Write` 与长输出构建测试命令。门控的判定来源、白名单与黑名单命令模式见该能力；无法判定当前阶段时放行（门控的目的是降低上下文消耗，不是安全边界）
 - **轮次级重试**：某轮子代理崩溃 → 新建 Agent 重跑该轮（≤3 次重试），全部失败标记 ⚠️ 阻塞
 - **后台权限失败回退前台子代理**：后台子代理因权限问题失败时，主 Agent SHALL 创建新的前台子代理（run_in_background=false）重新执行，SHALL NOT 直接接管，回退不计入轮次级重试 3 次上限
 - **权限预配置**：由 kflow-init 根据 `kflow-init 的 references/permission-model.md` 自动配置，取代手动预配置
 - **双写强制**：集中定义在 `各执行类 skill 的 references/repetition.md` §12，各执行类阶段 SKILL.md 内联规则框
 
-> 完整规范参见 `各执行类 skill 的 references/repetition.md` §12
+> **门控拒绝不等于流程阻塞**：门控拒绝一次工具调用时，主 Agent SHALL 转而创建子代理执行该工作，SHALL NOT 将拒绝视为阻塞或据此中止流程。拒绝原因（`permissionDecisionReason`）为**指导性内容**，回传给主 Agent 作为改派子代理的依据。门控拒绝记录 SHALL 可观测，供审计阶段核验职责边界遵守情况（参见 `08-governance.md`）。
+
+> 完整规范参见 `各执行类 skill 的 references/repetition.md` §12；门控机制权威定义见 `main-agent-execution-gating` 能力
 
 ## 十六、自审机制
 
@@ -101,33 +110,70 @@ kflow-explore、kflow-prototype-design、kflow-design、kflow-plan 四个阶段�
 
 ## 十七、子代理上下文分层加载
 
-> **版本**: 2.5.0 新增
+> **版本**: 2.5.0 新增，2.6.0 加载粒度下沉到阶段级并补入切片规则（变更 optimize-context-budget）
 
-子代理冷启动时按阶段类型分层加载各 skill 的 `references/` 文件，避免全量加载不相关的上下文。每个核心机制文档和 `references/` 文件头部标注了「加载层级」和「适用阶段」。
+子代理冷启动时按阶段分层加载各 skill 的 `references/` 文件，避免全量加载不相关的上下文。每个核心机制文档和 `references/` 文件头部标注了「加载层级」和「适用阶段」。
+
+**加载粒度下沉到阶段级**：层级划分（基础层 / 执行层 / 服务层 / 创意层 / 恢复层 / 归档层）保持不变，但加载清单的粒度由「阶段类型」下沉到**「具体阶段 + 子代理职责」**——同一层级的文件在不同阶段被切片为不同内容，且同一阶段内不同职责的子代理加载的章节亦不同。实测子代理平均加载 46,734 字符的 references，其中约 85% 与本阶段无关，故粒度必须落到阶段级与章节级。
 
 ### 17.1 分层定义
 
 | 层级 | 加载文件 | 适用阶段 |
 |------|---------|---------|
-| 基础层 | state-values.md（摘要）、gate-rules.md（当前阶段相关门控） | 全部 |
-| 执行层 | repetition-model.md | plan/code/code-review/api-test/e2e-test/integration-test/bug-fix |
-| 服务层 | service-lifecycle.md、phase-hooks.md（服务相关章节） | api-test/e2e-test/integration-test |
-| 创意层 | self-review.md | explore/prototype-design/design |
-| 恢复层 | recovery-protocol.md | 仅恢复场景 |
-| 归档层 | archive-rules.md | archive |
+| 基础层 | `state-values.md`、`gates.md` | 全部 |
+| 执行层 | `repetition.md` | plan/code/code-review/api-test/e2e-test/integration-test/bug-fix |
+| 服务层 | `service-lifecycle.md`、`hooks.md` | api-test/e2e-test/integration-test（hooks.md 另覆盖 prototype-design/code/audit/archive/bug-fix/bug-triage/design/explore/plan） |
+| 创意层 | `self-review.md` | explore/prototype-design/design |
+| 恢复层 | `recovery-protocol.md` | 仅恢复场景 |
+| 归档层 | `archive-rules.md` | archive |
 
-### 17.2 各阶段类型加载清单
+> 各阶段另加载本阶段的 `phase-transition.md`（阶段衔接决策与调度映射），与钩子机制同属阶段执行基础设施。
 
-| 阶段类型 | 加载层级 | 文件清单 |
-|---------|---------|---------|
-| 纯执行阶段（plan/code/code-review/bug-fix） | 基础层 + 执行层 | state-values.md + gate-rules.md + repetition-model.md |
-| 测试阶段（api-test/e2e-test/integration-test） | 基础层 + 执行层 + 服务层 | state-values.md + gate-rules.md + repetition-model.md + service-lifecycle.md + phase-hooks.md |
-| 设计阶段（explore/prototype-design/design） | 基础层 + 创意层 | state-values.md + gate-rules.md + self-review.md |
+### 17.2 各阶段精确加载清单
 
-> explore 阶段在上述清单之外**额外加载**创意层的 `clarify-convergence.md`（需求澄清收敛门规则，explore 专属）。该文件不适用于 prototype-design / design 阶段。
+清单精确到**文件 + 章节级定位**。各 skill 的 `references/` 副本为切片后的结果，下列章节号即该副本内的章节。
 
-### 17.3 RELOAD 与分层对齐
+| 阶段 | 加载文件（章节级定位） |
+|------|---------------------|
+| explore | `state-values.md`（§1 阶段流转状态值、§4 变更档位字段）、`gates.md`（§1 门控规则标注约定、§2 阶段正向门控中 explore 条目）、`self-review.md`（explore 4 维度：完整性/闭环性/必要性/清晰性）、`clarify-convergence.md`（全文）、`phase-transition.md`（§2 衔接决策表中 explore 行、§3 explore→design 调度行） |
+| prototype-design | `state-values.md`（§1、§3 原型设计阶段审查方式记录字段、§4）、`gates.md`（§1、§2 中 prototype 条目）、`self-review.md`（prototype 4 维度：覆盖性/一致性/可用性/完整性）、`hooks.md`（§二 2.2 浏览器进程阶段、§三 3.2、§四 RELOAD 清单中 prototype 行、§九 浏览器进程管理）、`phase-transition.md`（§2 prototype 行、§3 prototype→design 调度行） |
+| design | `state-values.md`（§1、§2 用户评审状态值、§4、§5 阶段适用性声明字段）、`gates.md`（§1、§2 中 design 条目、§3 阶段回退门控中 design 条目）、`self-review.md`（design 4 维度：一致性/完备性/可行性/可测性）、`phase-transition.md`（§2 design 行、§3 design→plan 调度行） |
+| plan | `state-values.md`（§1、§4）、`gates.md`（§1、§2 中 plan 条目、§7 HITL 阻塞 plan 入口规则）、`repetition.md`（§1 概述、§2 执行模型核心特征、§3 阶段分类、§8 主 Agent 验收标准、§9 验收失败记录与处理、§10 子代理 prompt 规范、§12 子代理隔离规则）、`hooks.md`（§四 RELOAD 清单中 plan 行、§三 1.1 轻量型 PRE_HOOK）、`phase-transition.md`（§2 plan 行、§3 plan→code 调度行） |
+| code | `state-values.md`（§1、§4）、`gates.md`（§1、§2 中 code 条目、§8 编码阶段上游问题决策流程）、`repetition.md`（§1~§5 概述/核心特征/阶段分类/执行流程/复杂度评估、§6 Agent 提前返回处理、§7 Agent 完成判断、§8 主 Agent 验收标准、§9 验收失败记录与处理、§10 子代理 prompt 规范、§12 子代理隔离规则、§13 轮间摘要传递机制）、`hooks.md`（§二 2.3 编译验证阶段、§三 3.3、§四 RELOAD 清单中 code 行、§五 服务生命周期操作步骤中编译验证部分）、`tdd-checklist.md`、`service-guide-template.md`、`phase-transition.md`（§2 code 行、§3 code→code-review 调度行） |
+| code-review | `state-values.md`（§1、§4）、`gates.md`（§1、§2 中 code-review 条目、§4 代码审查门控规则、§5 审查闭环验证规则）、`repetition.md`（§1~§3、§7、§8、§9、§10、§12、§13）、`hooks.md`（§四 RELOAD 清单中 code-review 行、§三 1.1）、`phase-transition.md`（§2 code-review 行、§3 code-review→api-test 调度行） |
+| api-test | `state-values.md`（§1、§4）、`gates.md`（§1、§2 中 api-test 条目、§3 中 api-test 条目、§6 子变更依赖规则）、`repetition.md`（§1~§3、§7、§8、§9、§10、§12）、`service-lifecycle.md`（全文）、`hooks.md`（§二 2.4 后端服务阶段、§三 3.4、§四 RELOAD 清单中 api-test 行、§六 服务刷新规则、§七 服务停止超时链、§八 端口冲突检测）、`phase-transition.md`（§2 api-test 行、§3 api-test→e2e-test 调度行） |
+| e2e-test | `state-values.md`（§1、§4）、`gates.md`（§1、§2 中 e2e-test 条目、§6）、`repetition.md`（§1~§3、§7、§8、§9、§10、§12）、`service-lifecycle.md`（全文）、`hooks.md`（§二 2.5 前后端服务阶段、§三 3.4、§四 RELOAD 清单中 e2e-test 行、§六 服务刷新规则、§七 服务停止超时链、§八 端口冲突检测、§九 浏览器进程管理）、`phase-transition.md`（§2 e2e-test 行、§3 e2e-test→integration-test 调度行） |
+| integration-test | `state-values.md`（§1、§4）、`gates.md`（§1、§2 中 integration-test 条目、§6）、`repetition.md`（§1~§3、§7、§8、§9、§10、§12）、`service-lifecycle.md`（全文）、`hooks.md`（§二 2.5、§三 3.4、§四 RELOAD 清单中 integration-test 行、§六~§九）、`phase-transition.md`（§2 integration-test 行、§3 integration-test→audit 调度行、§5 归档闸口） |
+| bug-fix | `state-values.md`（§1、§4）、`gates.md`（§1、§2 中 bug-fix 条目、§9 缺陷修复快车道门控规则）、`repetition.md`（§1~§3、§7、§8、§9、§10、§12、§13）、`hooks.md`（§三 2.6 缺陷修复快车道模式、§三 3.5、§四 RELOAD 清单中 bug-fix 行）、`phase-transition.md`（§2 bug-fix 行、§7 停止自动衔接时的用户提示） |
+| bug-triage | `gates.md`（§1、§9 缺陷修复快车道门控规则）、`repetition.md`（§1~§3 概述/核心特征/阶段分类）、`hooks.md`（§四 RELOAD 清单中 bug-fix 行、§三 1.1）、`phase-transition.md`（§2 bug-triage 行、§3 bug-triage→bug-fix 调度行） |
+| audit | `gates.md`（§1、§2 全阶段正向门控——审计为归档门控）、`hooks.md`（§四 RELOAD 清单中 audit 行、§三 1.1）、`phase-transition.md`（§2 audit 行、§3 audit→archive 调度行、§5 归档闸口） |
+| archive | `hooks.md`（§四 RELOAD 清单中 archive 行、§三 1.1）、`archive-rules.md`（全文）、`phase-transition.md`（§2 archive 行、§5 归档闸口） |
+| resume | `recovery-protocol.md`（全文）、`phase-transition.md`（§1~§3 概述/衔接决策表/调度映射表） |
 
-子代理执行 RELOAD 步骤时，SHALL 仅重新加载当前已加载层级的文件，不跨层级加载。
+> **同一阶段内按子代理职责细分**：上表为该阶段**子变更主工作子代理**的加载清单。承担审查/验证职责的子代理（交叉审查、单轮验证、审计）SHALL 仅加载其审查维度对应的章节，SHALL NOT 加载执行类章节（如 `repetition.md` 的执行流程与轮间摘要机制）。承担探路/信息收集职责的子代理（如 explore 的澄清子代理）SHALL 仅加载 `clarify-convergence.md` 与本阶段 `state-values.md`。
+
+### 17.3 切片规则
+
+共享 references 文件在分发到各 skill 前 SHALL 按以下规则切片。切片结果由 `scripts/sync-references.sh` 从 `references-src/` 下的权威源按 `references-src/slice-manifest.tsv` 生成——各 skill 的副本 SHALL NOT 逐一手工编辑。
+
+**归属规则**：
+
+| 序号 | 规则 | 说明 |
+|------|------|------|
+| 1 | 按规则的作用对象阶段归属 | 一条规则服务于哪个阶段，就进入该 skill 的切片。判定依据是该规则**约束的动作发生在哪个阶段**，而非该规则在文档中的位置 |
+| 2 | 跨阶段通用规则进入所有相关 skill 的切片 | 门控标注约定（`gates.md` §1）、状态值定义（`state-values.md` §1/§4）、子代理隔离规则（`repetition.md` §12）等被多个阶段共同消费的规则，复制进所有相关 skill 的切片，SHALL NOT 只保留在一处 |
+| 3 | 文件头部为全局元信息 | 首个章节号标题之前的内容（版本、来源、加载层级、适用阶段）在任何切片中均保留 |
+
+**降级规则**：
+
+| 序号 | 规则 | 说明 |
+|------|------|------|
+| 4 | 无法归属时保留全量形态并登记 | 若某规则确实无法归属单一阶段（如跨阶段的调度映射），该 skill 的该文件保留**全量形态**（不切片），并在本节的加载清单中登记该例外与理由。降级后 SHALL NOT 因「无法归属」而删除规则 |
+
+**切片边界争议的处理**：一条规则同时适用于多个阶段时按规则 1 的判定依据归属；确实跨越阶段边界的（如 `phase-transition.md` 的阶段衔接决策表）按规则 4 处理。
+
+### 17.4 RELOAD 与分层对齐
+
+子代理执行 RELOAD 步骤时，SHALL 仅重新加载当前已加载层级的文件，不跨层级加载；重新加载 SHALL 按 §17.2 的章节级定位进行，SHALL NOT 整体读取未变化的文件（按需分片读取规则见 `large-doc-splitting` 能力）。
 
 ---

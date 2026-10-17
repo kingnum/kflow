@@ -44,22 +44,6 @@
 | ⚠️ 需修订 | 用户评审发现问题，需修订后重新评审 | 用户选择「需要修订」，触发阶段回退 |
 | ⏭️ 跳过 | 该阶段不适用/已跳过，无需用户评审 | 纯后端项目跳过原型设计、原型设计被跳过 |
 
-## 3. 原型设计阶段审查方式记录字段
-
-原型设计阶段在 BUILD 门控通过后，通过 AskUserQuestion 由用户选择审查方式，选择结果 SHALL 记录到 `.status.md` 原型阶段条目。该字段决定 VERIFY 与 SELFREV 是否执行。
-
-| 字段值 | 含义 | 后续步骤 |
-|--------|------|---------|
-| `子代理自动审查验证` | 用户选择执行自动验证 | 执行 VERIFY（导航 5 轮 + Playwright 5 轮 + UX 5 轮 + 对比度检测）与 SELFREV，完成后进入 REVIEW |
-| `人工审查` | 用户选择自行审查，认领全部审查责任 | 跳过 VERIFY 与 SELFREV（不保留兜底轮次），直接进入 REVIEW |
-| （未记录） | BUILD 门控尚未通过，或用户尚未选择 | 阻塞在审查方式选择步骤，SHALL NOT 进入 REVIEW |
-
-**记录规则**：
-
-- 写入时机：用户在审查方式选择步骤选定后立即写入
-- 幂等性：变更从 `.status.md` 恢复执行且字段已记录时，SHALL 读取已记录值，SHALL NOT 重复询问
-- 可执行产物差异：`人工审查` 路径下仅产出 BUILD 报告（`self-reviews/prototype/cdn-crossref-check/report.md`）；`子代理自动审查验证` 路径下额外产出 `self-reviews/prototype/report.md`（SELFREV 单轮验证报告）与 `self-reviews/prototype/verify-report.md`（VERIFY 单轮合并验证报告，按导航合理性 / Playwright 全覆盖 / UX 规则审查 / 对比度检测 / 验证结论五分区组织）
-
 ## 4. 变更档位字段
 
 变更档位是**变更级 `.status.md` 基本信息的必填字段**，作为贯穿全流程的单一分级依据，决定各阶段的审查形态与产出深度。

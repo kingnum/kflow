@@ -1,6 +1,6 @@
 ---
 name: kflow-explore
-version: 0.27.0
+version: 0.28.0
 description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces signed-checklist self-review (the agent signs off on 4 dimensions with in-artifact evidence anchors, then one independent verification round, then a unified fix — a single round, never a second) and two-action save rule for external info gathering.
 license: MIT
 triggers:
@@ -70,6 +70,17 @@ allowed-tools:
 | 领域词汇表 | `CONTEXT.md`（项目根目录） | ✅ 必须 | 项目级领域术语定义，首次构建或增补。每术语含：定义、别名、边界 |
 | 状态文件 | `docs/changes/{change}/.status.md` | ✅ 必须 | 标记设计探索阶段完成，含项目类型字段、**变更档位**字段、执行备注 |
 | 自审报告 | `docs/changes/{change}/self-reviews/explore/report.md` | 🔶 条件 | 单轮验证报告（固定路径，不按轮次编号），含签署清单打假结果、独立发现问题清单、范围外观察、全量遍历证明、验证结论；缺失判缺项 |
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 

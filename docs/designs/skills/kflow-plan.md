@@ -66,6 +66,8 @@ allowed-tools:
 
 ---
 
+> **状态双写**：阶段完成、回退与重执行时，主 Agent SHALL 向 `docs/changes/{change}/status-log.md` 追加事件记录，并刷新 `.status.md` 的当前状态字段；`.status.md` SHALL 保持在 100 行以内。常规阶段推进与门控判定 SHALL 仅读取 `.status.md`，`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
+
 ## 执行流程
 
 ```
@@ -379,7 +381,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 
 > 单轮验证模型（签署清单 / 打假契约 / 终止结果取值）权威定义在 `signed-checklist-verification` 能力与 `07-agent-model.md` §16；本文件 SHALL NOT 自定义轮次数值或终止条件。
 
-> 通用规范（复杂度公式、prompt 规范、审查范围冻结、验证门控）参见 `skills/kflow-plan/references/repetition.md`
+> 通用规范（复杂度公式、prompt 规范、**工作量分片**、审查范围冻结、验证门控）参见 `skills/kflow-plan/references/repetition.md`
 
 ### 阶段特定参数
 

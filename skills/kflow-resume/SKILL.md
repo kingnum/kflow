@@ -1,6 +1,6 @@
 ---
 name: kflow-resume
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs to resume interrupted work/恢复、resume {change-name}, or when kflow-guide routes to RESUME mode. 仅承接中断恢复（7 步重流程：优先级链读状态 → 断点定位 → 完整门控与产物完整性二次校验 → 五问题摘要 → 服务恢复检测 → 调度）；轻量推进（「继续 {change-name}」）由 kflow-guide 直接调度阶段 Skill，SHALL NOT 经过本 Skill。
 license: MIT
 triggers:
@@ -145,6 +145,19 @@ Priority 5: tasks.md（兜底）
 ├── 从 checkbox 状态反推当前阶段
 └── 未勾选的最小阶段序号 = 当前阶段
 ```
+
+**恢复场景的补充读取（与优先级链并行，不参与「命中即停止」）**：
+
+```
+Status log（恢复场景必读）
+├── Read: docs/changes/{change}/status-log.md（存在时）
+│   ├── 还原阶段轨迹（各阶段开始/完成/回退事件序列）
+│   ├── 识别最近一次回退与重执行记录
+│   └── 作为断点定位的佐证：当前状态以 .status.md 为准，历史轨迹以 status-log.md 为准
+└── 文件不存在（历史变更未分层）-> 按既有单文件口径解析 .status.md，SHALL NOT 报错或阻塞
+```
+
+> **读取边界**：`status-log.md` 仅在中断恢复与审计场景读取；常规阶段推进、门控判定与子代理构造 SHALL 仅读取 `.status.md`（权威定义见 `status-file-layering` 能力）。
 
 ## 步骤 3：LOCATE — 断点定位
 

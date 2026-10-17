@@ -75,6 +75,8 @@ allowed-tools:
 
 ---
 
+> **状态双写**：阶段完成、回退与重执行时，主 Agent SHALL 向 `docs/changes/{change}/status-log.md` 追加事件记录，并刷新 `.status.md` 的当前状态字段；`.status.md` SHALL 保持在 100 行以内。常规阶段推进与门控判定 SHALL 仅读取 `.status.md`，`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
+
 ## 执行流程
 
 ```
@@ -601,7 +603,9 @@ Slice 3: ...
 
 编码阶段属于执行类阶段中的**重复制类阶段**，沿用重复制子代理循环：每轮遍历 tasks.md 中全部功能点，对每个 FP 执行完整 TDD 垂直切片（含 Tracer Bullet），禁止按轮次分段分配工作重点。轮次下限为 1 轮（无例外），轮次由实际执行的循环决定；变更档位只决定审查形态与产出深度，SHALL NOT 决定轮数。回退重执行 SHALL NOT 预置或提高轮数，受影响项清单仅供验证门控的「受影响项 100% 覆盖」使用。档位读取自变更级 `.status.md` 基本信息的「变更档位」字段，字段缺失或读取到历史遗留的 `完整` 取值时按 `标准` 档处理。当某轮无新发现且无可执行工作、且报告证明全部功能点与全部审查对象已完成全量遍历时，SHALL 返回执行报告并终止，终止结果 `执行完成`；连续 3 轮无实质进展（同一问题项反复出现）时返回执行报告并标注 `停滞`，记录 `docs/skill-suggestion.md` 并使用 AskUserQuestion 升级用户。审查范围冻结：审查对象集合由主 Agent 从阶段产物既有内容生成并冻结，审查维度限于本阶段枚举；冻结范围之外的发现降级为「范围外观察」，不改产物、不计入发现数。轮间摘要（第 2 轮起注入）保留。阶段终止时 SHALL 在 `.status.md` 写入终止结果；`执行轮次` 字段格式为 `{N} 轮`。执行模型与终止模型的权威定义见 `agent-iteration-execution` 能力。任何 prompt 与流程描述 SHALL NOT 预设或硬编码轮次数值。
 
-> 通用规范（复杂度公式、轮次执行细节、prompt 规范、审查范围冻结、验证门控）参见 `skills/kflow-code/references/repetition.md`
+> 通用规范（复杂度公式、轮次执行细节、prompt 规范、**工作量分片**、审查范围冻结、验证门控）参见 `skills/kflow-code/references/repetition.md`
+
+> **工作量分片上限**：单个子代理承担的工作量 SHALL NOT 超过 **3 个功能点**或 **10 个 TDD 步骤**；超出时由主 Agent 先行分片，前一片落盘后启动后一片承接。该上限的约束对象是**工作量**，与 §10「禁止任何轮数上限数值」约束的**轮数**口径不同，二者 SHALL NOT 混用（权威定义见 `docs/designs/core-mechanisms/07-agent-model.md` §15.1）。
 
 ### 阶段特定参数
 

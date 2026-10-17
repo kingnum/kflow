@@ -1,6 +1,6 @@
 ---
 name: kflow-e2e-test
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs E2E testing/E2E 测试、QA 测试、功能测试、浏览器自动化测试, or subchange API tests (kflow-api-test) pass and ready for browser testing. Playwright snapshot+ref模式，决策树路由，健康评分映射。仅前后端项目，纯后端跳过。依赖前置 kflow-api-test。含 PRE_HOOK/POST_HOOK 阶段钩子。/playwright
 license: MIT
 triggers:
@@ -93,6 +93,17 @@ allowed-tools:
 | 变更状态更新 | `.status.md` | ✅ 必须 | 更新子变更进度矩阵 |
 
 > **阶段耗时遥测**：本阶段完成时 SHALL 更新变更级 `.status.md` 的「阶段耗时与轮次统计」区，填写阶段/开始时间/结束时间/耗时/子代理轮次/执行方式六列；单轮类阶段的「子代理轮次」记 `1`（存在定向重验时记累计轮次），「执行方式」记 `单轮验证`（含定向重验）。
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 
@@ -528,12 +539,14 @@ E2E 测试阶段属于**单轮类执行阶段**，采用**单轮全面执行 + �
 
 2. 构建阶段专属提示词
    ├── 分层加载（基础层 + 执行层 + 服务层）:
+
    │   ├── skills/kflow-e2e-test/references/state-values.md（摘要）
    │   ├── skills/kflow-e2e-test/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-e2e-test/references/repetition.md
    │   ├── skills/kflow-e2e-test/references/service-lifecycle.md
    │   └── skills/kflow-e2e-test/references/hooks.md（服务相关章节）
    ├── 输入: e2e-tests/ + detailed-design.md + service-guide.md
+   ├── 本子代理承担的测试范围: {e2e-tests/ 用例区间}（单个子代理 ≤ 3 个功能点对应的场景用例；超出时先分片再构建 prompt，前一片落盘后启动后一片承接）
    ├── 测试执行要求 (playwright-cli snapshot+ref 模式)
    ├── traceability.md 待填充列: E2E测试(ID)
    ├── 覆盖率目标: 100%

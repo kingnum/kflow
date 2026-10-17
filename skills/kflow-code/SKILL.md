@@ -1,6 +1,6 @@
 ---
 name: kflow-code
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs coding implementation/编码实现、TDD、功能实现, or subchange task plan is ready for execution. 子变更级TDD编码——编译验证、数据库迁移管理、多Agent并行编码、跨变更冲突检测。必须阶段。含 PRE_HOOK/POST_HOOK 阶段钩子。
 license: MIT
 triggers:
@@ -75,6 +75,17 @@ allowed-tools:
 | 迁移脚本 | `docs/changes/{change}/migrations/{序号}_{子变更}_{描述}.sql` | 🔶 条件 | 涉及数据模型变更时 |
 | 回滚脚本 | `docs/changes/{change}/migrations/{序号}_{子变更}_{描述}_rollback.sql` | 🔶 条件 | 涉及数据模型变更时 |
 | 迁移记录 | `docs/changes/{change}/migrations/migration-log.md` | 🔶 条件 | 涉及数据模型变更时 |
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 
@@ -700,6 +711,7 @@ migrations/
    │   ├── skills/kflow-code/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-code/references/repetition.md
    ├── 输入: detailed-design.md + api-tests/ + 所有子变更 tasks.md
+   ├── 本子代理承担的功能点范围: {子变更}/{FP-NNN 列表 或 TDD 步骤区间}（单个子代理 ≤ 3 个功能点或 10 个 TDD 步骤；超出时先分片再构建 prompt，前一片落盘后启动后一片承接）
    ├── TDD 流程要求 (Red → Green → Refactor)，双层遍历：外层遍历全部子变更 + 内层遍历全部 FP 执行 TDD 循环
    ├── traceability.md 待填充列: 编码实现(SC)
    ├── 重复制遍历指令:

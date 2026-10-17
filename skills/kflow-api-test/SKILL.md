@@ -1,6 +1,6 @@
 ---
 name: kflow-api-test
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs API testing/接口测试、API测试、接口单元测试, or subchange code review passes and ready for interface testing. curl/HTTP 方式对 api-tests/ 逐条测试，单轮全面执行 + 定向重验模式（一轮内遍历全部接口用例执行完整流程，发现失败项时仅重跑失败用例；终止结果取值 执行完成 / 定向重验失败），健康评分（功能完整性/响应时间/HTTP状态码/错误处理/契约一致性）。适用于所有项目类型（前后端+纯后端）；轻量档下按阶段适用性声明条件适用（无新增或修改接口时标 ⏭️ 不适用）。含 PRE_HOOK/POST_HOOK 阶段钩子。/接口测试/API测试/接口单元测试
 license: MIT
 triggers:
@@ -90,6 +90,17 @@ allowed-tools:
 | 变更状态更新 | `.status.md` | ✅ 必须 | 更新子变更进度矩阵 |
 
 > **阶段耗时遥测**：本阶段完成时 SHALL 更新变更级 `.status.md` 的「阶段耗时与轮次统计」区，填写阶段/开始时间/结束时间/耗时/子代理轮次/执行方式六列；单轮类阶段的「子代理轮次」记 `1`（存在定向重验时记累计轮次），「执行方式」记 `单轮验证`（含定向重验）。
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 
@@ -296,12 +307,14 @@ API 测试阶段流程 (curl/HTTP 驱动):
 
 2. 构建阶段专属提示词
    ├── 分层加载（基础层 + 执行层 + 服务层）:
+
    │   ├── skills/kflow-api-test/references/state-values.md（摘要）
    │   ├── skills/kflow-api-test/references/gates.md（当前阶段相关门控）
    │   ├── skills/kflow-api-test/references/repetition.md
    │   ├── skills/kflow-api-test/references/service-lifecycle.md
    │   └── skills/kflow-api-test/references/hooks.md（服务相关章节）
    ├── 输入: api-tests/ + detailed-design.md + service-guide.md
+   ├── 本子代理承担的测试范围: {api-tests/ 用例区间}（单个子代理 ≤ 3 个功能点对应的接口用例；超出时先分片再构建 prompt，前一片落盘后启动后一片承接）
    ├── 测试执行要求 (curl/HTTP 驱动)
    ├── traceability.md 待填充列: 接口测试(ID)
    ├── 覆盖率目标: 100%

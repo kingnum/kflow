@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-triage
-version: 0.27.0
+version: 0.28.0
 description: Use when user needs bug triage/问题分诊、反馈、报告问题、报bug、提bug、问题诊断, or user reports an issue through kflow-guide. Independent diagnostic Skill (not a workflow phase). 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、问题登记（bugs/目录）、路由决策（L1/L2/L3→REVISION模式，L4→缺陷修复快车道）。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md, bugs/）。
 license: MIT
 triggers:
@@ -53,6 +53,17 @@ allowed-tools:
 | 缺陷级状态文件 | `docs/changes/{change}/bugs/fix/{BUG-ID}/bugfix-status.md` | 🔶 L4 结论时必须 | **仅当诊断结论为 L4 实现执行时创建**。含六个必填区：基本信息、分诊结论、受影响项清单（受影响功能点/接口/测试用例）、修复记录、定向验证、收口结论。创建时 SHALL 一并写入分诊结论与**受影响项清单**，后续由快车道修复与定向验证回写其余区；SHALL NOT 修改变更级 `.status.md` 的阶段状态矩阵字段 |
 
 > **L4 结论的额外输出**: 诊断结论为 L4 时，本 Skill 除问题索引与问题详情外，SHALL 额外创建缺陷级状态文件 `bugfix-status.md` 并写入受影响项清单——该清单是快车道定向验证的唯一验证范围依据，SHALL NOT 由修复者自行圈定。文件结构与隔离规则参见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.5，机制定义参见 `bugfix-fast-lane` 能力。
+
+## 状态双写规则
+
+阶段完成、回退与重执行时，主 Agent SHALL 同时执行两处写入：
+
+1. **追加历史**：向 `docs/changes/{change}/status-log.md` 追加本次事件——阶段名、轮次、完成时间、耗时、终止结果；回退时另记回退原因与目标阶段
+2. **刷新当前**：刷新变更级 `.status.md` 的当前状态字段——当前阶段、阶段状态表对应行、执行轮次、终止结果、未决事项
+
+`.status.md` SHALL 保持在 100 行以内，超出部分改为写入 `status-log.md`。变更目录中不存在 `status-log.md`（历史变更未分层）时按既有单文件口径处理，SHALL NOT 强制回填。
+
+> 读取边界：常规阶段推进与门控判定 SHALL 仅读取 `.status.md`；`status-log.md` 仅在中断恢复与审计场景读取。权威定义见 `status-file-layering` 能力。
 
 # 执行流程
 

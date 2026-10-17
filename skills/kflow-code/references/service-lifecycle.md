@@ -105,55 +105,6 @@ python skills/kflow-code/scripts/with_server.py --stop-all --state-file .service
 
 ---
 
-## 二、端口冲突检测
-
-### 2.1 检测命令
-
-```bash
-# Windows (PowerShell)
-netstat -ano | findstr :<port>
-
-# Linux/macOS
-lsof -i :<port>
-# 或
-ss -tlnp | grep :<port>
-```
-
-### 2.2 检测流程
-
-```
-1. 从 service-guide.md dev 环境读取目标端口列表
-2. 逐端口检测是否被占用
-3. 判断占用进程身份:
-   ├── 空闲 → 正常启动
-   ├── .service-state.json 中记录的 PID → 执行 STOP_STALE
-   └── 非预期进程 → ⚠️ 阻塞，输出占用信息
-```
-
-### 2.3 检测结果处理
-
-| 场景 | 命令 | 后续操作 |
-|------|------|---------|
-| 端口空闲 | — | 正常启动服务 |
-| 残留服务占用 | `taskkill /PID <pid>` (Win) / `kill <pid>` (Unix) | STOP_STALE 后启动 |
-| 非预期进程占用 | — | ❌ 阻塞，提示用户处理 |
-
-### 2.4 端口配置来源
-
-端口 SHALL 从 `docs/service-guide.md` dev 环境配置中读取。service-guide.md 中端口配置格式：
-
-```markdown
-## 服务端口
-
-| 服务 | 开发端口 | 生产端口 |
-|------|---------|---------|
-| 后端 API | 8080 | 8080 |
-| 前端 DevServer | 5173 | — |
-| 数据库 | 5432 | 5432 |
-```
-
----
-
 ## 三、服务停止超时链
 
 ### 3.1 超时链操作
@@ -195,42 +146,6 @@ python skills/kflow-code/scripts/with_server.py --stop-all --state-file .service
 3. 验证所有端口已释放（netstat/lsof 检测）
 4. 全部释放 → 删除 `.service-state.json`，退出码 0
 5. 有端口未释放 → 保留 `.service-state.json`，输出僵尸进程信息，退出码 1
-
----
-
-## 四、健康检查
-
-### 4.1 健康检查端点
-
-| 检查项 | 端点 | 预期响应 | 适用阶段 |
-|--------|------|---------|---------|
-| 服务就绪 | `GET http://localhost:{port}/health` | HTTP 200 | 所有需要服务的阶段 |
-| 数据库就绪 | `GET http://localhost:{port}/db-health` | HTTP 200 | 测试阶段 |
-| 前端就绪 | `GET http://localhost:{port}/health` | HTTP 200 | E2E/集成测试 |
-
-### 4.2 健康检查命令
-
-```bash
-# 单端点检查
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health
-
-# with_server.py 内置健康检查
-python skills/kflow-code/scripts/with_server.py --health --state-file .service-state.json
-```
-
-### 4.3 健康检查轮询参数
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| 启动超时 | 60s | 服务启动的总等待时间 |
-| 重试间隔 | 2s | 每次健康检查之间的等待时间 |
-| 最大重试次数 | 30 | 超时前最多重试次数（30 × 2s = 60s） |
-
-### 4.4 健康检查失败处理
-
-1. 输出失败端点 URL 和 HTTP 状态码
-2. 输出服务最后 20 行日志（stdout + stderr）
-3. ❌ 阻塞当前阶段，等待用户修复
 
 ---
 
@@ -290,43 +205,3 @@ python skills/kflow-code/scripts/with_server.py --health --state-file .service-s
 | `services[].last_health_check` | ISO 8601 | 最后一次健康检查时间 |
 
 ---
-
-## 六、浏览器进程清理
-
-Playwright 运行时环境隔离在 `.kflow-runtime/playwright/` 下。安装和二进制由 🔶 浏览器 阶段 PRE_HOOK 按需初始化（`cd .kflow-runtime/playwright && npm install playwright && npx playwright install chromium`）。
-
-```bash
-# 清理所有残留 Playwright 浏览器进程（从项目根目录执行）
-playwright-cli kill-all
-```
-
-清理场景：
-- prototype-design 阶段 VERIFY 步骤完成后
-- e2e-test 阶段每轮测试完成后（POST_HOOK）
-- integration-test 阶段完成后（POST_HOOK，仅前后端项目）
-
-**路径约束**：
-- `playwright-cli kill-all` SHALL 从项目根目录执行，SHALL NOT 在 `docs/designs/prototypes/` 目录下产生残留文件
-- Playwright 安装、使用均通过 `.kflow-runtime/playwright/` 下的隔离环境
-
----
-
-## 七、数据库迁移
-
-### 7.1 迁移执行规则
-
-测试阶段 PRE_HOOK 中 SHALL 检测并执行未执行的迁移脚本。
-
-```bash
-# 检测迁移状态（具体命令由 service-guide.md 定义）
-# 示例（Flyway）:
-mvn flyway:migrate -Dflyway.locations=filesystem:docs/changes/{change}/migrations
-
-# 示例（自定义迁移工具）:
-# （由具体项目的 service-guide.md 定义）
-```
-
-### 7.2 迁移失败处理
-
-- 迁移执行失败 → ❌ 阻塞，输出失败脚本和错误信息
-- 不跳过失败迁移，需人工修复后重新执行
