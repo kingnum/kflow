@@ -1,10 +1,12 @@
 # 阶段衔接决策规范
 
-> **版本**: 1.0.0
+> **版本**: 1.1.0
 > **来源**: core-mechanisms/04-gates-and-transitions.md §6.1
 > **适用范围**: 全部阶段 Skill（explore/prototype-design/design/plan/code/code-review/api-test/e2e-test/integration-test/audit）与 kflow-resume
 > **加载层级**: 衔接层
 > **适用阶段**: 全部
+>
+> **v1.1.0**: 新增 §8「缺陷修复快车道不是阶段路径」——快车道由 triage 判定进入，不参与阶段衔接决策，出口为定向验证 → 快速收口。
 
 ## 1. 概述
 

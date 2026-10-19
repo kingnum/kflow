@@ -4,7 +4,7 @@
 > **类型**: 运行时共享文件（被各阶段 SKILL.md 引用）
 > **创建时间**: 2026-05-28
 >
-> **v1.1.0**: 新增 bug-fix **快车道模式**的钩子分支——PRE_HOOK 不依赖服务（校验缺陷级状态文件 + RELOAD 缺陷级产物）、POST_HOOK 回写缺陷级 `bugfix-status.md`（SHALL NOT 更新变更级 `.status.md` 阶段字段）。
+> **v1.2.0**: bug-fix 快车道模式的钩子支持项目级与变更级两种缺陷工作区——`CHECK_STATE` / `RELOAD` / `UPDATE_STATE` 的路径按 triage 声明的工作区解析（项目级 `docs/bugs/` / 变更级 `docs/changes/{change}/bugs/`），验证目标扩展为已有测试、新增回归测试与手工验证步骤。
 
 > **加载层级**: 服务层
 > **适用阶段**: api-test/e2e-test/integration-test
@@ -59,16 +59,16 @@
 
 ### bug-fix 快车道模式的钩子
 
-`kflow-bug-fix` 的**快车道模式**（由 `kflow-bug-triage` 的 L4 结论触发、无触发测试阶段上下文）不适用「同触发阶段」的继承规则，其钩子配置独立：
+`kflow-bug-fix` 的**快车道模式**（由 `kflow-bug-triage` 的 L4 结论触发、无触发测试阶段上下文）不适用「同触发阶段」的继承规则，其钩子配置独立，并支持项目级与变更级两种工作区：
 
 | 钩子 | 服务依赖 | 步骤 |
 |------|:------:|------|
-| PRE_HOOK | ❌ 不需要服务 | `CHECK_STATE`（验证缺陷级状态文件存在且受影响项清单已填）→ `RELOAD`（重读缺陷级产物与受影响项代码） |
+| PRE_HOOK | ❌ 不需要服务 | `CHECK_STATE`（验证 triage 声明工作区的缺陷级状态文件存在且受影响项清单已填）→ `RELOAD`（重读缺陷级产物与受影响项代码） |
 | POST_HOOK | ❌ 不需要服务 | `UPDATE_STATE` → 更新**缺陷级** `bugfix-status.md`（修复记录区 / 定向验证区 / 收口结论区） |
 
-> **服务依赖说明**: 快车道模式 SHALL NOT 启动、停止或刷新任何服务，SHALL NOT 执行编译 / 迁移 / 健康检查——其验证为**定向验证**（仅重跑受影响项清单覆盖的用例），由修复者本地执行。
+> **服务依赖说明**: 快车道模式 SHALL NOT 启动、停止或刷新任何服务，SHALL NOT 执行编译 / 迁移 / 健康检查——其验证为**定向验证**（仅执行受影响项清单覆盖的验证目标：已有测试 / 新增回归测试 / 手工验证步骤），由修复者本地执行。
 >
-> **状态写入边界**: 快车道模式的 POST_HOOK SHALL NOT 更新变更级 `.status.md` 的阶段状态、`执行轮次` 或 `终止结果` 字段。状态写入边界详见 `skills/kflow-prototype-design/references/state-values.md` 与 `bugfix-fast-lane` 能力。
+> **状态写入边界**: 快车道模式的 POST_HOOK SHALL NOT 更新变更级 `.status.md` 的阶段状态、`执行轮次` 或 `终止结果` 字段。项目级工作区下 SHALL NOT 读写任何变更级状态文件。状态写入边界详见 `skills/kflow-prototype-design/references/state-values.md` 与 `bugfix-fast-lane` 能力。
 
 ---
 
@@ -121,7 +121,7 @@ POST_HOOK（原型设计阶段）:
 | e2e-test | `service-guide.md`（dev 环境章节）、`e2e-tests/index.md`（全文）、`e2e-tests/part-NN.md`（经 index.md 定位）、`detailed-design.md`（页面/流程相关章节）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `manifest.md`（前端 SC）；`prototype-changes.md`（前端 SC） |
 | integration-test | `service-guide.md`（dev 环境章节）、`integration-tests/index.md`（全文）、`integration-tests/part-NN.md`（经 index.md 定位）、`detailed-design.md`（跨子变更接口契约章节）、`functional-designs/index.md`（全文）、`.status.md`（全文） | `manifest.md`（如存在）；`prototype-changes.md`（如存在） |
 | audit | 全量产物（经各文档组 index.md 定位）、`cross-reviews/`（最新批次目录）、`test-reports/`（各阶段 `summary.md`）、`.status.md`（全文）、`status-log.md`（审计场景读取） | — |
-| bug-fix | `service-guide.md`（dev 环境章节）、失败测试报告（按用例 ID 定位）、相关设计文档（经 index.md 或章节标题定位）、`.status.md`（全文） | — |
+| bug-fix | `service-guide.md`（dev 环境章节）、失败测试报告（按用例 ID 定位）、相关设计文档（经 index.md 或章节标题定位）、`.status.md`（全文）；**快车道模式**见 §2.6 / §3.5（不读 `.status.md`，按 triage 声明的工作区读取缺陷级产物） | — |
 | archive | 全量产物（经各文档组 index.md 定位）、`.status.md`（全文） | — |
 
 ### 4.2 RELOAD 执行规则

@@ -1,6 +1,6 @@
 ---
 name: kflow-audit
-version: 0.28.0
+version: 0.29.0
 description: Use when user needs audit/审计、评估、检查、审核 of a change, or before archiving/归档前, or anytime manual inspection is needed. 审计由单一子代理执行，全部变更档位同一形态——四项记账职责（门控校验 / 覆盖率与产物存在性校验 / 耗时数据汇总 / 阻塞级问题兜底），不作加权评分、不输出评分表、不对产物质量作独立评审，保留阻塞级问题拦截权与归档门控地位。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, cross-reviews/, self-reviews/, test-reports/, .status.md）。
 license: MIT
 triggers:

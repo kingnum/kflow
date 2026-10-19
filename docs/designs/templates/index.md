@@ -2,8 +2,8 @@
 
 > **版本**: 参见仓库根目录 `VERSION` 文件
 > **创建时间**: 2026-05-05
-> **更新时间**: 2026-10-14
-> **总模板数**: 57（含 1 个已废弃）
+> **更新时间**: 2026-10-19
+> **总模板数**: 61（含 1 个已废弃）
 
 本文档是 KFlow Skills 体系中所有阶段产物模板的索引入口。模板目录按镜像实际 `docs/` 输出结构组织，模板路径与产物路径形成直接映射。
 
@@ -58,6 +58,12 @@ templates/
 │   ├── migration-log.md                        #   数据库迁移记录模板
 │   ├── traceability.md                         #   覆盖追溯矩阵模板
 │   └── checkpoint.md                           #   checkpoint 文件模板
+├── bugs/                                       # 项目级缺陷工作区模板（镜像 docs/bugs/）
+│   ├── bugs-index.md                           #   问题索引模板
+│   ├── bugs-detail.md                          #   问题详情模板
+│   └── fix/{BUG-ID}/                           #   快车道缺陷产物模板（项目级）
+│       ├── bugfix-status.md                    #     缺陷级状态文件模板
+│       └── verify-report.md                    #     定向验证报告模板
 ├── subchanges/{subchange}/                     # 子变更级模板（镜像 subchanges/{subchange}/）
 │   ├── subchange-status.md                     #   子变更状态文件模板
 │   ├── subchange-tasks.md                      #   子变更任务清单模板
@@ -137,6 +143,17 @@ templates/
 | 55 | changes/{change}/bugs/bugs-index.md | docs/changes/{change}/bugs/index.md | kflow-bug-triage | 新建 |
 | 56 | changes/{change}/bugs/bugs-detail.md | docs/changes/{change}/bugs/bug-NNN-NNN.md | kflow-bug-triage | 新建 |
 | 57 | changes/{change}/bugs/fix/{BUG-ID}/bugfix-status.md | docs/changes/{change}/bugs/fix/{BUG-ID}/bugfix-status.md | kflow-bug-triage（创建 + 分诊结论 + 受影响项清单）/ kflow-bug-fix（修复记录 + 定向验证 + 收口结论） | 新建 |
+
+### 项目级缺陷模板 (bugs/)
+
+| 序号 | 模板文件 | 对应产物 | 产出 Skill | 类型 |
+|------|---------|---------|-----------|------|
+| 58 | bugs/bugs-index.md | docs/bugs/index.md | kflow-bug-triage | 新建 |
+| 59 | bugs/bugs-detail.md | docs/bugs/bug-NNN-NNN.md | kflow-bug-triage | 新建 |
+| 60 | bugs/fix/{BUG-ID}/bugfix-status.md | docs/bugs/fix/{BUG-ID}/bugfix-status.md | kflow-bug-triage（创建 + 分诊结论 + 受影响项清单）/ kflow-bug-fix（修复记录 + 定向验证 + 收口结论） | 新建 |
+| 61 | bugs/fix/{BUG-ID}/verify-report.md | docs/bugs/fix/{BUG-ID}/verify-report.md | kflow-bug-fix（快车道模式） | 新建 |
+
+> 项目级缺陷工作区不参与变更归档：`docs/bugs/` 下的索引、详情与 `fix/{BUG-ID}/` 产物 SHALL NOT 随任何变更归档移动或删除。变更级缺陷模板（序号 55~57）保持不变。
 
 ### 集成测试模板 (changes/{change}/integration/)
 

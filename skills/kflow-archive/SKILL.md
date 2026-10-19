@@ -1,7 +1,7 @@
 ---
 name: kflow-archive
-version: 0.28.0
-description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md）。
+version: 0.29.0
+description: Use when user needs to archive a change/归档、完成、变更结束, or all stages and integration tests are complete with audit passed. 变更归档——集成测试门控、审计门控、项目级阻塞缺陷门控（读取 `docs/bugs/index.md`，未关闭的 🔴 阻塞级缺陷阻断归档）、设计合并（functional-designs + detailed-designs/6文件体系）、索引更新、询问是否 git commit。必须阶段，变更级。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：全量产物, .status.md）。
 license: MIT
 triggers:
   - 归档
@@ -34,6 +34,7 @@ allowed-tools:
 - **裁剪合法性检查**：标记 `⏭️ 不适用` 的阶段均须在变更级 `.status.md` 的「阶段适用性声明」区有对应判定依据；无声明依据的 `⏭️` SHALL 阻塞归档
 - 集成测试通过检查（`test-reports/integration/summary.md` 存在且标记"集成测试通过"；集成测试阶段被合法裁剪时视为满足，SHALL NOT 要求该文件存在，见「归档条件」）
 - **审计门控通过**（kflow-audit 四维度评估通过，无阻塞/严重问题）
+- **项目级阻塞缺陷门控**：读取 `docs/bugs/index.md`，未关闭的 🔴 阻塞级缺陷 SHALL 阻断归档；该文件不存在时视为门控满足（见「项目级阻塞缺陷门控」）
 - **用户验收确认通过**（`.status.md` 中「用户验收确认」状态 = ✅ 已确认 或 ⏭️ 用户跳过）
 
 # 输入要求
@@ -46,6 +47,7 @@ allowed-tools:
 | 审计报告 | ✅ 必须 | kflow-audit 审计通过证明 |
 | functional-designs/ | ✅ 必须 | 功能设计（用于设计合并） |
 | detailed-design.md | ✅ 必须 | 详细设计（用于设计合并） |
+| `docs/bugs/index.md` | 🔶 条件 | 项目级缺陷工作区索引；存在时读取并检查未关闭的 🔴 阻塞级缺陷，不存在时视为门控满足 |
 
 # 输出产物
 
@@ -59,6 +61,7 @@ allowed-tools:
 | 变更日志更新 | `docs/designs/changelog.md` | 🔶 条件 | 新增功能模块或结构变更时更新；合并时被裁剪出的产品级修订记录亦追加于此 |
 | 产物修订历史 | `docs/changes/{change}/revision-history.md` | 🔶 条件 | 变更级产物的修订记录超出保留条数时创建；按产物文件分组，原样保留被移出记录的字段 |
 | 功能模块摘要更新 | `docs/designs/functional-designs/module-summary.md` | ✅ 必须 | 设计合并后更新模块摘要（模块名+核心功能+FP-ID范围+文档位置） |
+| 阻塞缺陷清单 | 对话中输出 | 🔶 条件 | 项目级存在未关闭 🔴 阻塞级缺陷时输出：BUG-ID、标题、状态、详情文件 |
 
 ## 状态双写规则
 
@@ -80,7 +83,7 @@ allowed-tools:
 │                    ARCHIVE WORKFLOW                          │
 ├─────────────────────────────────────────────────────────────┤
 │  1. PRE_HOOK  → 引用 skills/kflow-archive/references/hooks.md archive 阶段 PRE_HOOK │
-│  2. CHECK     → 门控检查（含集成测试+审计门控+所有子变更阶段） │
+│  2. CHECK     → 门控检查（含集成测试+审计门控+项目级阻塞缺陷+所有子变更阶段） │
 │  3. ACCEPTANCE→ 用户验收确认（如未确认）                      │
 │  │   ├── 检查 .status.md 用户验收确认状态                     │
 │  │   ├── 已确认/已跳过 → 进入 CONFIRM                          │
@@ -280,6 +283,7 @@ Options:
 - [ ] 纯后端项目：所有子变更接口单元测试通过
 - [ ] 集成测试通过（test-reports/integration/summary.md 存在且标记"集成测试通过"）
 - [ ] 审计门控通过（kflow-audit 四维度评估，无阻塞/严重问题）
+- [ ] **项目级阻塞缺陷门控满足**（`docs/bugs/index.md` 不存在，或其中无未关闭的 🔴 阻塞级缺陷）
 - [ ] ADR 索引已更新（如有新增 ADR，docs/adr/index.md 已包含本次变更的 ADR）
 - [ ] 无遗留的阻碍记录
 - [ ] **用户验收确认通过**（.status.md 中「用户验收确认」状态 = ✅ 已确认 或 ⏭️ 用户跳过）
@@ -297,6 +301,24 @@ Options:
 | 覆盖率分母 | 裁剪列整列填 `⏭️`，覆盖率 = 已填充格数 / (总格数 - 不适用格数) |
 
 > `标准` 档的归档条件维持既有规则；纯后端项目跳过 E2E测试的既有规则不受影响。
+
+## 项目级阻塞缺陷门控
+
+归档门控 SHALL 读取项目级缺陷工作区 `docs/bugs/index.md`，并将未关闭的 🔴 阻塞级缺陷纳入归档条件。项目级缺陷工作区不参与变更归档——归档 SHALL NOT 移动、合并或删除 `docs/bugs/`。
+
+| 情形 | 判定 | 处理 |
+|------|------|------|
+| `docs/bugs/index.md` 不存在 | 项目级门控满足 | SHALL NOT 因缺少该文件而阻塞归档 |
+| 存在未关闭的 🔴 阻塞级缺陷 | **阻塞归档** | 输出阻塞缺陷清单，提示先完成修复与快速收口后重新归档 |
+| 无未关闭的 🔴 阻塞级缺陷 | 项目级门控满足 | 🟡 警告与 🔵 建议级缺陷 SHALL NOT 阻塞归档 |
+
+**阻塞缺陷清单输出格式**：
+
+| BUG-ID | 标题 | 状态 | 详情文件 |
+|--------|------|------|---------|
+| BUG-{NNN} | {标题} | {待处理 / 处理中 / 已挂起} | `docs/bugs/bug-NNN-NNN.md#bug-nnn` |
+
+> 读取范围限于 `docs/bugs/index.md` 与清单列出的详情文件；SHALL NOT 将项目级缺陷计入变更级 `docs/changes/{change}/bugs/` 的归档检查，两类工作区的阻塞缺陷分别由各自索引判定。
 
 ---
 
@@ -445,6 +467,8 @@ kflow-audit 完成且审计通过
 # 核心提醒
 
 - **禁止自动进入**：归档阶段 SHALL NOT 被任何前置阶段自动调度进入，MUST 用户显式确认
+- **审计门控**：归档前必须确认审计通过且无阻塞/严重问题
+- **项目级阻塞缺陷门控**：读取 `docs/bugs/index.md`，未关闭的 🔴 阻塞级缺陷 SHALL 阻断归档并输出清单（BUG-ID、标题、状态、详情文件）；索引不存在时视为满足；`docs/bugs/` 不参与变更归档
 - **用户验收确认**：集成测试+审计通过后、归档前必须执行用户验收（AskUserQuestion），通过/跳过/不通过三种结果
 - **验收不通过时**：路由到 kflow-bug-fix 修复，修复后重新测试→审计→验收循环
 - 归档后禁止对变更进行任何修改操作（进入只读保护状态）

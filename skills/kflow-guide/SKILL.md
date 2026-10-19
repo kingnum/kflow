@@ -1,7 +1,7 @@
 ---
 name: kflow-guide
-version: 0.28.0
-description: Use when user needs workflow guidance/流程指引、帮助、如何开始、下一步做什么 or says 恢复/resume with a change name, or advances an active change with 继续 + 变更名. Also use when user expresses intent to fix work/修复、Bug、缺陷 or design revision/设计需调整、功能设计需调整、原型.*调整、详细设计.*调整、接口设计.*改、修改.*设计、调整.*设计.自动检测用户意图、活跃变更，读取项目级项目类型记录，降低使用门槛，无需记忆所有 Skill 名称。RESUME 路由 + 轻量推进 + 定向指引 + DESIGN_REVISION 设计修订分流。**变更名模式（「恢复/resume + 变更名」与「继续 + 变更名」）优先级最高，禁止 Plan Mode 拦截，直接进入 Skill 路由链。** 新变更由 kflow-explore 承接，本 Skill SHALL NOT 承担新变更创建前指引。
+version: 0.29.0
+description: Use when user needs workflow guidance/流程指引、帮助、如何开始、下一步做什么 or says 恢复/resume with a change name, or advances an active change with 继续 + 变更名. Also use when user expresses intent to fix work/修复、Bug、缺陷 (no change name required/无需变更名) or design revision/设计需调整、功能设计需调整、原型.*调整、详细设计.*调整、接口设计.*改、修改.*设计、调整.*设计. 缺陷修复意图直接路由到 kflow-bug-triage，L4 简单缺陷进入缺陷修复快车道且无需创建变更。自动检测用户意图、活跃变更，读取项目级项目类型记录，降低使用门槛，无需记忆所有 Skill 名称。RESUME 路由 + 轻量推进 + 定向指引 + DESIGN_REVISION 设计修订分流。**变更名模式（「恢复/resume + 变更名」与「继续 + 变更名」）优先级最高，禁止 Plan Mode 拦截，直接进入 Skill 路由链。** 新变更由 kflow-explore 承接，本 Skill SHALL NOT 承担新变更创建前指引。
 license: MIT
 triggers:
   - 流程指引
@@ -76,8 +76,9 @@ INPUT -> PARSE(变更名正则/设计修订解析) -> ROUTE(变更名模式直�
 │  3. INTENT     意图识别（关键词映射）                             │
 │     ├── 识别成功 -> 确定目标 Skill                                │
 │     └── 无法识别 -> 显示全套流程概览                              │
-│  4. CHANGES    活跃变更检测                                       │
-│     ├── 无活跃变更 -> 引导使用 kflow-explore 创建变更           │
+│  4. CHANGES    活跃变更检测（不阻断修复意图）                     │
+│     ├── 修复意图 -> 直接路由到 kflow-bug-triage（无论活跃变更数） │
+│     ├── 无活跃变更（非修复意图）-> 引导使用 kflow-explore 创建     │
 │     ├── 单个活跃变更 -> 自动选择该变更                            │
 │     └── 多个活跃变更 -> 列出供用户选择                            │
 │  5. TYPEREAD   项目类型读取（读取项目级记录，确定基础阶段集合）   │
@@ -195,8 +196,12 @@ DESIGN_REVISION 路由流程:
 ### 修复类关键词上下文判断
 
 当用户输入命中修复类关键词（修复、Bug、缺陷）时：
+
+- 活跃变更数量 SHALL NOT 成为路由前置条件，SHALL NOT 作为是否创建变更的判定依据
 - 存在活跃 bug-fix 子阶段 → 路由到 `kflow-bug-fix`（继续已有修复）
-- 不存在活跃 bug-fix → 路由到 `kflow-bug-triage`（新问题诊断）
+- 不存在活跃 bug-fix → 路由到 `kflow-bug-triage`（新问题诊断），无活跃变更时同样路由到 `kflow-bug-triage`
+- SHALL NOT 将修复意图引导到 `kflow-explore` 创建新变更
+- 存在活跃变更时，缺陷归属（项目级 / 变更级）由 `kflow-bug-triage` 判定；本 Skill SHALL NOT 因存在活跃变更而预先创建变更
 - 无法判断 → 使用 AskUserQuestion 询问用户意图
 
 ### 意图识别优先级规则
@@ -249,14 +254,15 @@ DESIGN_REVISION 路由流程:
 │  2. FILTER   过滤未归档变更                                       │
 │     └── 排除 docs/changes/archive/ 目录下的变更                          │
 │  3. READ     读取各变更的 .status.md                              │
-│  4. COUNT    统计活跃变更数量                                     │
-│     ├── 0 个 -> 提示无可操作的变更，引导使用 kflow-explore 创建   │
+│  4. COUNT    统计活跃变更数量（修复意图不以此为前提）             │
+│     ├── 修复意图 -> 不引导创建变更，路由到 kflow-bug-triage       │
+│     ├── 0 个（非修复意图）-> 引导使用 kflow-explore 创建          │
 │     ├── 1 个 -> 自动选择该变更                                   │
 │     └── > 1 个 -> 列出变更供用户选择                             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-> 活跃变更数为 0 时，本 Skill SHALL NOT 输出创建前指引、变更类型分类或变更名称建议——新变更由 `kflow-explore` 承接，本 Skill 仅提示入口。
+> 活跃变更数为 0 时，本 Skill SHALL NOT 输出创建前指引、变更类型分类或变更名称建议——新变更由 `kflow-explore` 承接，本 Skill 仅提示入口。**修复意图除外**：命中修复类关键词时 SHALL 直接路由到 `kflow-bug-triage`，SHALL NOT 因无活跃变更而引导创建变更。
 
 ## 步骤 5：TYPEREAD — 项目类型读取
 
@@ -358,6 +364,18 @@ DESIGN_REVISION 路由流程:
 ### 项目类型: {前后端项目|纯后端项目}
 ### 变更档位: {轻量|标准}（`.status.md` 不含该字段或含历史遗留的 `完整` 取值时按 `标准` 档展示）
 
+### 缺陷修复快车道（独立路径，不计入变更阶段集合）
+
+```
+修复意图 -> kflow-bug-triage（四层溯源 + 影响范围评估）
+    ├── L4 且满足快车道条件 -> kflow-bug-fix 快车道模式 -> 定向验证 -> 快速收口（不创建变更）
+    └── L1/L2/L3 或 L4 不满足快车道条件 -> 创建「功能缺陷」变更并路由到对应设计阶段
+```
+
+- **简单缺陷无需创建变更**：L4 且修复不需要修改 L1/L2/L3 产物、不需要数据迁移或破坏性契约变更、受影响项可枚举且用户确认时，缺陷直接进入快车道
+- 项目级缺陷工作区为 `docs/bugs/`；变更级缺陷工作区为 `docs/changes/{change}/bugs/`，由 `kflow-bug-triage` 判定
+- 快车道路径独立于下方阶段集合，SHALL NOT 被计入变更阶段数量或档位裁剪
+
 ### 阶段流程
 {`标准` 档 → 按项目类型显示完整阶段集合；`轻量` 档 → 已生成阶段适用性声明时以 `⏭️ 不适用` 标注被裁剪阶段并给出实际阶段集合，尚未生成时显示完整阶段集合并附「接口单元测试与 E2E 测试将在详细设计后按适用性判定」}
 
@@ -377,6 +395,7 @@ DESIGN_REVISION 路由流程:
 | 归档 | kflow-archive | 变更归档、设计合并、索引更新 |
 | 产物诊断 | kflow-verify | 独立诊断 Skill（非流程阶段），七维度全阶段产物诊断、严重度分级、修复路由 |
 | 问题分诊 | kflow-bug-triage | 独立诊断 Skill（非流程阶段），四层溯源定位问题源头并路由修复 |
+| 缺陷修复（快车道） | kflow-bug-fix | 独立路径（非变更阶段），L4 简单缺陷的修复 → 定向验证 → 快速收口，不创建变更 |
 | 文档优化 | kflow-doc-optimize | 独立维护（非流程阶段），可随时调用优化存量文档的修订记录与体积；**无活跃变更时同样可路由** |
 
 > `轻量` 档下被裁剪的阶段 SHALL 在该表中保留行，并在「阶段」列以 `⏭️ 不适用` 标注。
@@ -450,8 +469,9 @@ DESIGN_REVISION 路由流程:
 - **引导进入**：根据意图识别结果引导进入对应 Skill
 - **路由到 `kflow-resume`**：识别 RESUME 模式（「恢复/resume + 变更名」）后直接调用 `kflow-resume` 进行中断恢复
 - **轻量推进 -> 目标阶段 Skill**：识别「继续 + 变更名」模式时读取 `.status.md`，按阶段衔接决策直接调度目标阶段 Skill，SHALL NOT 调用 `kflow-resume`
-- **路由到 `kflow-bug-triage`**：用户反馈关键词（反馈/报告问题/报bug/提bug/问题）匹配时路由到 triage
+- **路由到 `kflow-bug-triage`**：用户反馈关键词（反馈/报告问题/报bug/提bug/问题）或修复类关键词（修复/Bug/缺陷）匹配时路由到 triage；修复意图无需变更名，且 SHALL NOT 以活跃变更数量作为前置条件
 - **路由到 `kflow-bug-fix`**：修复类关键词 + 存在活跃 bug-fix 子阶段时路由继续已有修复
+- **缺陷修复快车道**：L4 简单缺陷经 triage 判定后进入快车道（分诊 → 修复 → 定向验证 → 快速收口），无需创建变更；流程概览 SHALL 将其作为独立于变更阶段的路径展示
 - **新变更 -> `kflow-explore`**：无活跃变更或用户表达新变更意图时，提示用户使用 `kflow-explore` 开始设计探索；本 Skill SHALL NOT 输出创建前指引、变更类型分类或变更名称建议
 - **定向指引**：识别「指引/引导/guide + 变更名」模式时输出定向状态信息
 - **无前置阶段**：无需门控检查
@@ -462,6 +482,8 @@ DESIGN_REVISION 路由流程:
 - 正则解析优先级最高，在关键词匹配之前执行；变更名模式命中时 SHALL NOT 再按关键词映射裁决一次
 - 变更名模式有两条独立分支：「恢复/resume + 变更名」-> `kflow-resume`；「继续 + 变更名」-> 轻量推进（直接调度阶段 Skill）
 - 意图识别按优先级值选择，同优先级结合活跃变更上下文判断
+- 修复意图 SHALL NOT 以活跃变更数量为前置条件：无活跃变更时直接路由到 `kflow-bug-triage`，SHALL NOT 引导到 `kflow-explore` 创建变更；L4 简单缺陷进入缺陷修复快车道，无需变更名
+- 流程概览 SHALL 将「缺陷修复快车道」作为独立于变更阶段集合的路径展示，并说明简单缺陷无需创建变更
 - 无变更名时：「恢复/resume」按活跃变更数决定是否调用 `kflow-resume`（0 活跃->提示无可恢复变更，1 活跃->自动 resume，>1 活跃->列出供选择）；「继续」执行轻量推进，SHALL NOT 调用 `kflow-resume`
 - 指引错误必须记录到 skill-suggestion.md，便于后续优化关键词映射
 - 本 Skill 不创建变更目录和文件，变更初始化在 kflow-explore 阶段完成；创建前指引、变更类型分类、变更名称建议均由 `kflow-explore` 承担，本 Skill SHALL NOT 重复提供

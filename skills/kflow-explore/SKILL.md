@@ -1,6 +1,6 @@
 ---
 name: kflow-explore
-version: 0.28.0
+version: 0.29.0
 description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces signed-checklist self-review (the agent signs off on 4 dimensions with in-artifact evidence anchors, then one independent verification round, then a unified fix — a single round, never a second) and two-action save rule for external info gathering.
 license: MIT
 triggers:

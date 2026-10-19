@@ -9,7 +9,7 @@
 
 ```yaml
 name: kflow-archive
-description: 变更归档阶段 - 将已完成的变更进行归档操作。必须阶段，增加集成测试门控、审计门控和所有子变更各阶段完成检查。归档时执行设计合并：提取功能设计和详细设计合并到产品级文档；原型改动登记到产品级 docs/designs/prototypes/manifest.md（原型已在原型设计阶段直写产品级，归档不做文件级原型合并）。更新状态文件和索引文件。归档后禁止对变更进行任何修改操作。阶段钩子引用 `skills/kflow-archive/references/hooks.md`（不需要服务，RELOAD：全量产物, .status.md）。
+description: 变更归档阶段 - 将已完成的变更进行归档操作。必须阶段，增加集成测试门控、审计门控、项目级阻塞缺陷门控（读取 docs/bugs/index.md，未关闭的 🔴 阻塞级缺陷阻断归档）和所有子变更各阶段完成检查。归档时执行设计合并：提取功能设计和详细设计合并到产品级文档；原型改动登记到产品级 docs/designs/prototypes/manifest.md（原型已在原型设计阶段直写产品级，归档不做文件级原型合并）。更新状态文件和索引文件。归档后禁止对变更进行任何修改操作。阶段钩子引用 `skills/kflow-archive/references/hooks.md`（不需要服务，RELOAD：全量产物, .status.md）。
 license: MIT
 triggers:
   - 归档
@@ -38,6 +38,7 @@ allowed-tools:
 - 集成测试通过检查（test-reports/integration/summary.md 存在且标记"集成测试通过"；集成测试阶段被合法裁剪时视为满足，不要求该文件存在，见下方档位适配）
 - **裁剪合法性检查**：标记 `⏭️ 不适用` 的阶段均须在变更级 `.status.md` 的「阶段适用性声明」区有对应判定依据（无依据的 `⏭️` SHALL 阻塞归档）
 - **审计门控通过**（kflow-audit 四项记账职责通过，无阻塞级问题）
+- **项目级阻塞缺陷门控**：读取 `docs/bugs/index.md`，未关闭的 🔴 阻塞级缺陷 SHALL 阻断归档；该文件不存在时视为门控满足
 - **用户验收确认通过**（.status.md 中「用户验收确认」状态 = ✅ 已确认 或 ⏭️ 用户跳过）
 - **用户显式确认进入归档**（审计通过后 MUST 通过 AskUserQuestion 获取用户显式确认，Archive 是唯一禁止自动流转的阶段，见 §自动流转禁止规则）
 
@@ -63,6 +64,7 @@ allowed-tools:
 | 审计报告 | ✅ 必须 | kflow-audit 审计通过证明 |
 | functional-designs/ | ✅ 必须 | 功能设计（用于设计合并） |
 | detailed-design.md | ✅ 必须 | 详细设计（用于设计合并） |
+| `docs/bugs/index.md` | 🔶 条件 | 项目级缺陷工作区索引；存在时读取并检查未关闭的 🔴 阻塞级缺陷，不存在时视为门控满足 |
 
 ---
 
@@ -77,6 +79,7 @@ allowed-tools:
 | 详细设计全景文档更新 | docs/designs/detailed-designs/{architecture,data-model,api-catalog,nfr-baseline,config-items,error-handling}.md | [全景架构](../../templates/design-templates/detailed-designs/architecture.md)、[数据模型](../../templates/design-templates/detailed-designs/data-model.md)、[API目录](../../templates/design-templates/detailed-designs/api-catalog.md)、[NFR基线](../../templates/design-templates/detailed-designs/nfr-baseline.md)、[配置项](../../templates/design-templates/detailed-designs/config-items.md)、[错误处理](../../templates/design-templates/detailed-designs/error-handling.md) | 🔶 条件 | 涉及跨模块变更时按类型分散更新至 6 文件 |
 | 变更日志更新 | docs/designs/changelog.md | [变更日志](../../templates/design-templates/changelog.md) | 🔶 条件 | 新增功能模块或结构变更时更新 |
 | 功能模块摘要更新 | docs/designs/functional-designs/module-summary.md | [模块摘要](../../templates/design-templates/functional-designs/module-summary.md) | ✅ 必须 | 设计合并后更新模块摘要（模块名+核心功能+FP-ID范围+文档位置） |
+| 阻塞缺陷清单 | 对话中输出 | — | 🔶 条件 | 项目级存在未关闭 🔴 阻塞级缺陷时输出：BUG-ID、标题、状态、详情文件 |
 
 ---
 
@@ -194,7 +197,17 @@ allowed-tools:
 
 > 完整规范参见 `skills/kflow-archive/references/archive-rules.md` §1
 
-归档前检查清单：所有阶段完成、所有子变更各阶段完成、测试通过、审计门控通过、用户验收确认通过、ADR 索引已更新（如有新增）、无遗留阻碍记录、用户确认归档。
+归档前检查清单：所有阶段完成、所有子变更各阶段完成、测试通过、审计门控通过、项目级阻塞缺陷门控满足、用户验收确认通过、ADR 索引已更新（如有新增）、无遗留阻碍记录、用户确认归档。
+
+**项目级阻塞缺陷门控**：
+
+| 情形 | 判定 | 处理 |
+|------|------|------|
+| `docs/bugs/index.md` 不存在 | 项目级门控满足 | SHALL NOT 因缺少该文件而阻塞归档 |
+| 存在未关闭的 🔴 阻塞级缺陷 | 阻塞归档 | 输出阻塞缺陷清单后终止归档流程 |
+| 无未关闭的 🔴 阻塞级缺陷 | 项目级门控满足 | 🟡 警告与 🔵 建议级缺陷 SHALL NOT 阻塞归档 |
+
+阻塞缺陷清单输出列：BUG-ID、标题、状态、详情文件。`docs/bugs/` 不参与变更归档，归档 SHALL NOT 移动、合并或删除该目录。
 
 **按档位适配**（判定基准为变更级 `.status.md` 的 `变更档位`，缺省或读取到历史遗留的 `完整` 取值时按 `标准` 档）：
 

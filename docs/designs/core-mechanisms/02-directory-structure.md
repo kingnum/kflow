@@ -2,7 +2,7 @@
 
 > **版本**: 参见仓库根目录 `VERSION` 文件
 > **创建时间**: 2026-04-29
-> **更新时间**: 2026-05-17
+> **更新时间**: 2026-10-19
 
 > **加载层级**: 基础层
 > **适用阶段**: 全部
@@ -153,6 +153,13 @@ docs/
 │   ├── changelog.md                   # 变更日志（按年归档）
 │   └── ...
 │
+├── bugs/                              # 项目级缺陷工作区（用户反馈 / 不属于任何活跃变更的缺陷）
+│   ├── index.md                       #   问题索引（统计+问题列表+分页表）
+│   ├── bug-NNN-NNN.md                 #   分页详情文件（每文件 ≤20 条 BUG）
+│   └── fix/{BUG-ID}/                  #   快车道缺陷产物（仅 L4 快车道缺陷存在）
+│       ├── bugfix-status.md           #     缺陷级状态文件
+│       └── verify-report.md           #     定向验证报告
+│
 ├── CONTEXT.md                         # 项目级领域词汇表（设计探索阶段构建和增补，所有阶段引用）
 │
 ├── adr/                               # 架构决策记录目录
@@ -163,6 +170,22 @@ docs/
 │
 └── skill-suggestion.md                # Skills 优化建议记录
 ```
+
+### 2.1.1 缺陷工作区（项目级 / 变更级）
+
+缺陷登记 SHALL 支持两种工作区，由 `kflow-bug-triage` 在登记前判定：
+
+| 工作区 | 触发场景 | 路径根 | 文件清单 | 生命周期 |
+|--------|---------|--------|---------|---------|
+| 项目级 | 用户反馈的缺陷（A 路径）；不属于任何活跃变更的缺陷；活跃变更存在但缺陷由既有功能或历史代码导致 | `docs/bugs/` | `index.md`、`bug-NNN-NNN.md`、`fix/{BUG-ID}/bugfix-status.md`、`fix/{BUG-ID}/verify-report.md` | 不随任何变更归档移动或删除；收口后保留为历史记录；未关闭的 🔴 阻塞级缺陷阻断任意变更归档 |
+| 变更级 | 测试阶段自动发现的缺陷（B 路径）；由活跃变更引入的代码或产物导致的缺陷 | `docs/changes/{change}/bugs/` | 结构同项目级 | 随变更整体归档到 `docs/changes/archive/`；归档前检查该变更未关闭的 🔴 阻塞级缺陷 |
+
+**规则**：
+
+- 两种工作区同构（索引 + 分页详情 + `fix/{BUG-ID}/` 快车道产物），但各自独立维护 BUG-ID 递增序号
+- 跨工作区引用缺陷时 SHALL 使用「工作区路径 + BUG-ID」形式，SHALL NOT 仅使用 BUG-ID
+- 项目级缺陷 SHALL NOT 创建 `docs/changes/{change}/` 目录，SHALL NOT 进入变更级阶段状态矩阵、审计或归档
+- `docs/bugs/index.md` 不存在时，归档门控视为项目级门控满足，SHALL NOT 因缺少该文件而阻塞归档
 
 ### 2.2 命名规范
 
@@ -190,9 +213,12 @@ docs/
 | 集成测试索引 | `index.md` | `docs/changes/{change}/integration-tests/index.md` |
 | 集成测试分册 | `part-NN.md` | `docs/changes/{change}/integration-tests/part-01.md` |
 | 覆盖追溯矩阵 | `traceability.md` | `docs/changes/{change}/traceability.md` |
-| 问题登记目录 | `bugs/` | `docs/changes/{change}/bugs/` |
-| 问题索引 | `index.md` | `docs/changes/{change}/bugs/index.md` |
-| 问题详情分页 | `bug-NNN-NNN.md` | `docs/changes/{change}/bugs/bug-001-020.md` |
+| 问题登记目录（变更级） | `bugs/` | `docs/changes/{change}/bugs/` |
+| 问题登记目录（项目级） | `bugs/` | `docs/bugs/` |
+| 问题索引 | `index.md` | `docs/changes/{change}/bugs/index.md`、`docs/bugs/index.md` |
+| 问题详情分页 | `bug-NNN-NNN.md` | `docs/changes/{change}/bugs/bug-001-020.md`、`docs/bugs/bug-001-020.md` |
+| 缺陷级状态文件 | `fix/{BUG-ID}/bugfix-status.md` | `docs/changes/{change}/bugs/fix/BUG-001/bugfix-status.md`、`docs/bugs/fix/BUG-001/bugfix-status.md` |
+| 定向验证报告 | `fix/{BUG-ID}/verify-report.md` | `docs/changes/{change}/bugs/fix/BUG-001/verify-report.md`、`docs/bugs/fix/BUG-001/verify-report.md` |
 | 自审记录目录 | `self-reviews/{phase}/` | `docs/changes/{change}/self-reviews/explore/` |
 | 自审记录文件 | `report.md` | `docs/changes/{change}/self-reviews/explore/report.md` |
 | 交叉审查目录 | `cross-reviews/{YYYYMMDD}-{HHMMSS}/` | `docs/changes/{change}/cross-reviews/20260514-150000/` |
