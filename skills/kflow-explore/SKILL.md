@@ -1,6 +1,6 @@
 ---
 name: kflow-explore
-version: 0.29.0
+version: 0.30.0
 description: Use when starting new requirements/开始新需求、设计探索、功能设计、需求澄清. Entry point for all changes - inherits project type from the project-level record (CLAUDE.md project profile → docs/toolchain.md header → in-place detection only when both are unavailable; re-scans solely for silent drift check), splits features to atomic level, determines the change tier, builds CONTEXT.md domain glossary, outputs functional-designs/ with functional structure tree. Enforces signed-checklist self-review (the agent signs off on 4 dimensions with in-artifact evidence anchors, then one independent verification round, then a unified fix — a single round, never a second) and two-action save rule for external info gathering.
 license: MIT
 triggers:
@@ -325,7 +325,7 @@ CLARIFY SHALL 维护「未决问题清单」，并在进入 SPLIT 之前要求�
 
 | 条件 | 处理方式 |
 |------|---------|
-| 功能点 ≤ 10 | 详细设计阶段确认后，创建单一子变更 |
+| 功能点 ≤ 10 | 详细设计阶段确认后，创建 1 或 2 个子变更（FP 类型混合时为后端子变更 + 前端子变更） |
 | 功能点 > 10 且 ≤ 20 | 详细设计阶段完成后拆分为多个子变更 |
 | 功能点总数 > 20 | 提示用户拆分为多个变更 |
 
@@ -333,7 +333,7 @@ CLARIFY SHALL 维护「未决问题清单」，并在进入 SPLIT 之前要求�
 
 SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的「变更档位」字段。档位是贯穿全流程的单一分级依据，驱动后续阶段的审查形态与产出深度——SHALL NOT 决定执行轮次。
 
-**初判仅使用本阶段可得的信息**（变更类型 + 功能点数）。接口数与数据模型变更数属于本阶段域外内容（见「阶段边界约束」），SHALL NOT 为凑齐完整影响范围分数公式而在 explore 阶段定义接口或数据模型；完整公式复核由 kflow-design 在 DIVIDE 之后执行。
+**初判仅使用本阶段可得的信息**（变更类型 + 功能点数）。接口契约变更数与数据模型变更数属于本阶段域外内容（见「阶段边界约束」），SHALL NOT 为凑齐复核公式而在 explore 阶段定义接口或数据模型；完整复核由 kflow-design 在 DIVIDE 之后按设计面口径执行（新增/修改的接口契约数与 schema/migration 数；受影响但未改契约的接口不计入）。初判映射表与本节说明 SHALL NOT 引入接口或数据模型的计量定义。
 
 ### 8a. 初判映射规则
 
@@ -348,7 +348,9 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 > 阈值保守取值：功能需求需 FP ≤ 2 才判轻量，避免初判偏低导致 design 阶段频繁升档。
 >
 > `产品需求` SHALL 按功能点数比照 `功能需求` 的分档规则判定（如 FP = 5 → `标准`），SHALL NOT 设独立于该规则的档位下限。
-> SHALL NOT 无条件判定为 `标准` 之外的档位；初判结果 SHALL 标注为「初判」，由 kflow-design 的复核环节用完整影响范围分数公式校正；SHALL NOT 存在任何独立于该映射规则的变更类型档位分支。枚举为 `{轻量, 标准}` 二值，SHALL NOT 存在按功能点数上探的第三档取值。
+> SHALL NOT 无条件判定为 `标准` 之外的档位；初判结果 SHALL 标注为「初判」，由 kflow-design 的复核环节用设计面分数公式校正；SHALL NOT 存在任何独立于该映射规则的变更类型档位分支。枚举为 `{轻量, 标准}` 二值，SHALL NOT 存在按功能点数上探的第三档取值。
+>
+> 升档分硬升档（数据迁移、破坏性契约变更、跨变更契约影响；不可拒绝）与软升档（默认保持轻量，仅在新增下游测试阶段时提示，拒绝后记录理由）。
 
 ### 8b. 用户覆盖确认
 
@@ -387,7 +389,7 @@ SPLIT 完成后执行变更档位初判，结果写入变更级 `.status.md` 的
 | 轻量 | OUTPUT 产出压缩为单页（功能点清单 + 影响分析 + 修复/实现范围），仍写入既有产物路径；SELFREV 固定单轮（产物完整性门控为附加硬门）；PROTO_GATE 不主动询问 |
 | 标准 | 标准产出；SELFREV 固定单轮，报告逐维度给出结论 |
 
-> 档位判定公式、单向升档安全阀与缺省回退规则详见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.1.1 与 `docs/designs/skills/kflow-explore.md`。
+> 档位判定（初判映射 + design 阶段设计面分数复核）、单向升档安全阀与缺省回退规则详见 `docs/designs/core-mechanisms/03-status-and-tasks.md` §3.1.1 与 `docs/designs/skills/kflow-explore.md`。
 
 ## 步骤 9：RELATE — 分析功能点关联关系
 

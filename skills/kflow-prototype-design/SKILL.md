@@ -1,6 +1,6 @@
 ---
 name: kflow-prototype-design
-version: 0.29.0
+version: 0.30.0
 description: Use when user needs prototype design/原型设计、UI 设计、交互设计、HTML 原型 for frontend changes. 编排层，默认复用 docs/toolchain.md 已锁定的设计工具链，委托子代理生成 HTML 原型并直写产品级 docs/designs/prototypes/。BUILD 四项静态门控必做，通过后由用户选择人工审查或子代理自动审查验证。含用户评审循环、变更级改动追踪（哈希并发检测）、CDN 离线扫描、多文件交叉引用检查。含 PRE_HOOK/POST_HOOK 阶段钩子引用。
 license: MIT
 triggers:

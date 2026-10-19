@@ -1,6 +1,6 @@
 ---
 name: kflow-doc-optimize
-version: 0.29.0
+version: 0.30.0
 description: Use when user needs document optimization/文档优化、文档瘦身、拆分文档、清理修订记录、文档体积治理, or wants to trim revision records and split oversized docs in an existing project. 独立维护 Skill（非流程阶段）——扫描产品级与活跃变更级文档，按阈值识别修订记录超量与超大文档，经用户确认后仅搬移、拆分与建索引，并校验引用完整性。不写入变更阶段状态。
 license: MIT
 triggers:

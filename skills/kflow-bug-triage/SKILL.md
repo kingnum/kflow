@@ -1,6 +1,6 @@
 ---
 name: kflow-bug-triage
-version: 0.29.0
+version: 0.30.0
 description: Use when user needs bug triage/问题分诊、反馈、报告问题、报bug、提bug、问题诊断, or user reports an issue through kflow-guide. Independent diagnostic Skill (not a workflow phase). 四层溯源诊断（L1需求→L2原型→L3设计→L4实现）、缺陷工作区判定（项目级 `docs/bugs/` / 变更级 `docs/changes/{change}/bugs/`）、路由决策（L1/L2/L3→创建或复用变更的 REVISION 模式，L4 满足快车道条件→缺陷修复快车道且不创建变更，L4 不满足→创建功能缺陷变更）。可在存在或不存在活跃变更时执行；用户反馈默认登记到项目级工作区，测试阶段自动发现登记到变更级工作区。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务，RELOAD：选定工作区, 诊断证据来源, 活跃变更 .status.md（条件））。
 license: MIT
 triggers:

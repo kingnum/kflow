@@ -1,6 +1,6 @@
 ---
 name: kflow-plan
-version: 0.29.0
+version: 0.30.0
 description: Use when user needs task planning/任务计划、任务清单、实现计划, or detailed-design.md is ready for subchange breakdown. 子变更级checkbox任务清单（含DoD四维验收标准），功能点级全展开TDD循环，区分后端SC/前端SC输入源。含 PRE_HOOK/POST_HOOK 阶段钩子引用（不需要服务）。
 license: MIT
 triggers:
@@ -52,7 +52,7 @@ allowed-tools:
 
 不满足则 ❌ 阻塞，提示先完成前置条件。
 
-> 轻量档的单子变更：变更恒为 1 个子变更，`api-tests/` 在 `接口单元测试` 判为 `⏭️ 不适用` 时 SHALL NOT 产出，其缺失属合法跳过，SHALL NOT 判为缺项或阻塞（判定见共享 `references/gates.md` §1.2、字段定义见 `references/state-values.md` §5）。
+> 轻量档的子变更：变更为 1 或 2 个子变更，`api-tests/` 在 `接口单元测试` 判为 `⏭️ 不适用` 时 SHALL NOT 产出，其缺失属合法跳过，SHALL NOT 判为缺项或阻塞（判定见共享 `references/gates.md` §1.2、字段定义见 `references/state-values.md` §5）。
 
 # 输入要求
 
@@ -717,7 +717,7 @@ HITL 子变更 SHALL 在任务清单中包含决策点列表：
 - 禁止 TODO/TBD/{待填写} 等占位符
 - 自审固定为**单轮验证**：轮数恒为 1，SHALL NOT 执行第二轮、无 0 轮豁免路径、不追加确认轮（参见步骤 8.5 与 `skills/kflow-plan/references/repetition.md`；缺失档位或历史取值 完整 按 标准 档）；轻量档同样执行单轮验证并附加产物完整性门控
 - **审查范围冻结**：主 Agent 从阶段产物既有内容生成审查对象集合并冻结，审查维度限于 4 个定制维度；冻结范围之外的发现降级为「范围外观察」——不改产物、不计入验证发现数；越界轮 SHALL NOT 被接受为有效验证
-- **轻量档单一子变更**：轻量档变更恒为 1 个子变更，「遍历全部子变更」等复数表述在该场景下即为遍历该唯一子变更，不产生额外要求；`api-tests/` 可因 `接口单元测试` 被裁剪而不存在，属合法跳过
+- **轻量档子变更**：轻量档变更为 1 或 2 个子变更，「遍历全部子变更」等复数表述即为遍历该 1 或 2 个子变更，不产生额外要求；`api-tests/` 可因 `接口单元测试` 被裁剪而不存在，属合法跳过
 - **单轮验证自审强制执行**：OUTPUT 步骤完成后自动进入 SELFREV，主 Agent 完成 4 维度签署自证（零子代理）→ 启动 1 个独立子代理做单轮验证（先独立遍历全部子变更 tasks.md 形成自身结论且不读签署清单，再逐项对照签署清单打假，只报告不修改任何 tasks.md）→ 主 Agent 统一修复并生成「本阶段修复清单」；4 维度为任务覆盖完整性 / DoD 验收标准正确性 / HITL 标注准确性 / 任务粒度合理性，审查对象集合由主 Agent 冻结、维度集合封闭；轮数恒为 1、SHALL NOT 执行第二轮，终止结果 `验证通过` / `验证发现问题({N})`
 
 # 反馈机制
