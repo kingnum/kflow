@@ -14,7 +14,7 @@
 
 - **WHEN** functional-designs/index.md 的 OUTPUT 步骤生成
 - **THEN** "三、页面导航结构图" SHALL 被替换为"三、功能结构树"
-- **AND** 保留原有的"四、核心业务流程图"及后续章节不变
+- **AND** 保留原有的"五、核心业务流程图"及后续章节不变
 
 #### Scenario: 旧格式不再使用
 

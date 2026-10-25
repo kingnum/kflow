@@ -1,6 +1,6 @@
 ---
 name: kflow-design
-version: 0.30.0
+version: 0.31.0
 description: Use when user needs detailed design/详细设计、技术设计、架构设计、设计审查. 变更级统一详细设计——系统架构、数据模型、接口设计、NFR定义、按变更档位分级审查（轻量单 Agent 综合 / 标准两视角并行）、变更档位复核、子变更划分（含HITL/AFK分类）、ADR架构决策记录。必须阶段，依赖 kflow-explore 输出。
 license: MIT
 triggers:
@@ -450,6 +450,8 @@ ELSE（FP ≤ 20）:
 ## 步骤 6：NFR — 非功能需求
 
 > **拆分模式**（FP > 20）：NFR 内容写入 `detailed-design/nfr.md`（独立文件），非 `detailed-design.md` 章节。
+>
+> **需求输入**：以 `functional-designs/index.md`「非功能期望」小节（§一）为需求输入，将用户视角期望转译为可度量技术目标值（目标值、测量方法、验证阶段）；探索侧标注「本变更无特殊非功能期望」时按既有最小要求自行定义。
 
 ### 5a. 性能需求
 

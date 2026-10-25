@@ -112,6 +112,9 @@ allowed-tools:
 │  5. DESIGN    → 为所有功能点编写详细设计 + 复杂度评估（低/中/高）│
 │  5.5 COMPLEX  → 高复杂度 FP 逐项确认（AskUserQuestion）          │
 │  6. NFR       → 编写 NFR 章节（性能/安全/可用性/可维护性）      │
+│  │   需求输入: functional-designs/index.md「非功能期望」小节，  │
+│  │   将用户视角期望转译为可度量技术目标值；探索侧标注           │
+│  │   「无特殊非功能期望」时按既有最小要求自行定义                │
 │  7. APITESTS  → 编写统一 api-tests/（轻量档：见 9.6 顺序约束）   │
 │  8. E2ETESTS  → (前后端项目) 编写统一 e2e-tests/（轻量档：同 7） │
 │  9. DIVIDE    → 基于完整设计认知划分子变更 + FP 类型校验      │
